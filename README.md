@@ -261,3 +261,39 @@ type Options = {
   }
 }
 ```
+
+#### electron-builder config
+
+```js
+const { name } = require('./package.json')
+
+const target = `${name}.asar`
+/**
+ * @type {import('electron-builder').Configuration}
+ */
+module.exports = {
+  appId: 'YourAppID',
+  productName: name,
+  files: [
+    'app.js', // <- app entry file
+    '!**/{.eslintignore,.eslintrc.cjs,.editorconfig,.prettierignore,.prettierrc.yaml,dev-app-update.yml,LICENSE,.nvmrc,.npmrc}',
+    '!**/{tsconfig.json,tsconfig.node.json,tsconfig.web.json}',
+    '!**/*debug*.*',
+    '!**/*.{md,zip,map}',
+    '!**/*.{c,cpp,h,hpp,cc,hh,cxx,hxx,gypi,gyp,sh}',
+    '!**/.{github,vscode}',
+    '!node_modules/**/better-sqlite3/deps/**',
+  ],
+  asarUnpack: [
+    '**/*.{node,dll}',
+  ],
+  directories: {
+    output: 'release',
+  },
+  extraResources: [
+    { from: `release/${target}`, to: target }, // <- asar file
+  ],
+  publish: null,
+  // ...
+}
+```
