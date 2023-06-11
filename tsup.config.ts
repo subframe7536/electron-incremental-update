@@ -5,7 +5,7 @@ export default defineConfig({
   clean: true,
   format: ['esm', 'cjs'],
   entry: [
-    'src/plugin.ts',
+    'src/vite.ts',
     'src/index.ts',
   ],
   external: ['electron', 'asar', '@electron/asar', 'vite', 'esbuild'],

@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "description": "electron incremental update tools, powered by vite",
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "release": "bumpp"
   },
   "type": "module",
   "license": "MIT",
@@ -18,9 +19,9 @@
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
     },
-    "./plugin": {
-      "require": "./dist/plugin.cjs",
-      "import": "./dist/plugin.mjs"
+    "./vite": {
+      "require": "./dist/vite.cjs",
+      "import": "./dist/vite.mjs"
     }
   },
   "typesVersions": {
@@ -28,8 +29,8 @@
       ".": [
         "dist/updater.d.ts"
       ],
-      "plugin": [
-        "dist/plugin.d.ts"
+      "vite": [
+        "dist/vite.d.ts"
       ]
     }
   },
@@ -44,6 +45,7 @@
     "@subframe7536/eslint-config": "^0.1.9",
     "@types/node": "^20.2.5",
     "asar": "^3.2.0",
+    "bumpp": "^9.1.1",
     "electron": "^25.0.1",
     "eslint": "^8.42.0",
     "fs-jetpack": "^5.1.0",
