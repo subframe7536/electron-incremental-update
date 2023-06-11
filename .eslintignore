@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-electron
+.gitignore
+.github
+.vscode
+src/router.ts
+release
+app.js*
