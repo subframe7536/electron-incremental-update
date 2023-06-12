@@ -1,10 +1,10 @@
 export type BuildAsarOption = {
   version: string
-  productName: string
   asarOutputPath: string
   privateKeyPath: string
   electronDistPath: string
   rendererDistPath: string
+  versionPath: string
 }
 
 export type BuildEntryOption = {
@@ -63,6 +63,11 @@ export type Options = {
      * @default `dist`
      */
     rendererDistPath?: string
+    /**
+     * Path to version info output
+     * @default `version.json`
+     */
+    versionPath?: string
   }
   keys?: {
     /**
@@ -93,6 +98,7 @@ export function parseOptions(options: Options) {
     asarOutputPath = `release/${productName}.asar`,
     electronDistPath = 'dist-electron',
     rendererDistPath = 'dist',
+    versionPath = 'version.json',
   } = paths
   const {
     privateKeyPath = 'public/private.pem',
@@ -102,11 +108,11 @@ export function parseOptions(options: Options) {
 
   const buildAsarOption: BuildAsarOption = {
     version,
-    productName,
     asarOutputPath,
     privateKeyPath,
     electronDistPath,
     rendererDistPath,
+    versionPath,
   }
   const buildEntryOption: BuildEntryOption = {
     privateKeyPath,

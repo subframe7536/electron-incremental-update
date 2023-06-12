@@ -49,6 +49,7 @@ export async function buildAsar({
   privateKeyPath,
   electronDistPath,
   rendererDistPath,
+  versionPath,
 }: BuildAsarOption) {
   await rename(rendererDistPath, `${electronDistPath}/renderer`)
   await writeFile(`${electronDistPath}/version`, version)
@@ -59,7 +60,7 @@ export async function buildAsar({
   await gzipFile(asarOutputPath)
   const buffer = await readFile(`${asarOutputPath}.gz`)
   const signature = generateSignature(buffer, await readFile(privateKeyPath, 'utf-8'))
-  await writeFile('version.json', JSON.stringify({
+  await writeFile(versionPath, JSON.stringify({
     signature,
     version,
     size: buffer.length,
