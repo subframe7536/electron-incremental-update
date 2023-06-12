@@ -4,8 +4,9 @@
   "description": "electron incremental update tools, powered by vite",
   "scripts": {
     "build": "tsup",
-    "release": "bumpp"
+    "release": "tsup && bumpp"
   },
+  "repository": "https://github.com/subframe7536/electron-incremental-update",
   "type": "module",
   "license": "MIT",
   "files": [

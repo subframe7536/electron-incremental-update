@@ -17,7 +17,7 @@ type UpdateEvents = {
   donwnloadError: [error: unknown]
 }
 
-type UpdateJSON = {
+export type UpdateJSON = {
   signature: string
   version: string
   size: number
@@ -30,6 +30,11 @@ type MaybeArray<T> = T extends undefined | null | never
       ? [data: T[0]]
       : T
     : [data: T]
+
+interface CheckUpdateOption {
+  updateJsonURL?: string
+  releaseCdnPrefix?: string
+}
 interface TypedUpdater<
   T extends Record<string | symbol, MaybeArray<any>>,
   Event extends Exclude<keyof T, number> = Exclude<keyof T, number>,
@@ -41,22 +46,22 @@ interface TypedUpdater<
   once<E extends Event>(eventName: E, listener: (...args: MaybeArray<T[E]>) => void): this
   emit<E extends Event>(eventName: E, ...args: MaybeArray<T[E]>): boolean
   off<E extends Event>(eventName: E, listener: (...args: MaybeArray<T[E]>) => void): this
-  checkUpdate(releaseCdnPrefix?: string): Promise<void>
+  checkUpdate(options?: CheckUpdateOption): Promise<void>
 }
 
 export type Updater = TypedUpdater<UpdateEvents>
-export interface Options {
+export interface Options extends CheckUpdateOption {
   SIGNATURE_PUB: string
   productName: string
   githubRepository: string
-  releaseCdnPrefix?: string
 }
 
 export function createUpdater({
   SIGNATURE_PUB,
-  githubRepository: repository,
+  githubRepository,
   productName,
-  releaseCdnPrefix,
+  releaseCdnPrefix: _release,
+  updateJsonURL: _update,
 }: Options): Updater {
   // hack to make typesafe
   const updater = new EventEmitter() as unknown as Updater
@@ -151,12 +156,17 @@ export function createUpdater({
     && parseVersion(app.getVersion()) < parseVersion(version)
   }
 
-  async function checkUpdate(releaseCdnPrefix?: string): Promise<CheckResultType> {
+  async function checkUpdate(option?: CheckUpdateOption): Promise<CheckResultType> {
+    const { releaseCdnPrefix, updateJsonURL } = option || {}
+
     const gzipPath = `../${productName}.asar.gz`
     const tmpFile = gzipPath.replace('.asar.gz', '.tmp.gz')
-    const base = repository.replace('https://github.com', '')
-    const updateJSONUrl = `https://cdn.jsdelivr.net/gh/${base}/version.json`
-    const downloadUrl = `${releaseCdnPrefix ? `${releaseCdnPrefix}/${base}` : repository}/releases/download/latest/${productName}.asar.gz`
+    const base = githubRepository.replace('https://github.com', '')
+
+    const updateJSONUrl = updateJsonURL ?? _update ?? `https://cdn.jsdelivr.net/gh/${base}/version.json`
+
+    const prefix = releaseCdnPrefix ?? _release
+    const downloadUrl = `${prefix ? `${prefix}/${base}` : githubRepository}/releases/download/latest/${productName}.asar.gz`
 
     // remove temp file
     if (existsSync(tmpFile)) {
@@ -184,6 +194,7 @@ export function createUpdater({
     }
 
     updater.emit('downloadStart', size)
+
     // download update file buffer
     const buffer = await download(downloadUrl, 'buffer')
 
@@ -198,9 +209,9 @@ export function createUpdater({
 
     return 'success'
   }
-  const onCheck = async () => {
+  const onCheck = async (option?: CheckUpdateOption) => {
     try {
-      const result = await checkUpdate(releaseCdnPrefix)
+      const result = await checkUpdate(option)
       updater.emit('checkResult', result)
     } catch (error) {
       updater.emit('checkResult', 'fail', error)
