@@ -80,13 +80,13 @@ export interface Options extends UpdateOption {
   /**
    * product name
    *
-   * you can use the `name` in package.json
+   * you can use the `name` in `package.json`
    */
   productName: string
   /**
    * repository url, e.g. `https://github.com/electron/electron`
    *
-   * you can use the `repository` in package.json
+   * you can use the `repository` in `package.json`
    *
    * if `updateJsonURL` or `releaseAsarURL` are absent,
    * `repository` will be used to determine the url

@@ -24,19 +24,22 @@ export type Options = {
   /**
    * the name of you application
    *
-   * you can set as 'name' in package.json
+   * you can set as 'name' in `package.json`
   */
   productName: string
   /**
    * the version of you application
    *
-   * you can set as 'version' in package.json
+   * you can set as 'version' in `package.json`
    */
   version: string
   /**
-   * Whether to minify
+   * Whether to minify entry file
    */
   minify?: boolean
+  /**
+   * paths config
+   */
   paths?: {
     /**
      * Path to app entry file
@@ -49,7 +52,7 @@ export type Options = {
      */
     entryOutputPath?: string
     /**
-     * Path to app entry file
+     * Path to asar file
      * @default `release/${ProductName}.asar`
      */
     asarOutputPath?: string
@@ -69,6 +72,9 @@ export type Options = {
      */
     versionPath?: string
   }
+  /**
+   * signature config
+   */
   keys?: {
     /**
      * Path to the pem file that contains private key

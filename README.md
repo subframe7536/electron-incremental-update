@@ -1,25 +1,37 @@
 ## electron incremental updater
 
-inspired by Obsidian's update strategy, using RSA + Signature to sign the update asar and replace the old one when verified
+provider a vite plugin and useful functions to generate updater and split entry file and real app
+
+### principle
+
+using two asar, `app.asar` and `main.asar` (if "main" is your app's name)
+
+the `app.asar` is used to load `main.asar` and initialize the updater
+
+using RSA + Signature to sign the new `main.asar` downloaded from remote and replace the old one when verified
+
+- inspired by Obsidian's update strategy
+
+### notice
 
 develop with [vite-plugin-electron](https://github.com/electron-vite/vite-plugin-electron), and may be effect in other electron vite frameworks
 
-### install
+## install
 
-#### npm
+### npm
 ```bash
 npm install electron-incremental-update
 ```
-#### yarn
+### yarn
 ```bash
 yarn add electron-incremental-update
 ```
-#### pnpm
+### pnpm
 ```bash
 pnpm add electron-incremental-update
 ```
 
-### usage
+## usage
 
 base on [electron-vite-vue](https://github.com/electron-vite/electron-vite-vue)
 
@@ -36,7 +48,7 @@ src
 └── ...
 ```
 
-#### setup app
+### setup app
 
 ```ts
 // electron/app.ts
@@ -53,7 +65,7 @@ const updater = createUpdater({
 initApp(name, updater)
 ```
 
-#### setup main
+### setup main
 
 ```ts
 // electron/main/index.ts
@@ -103,7 +115,7 @@ export default function (updater: Updater) {
 }
 ```
 
-#### use native modules
+### use native modules
 
 ```ts
 // db.ts
@@ -128,7 +140,7 @@ console.log(r)
 db.close()
 ```
 
-#### setup vite.config.ts
+### setup vite.config.ts
 
 ```ts
 import { rmSync } from 'node:fs'
@@ -189,7 +201,7 @@ export default defineConfig(({ command }) => {
 })
 ```
 
-##### option
+#### option
 
 ```ts
 type Options = {
@@ -213,6 +225,9 @@ type Options = {
    * Whether to minify
    */
   minify?: boolean
+  /**
+   * path config
+   */
   paths?: {
     /**
      * Path to app entry file
@@ -225,7 +240,7 @@ type Options = {
      */
     entryOutputPath?: string
     /**
-     * Path to app entry file
+     * Path to asar file
      * @default `release/${ProductName}.asar`
      */
     asarOutputPath?: string
@@ -239,7 +254,15 @@ type Options = {
      * @default `dist`
      */
     rendererDistPath?: string
+    /**
+     * Path to version info output
+     * @default `version.json`
+     */
+    versionPath?: string
   }
+  /**
+   * signature config
+   */
   keys?: {
     /**
      * Path to the pem file that contains private key
@@ -262,7 +285,7 @@ type Options = {
 }
 ```
 
-#### electron-builder config
+### electron-builder config
 
 ```js
 const { name } = require('./package.json')
