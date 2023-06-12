@@ -47,7 +47,7 @@ const SIGNATURE_PUB = '' // auto generate RSA public key when start app
 
 const updater = createUpdater({
   SIGNATURE_PUB,
-  githubRepository: repository,
+  repository,
   productName: name,
 })
 initApp(name, updater)
