@@ -92,15 +92,78 @@ export interface Options extends UpdateOption {
    * `repository` will be used to determine the url
    */
   repository?: string
-  /**
-   * download user agent
+  downloadConfig?: {
+    /**
+     * download user agent
    * @default 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
+    */
+    userAgent?: string
+    /**
+    * extra download header, `accept` and `user-agent` is set by default
    */
-  userAgent?: string
-  /**
-   * extra download header, `accept` and `user-agent` is set by default
-   */
-  extraHeader?: Record<string, string>
+    extraHeader?: Record<string, string>
+    /**
+     * download JSON function
+     * @param url download url
+     * @param updater updater, emit events
+     * @param header download header
+     * @returns `UpdateJSON`
+     */
+    downloadJSON?: (url: string, updater: Updater, headers: Record<string, any>) => Promise<UpdateJSON>
+    /**
+     * download buffer function
+     * @param url download url
+     * @param updater updater, emit events
+     * @param header download header
+     * @returns `Buffer`
+     */
+    downloadBuffer?: (url: string, updater: Updater, headers: Record<string, any>) => Promise<Buffer>
+  }
+}
+
+function downloadJSONDefault(url: string, updater: Updater, headers: Record<string, any>) {
+  return new Promise<UpdateJSON>((resolve, reject) => {
+    https.get(url, (res) => {
+      let data = ''
+      res.setEncoding('utf8')
+      res.headers = headers
+      res.on('data', chunk => (data += chunk))
+      res.on('end', () => {
+        updater.emit('downloadEnd', true)
+        const json = JSON.parse(data)
+        if ('signature' in json && 'version' in json && 'size' in json) {
+          resolve(json)
+        } else {
+          throw new Error('invalid update json')
+        }
+      })
+    }).on('error', (e) => {
+      e && updater.emit('donwnloadError', e)
+      updater.emit('downloadEnd', false)
+      reject(e)
+    })
+  })
+}
+
+function downloadBufferDefault(url: string, updater: Updater, headers: Record<string, any>) {
+  return new Promise<Buffer>((resolve, reject) => {
+    https.get(url, (res) => {
+      let data: any[] = []
+      res.headers = headers
+      res.on('data', (chunk) => {
+        updater.emit('downloading', chunk.length)
+        data.push(chunk)
+      })
+      res.on('end', () => {
+        updater.emit('downloadEnd', true)
+        resolve(Buffer.concat(data))
+      })
+    }).on('error', (e) => {
+      e && updater.emit('donwnloadError', e)
+      updater.emit('downloadEnd', false)
+      reject(e)
+    })
+  })
 }
 
 export function createUpdater({
@@ -109,62 +172,35 @@ export function createUpdater({
   productName,
   releaseAsarURL: _release,
   updateJsonURL: _update,
-  userAgent,
-  extraHeader,
+  downloadConfig,
 }: Options): Updater {
   // hack to make typesafe
   const updater = new EventEmitter() as unknown as Updater
 
-  async function download<T>(
+  const { downloadBuffer, downloadJSON, extraHeader, userAgent } = downloadConfig || {}
+
+  async function download(
     url: string,
     format: 'json',
-  ): Promise<T>
+  ): Promise<UpdateJSON>
   async function download(
     url: string,
     format: 'buffer',
   ): Promise<Buffer>
-  async function download<T>(
+  async function download(
     url: string,
     format: 'json' | 'buffer',
-  ): Promise<T | Buffer> {
+  ): Promise<UpdateJSON | Buffer> {
     const ua = userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
-    const commonHeader = {
+    const headers = {
+      Accept: `application/${format === 'json' ? 'json' : 'octet-stream'}`,
       UserAgent: ua,
       ...extraHeader,
     }
-    return await new Promise((resolve, reject) => {
-      https.get(url, (res) => {
-        if (format === 'json') {
-          let data = ''
-          res.setEncoding('utf8')
-          res.headers = {
-            Accept: 'application/json',
-            ...commonHeader,
-          }
-          res.on('data', chunk => (data += chunk))
-          res.on('end', () => {
-            resolve(JSON.parse(data))
-          })
-        } else if (format === 'buffer') {
-          let data: any[] = []
-          res.headers = {
-            Accept: 'application/octet-stream',
-            ...commonHeader,
-          }
-          res.on('data', (chunk) => {
-            updater.emit('downloading', chunk.length)
-            data.push(chunk)
-          })
-          res.on('end', () => {
-            updater.emit('downloadEnd', true)
-            resolve(Buffer.concat(data))
-          })
-        }
-      }).on('error', (e) => {
-        e && updater.emit('donwnloadError', e)
-        reject(e)
-      })
-    })
+    const downloadFn = format === 'json'
+      ? downloadJSON ?? downloadJSONDefault
+      : downloadBuffer ?? downloadBufferDefault
+    return await downloadFn(url, updater, headers)
   }
 
   async function extractFile(gzipFilePath: string) {
@@ -230,7 +266,7 @@ export function createUpdater({
     }
 
     // fetch update json
-    const json = await download<UpdateJSON>(updateJsonURL, 'json')
+    const json = await download(updateJsonURL, 'json')
 
     if (!json) {
       throw new Error('fetch update json failed')
