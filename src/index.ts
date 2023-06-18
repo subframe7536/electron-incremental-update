@@ -20,13 +20,47 @@ interface AppOption {
 /**
  * Initialize application
  * @param productName name of your application
- * @param updater updater instance or options
+ * @param updater updater instance or updater options
  * @param option options for entry, will be used to generate electron main path, default target path: `dist-electron/main/index.js`
  * @returns a function to init your application with a updater
+ *
+ * @example
+ * **manual** generate updater
+ * ```ts
+ * import { initApp } from 'electron-incremental-updater'
+ * import { name, repository } from '../package.json'
+ *
+ * const SIGNATURE_PUB = '' // auto generate RSA public key when start app
+ * const updater = createUpdater({
+ *   SIGNATURE_PUB,
+ *   productName: name,
+ *   repository,
+ * })
+ * initApp(name, updater)
+ * ```
+ * @example
+ * **auto** generate updater and set update URL
+ *
+ * ```ts
+ * import { getReleaseDnsPrefix, initApp } from 'electron-incremental-update'
+ * import { name, repository } from '../package.json'
+ *
+ * const SIGNATURE_PUB = '' // auto generate RSA public key when start app
+ *
+ * const { urlPrefix } = getReleaseCdnPrefix()[0]
+ * initApp(name, {
+ *   SIGNATURE_PUB,
+ *   repository,
+ *   updateJsonURL: `https://cdn.jsdelivr.net/gh/${repository.replace('https://github.com', '')}/version.json`,
+ *   releaseAsarURL: `${urlPrefix}/download/latest/${name}.asar.gz`,
+ * }, {
+ *  // options for main entry
+ * })
+ * ```
 */
 export function initApp(
   productName: string,
-  updater: Updater | UpdaterOption & { productName?: string },
+  updater: Updater | Omit<UpdaterOption, 'productName'> & { productName?: string },
   option?: AppOption,
 ) {
   const {
@@ -43,7 +77,8 @@ export function initApp(
   let _updater: Updater | undefined
 
   if ('SIGNATURE_PUB' in updater) {
-    _updater = createUpdater({ ...updater, productName })
+    const _option = updater.productName ? updater as UpdaterOption : { ...updater, productName }
+    _updater = createUpdater(_option)
   } else {
     _updater = updater
   }

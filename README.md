@@ -50,6 +50,8 @@ src
 
 ### setup app
 
+more example see comment on `initApp()`
+
 ```ts
 // electron/app.ts
 import { createUpdater, initApp } from 'electron-incremental-update'
@@ -143,55 +145,31 @@ db.close()
 ### setup vite.config.ts
 
 ```ts
-import { rmSync } from 'node:fs'
-import { defineConfig } from 'vite'
-import electron from 'vite-plugin-electron'
-import updater from 'electron-incremental-update/vite'
-import pkg from './package.json'
-
-// https://vitejs.dev/config/
-
 export default defineConfig(({ command }) => {
-  rmSync('dist-electron', { recursive: true, force: true })
 
-  const isServe = command === 'serve'
   const isBuild = command === 'build'
-  const sourcemap = isServe || !!process.env.VSCODE_DEBUG
+  // ...
 
   return {
     plugins: [
       electron([
+        // main
         {
-          // Main-Process entry file of the Electron App.
-          entry: ['electron/main/index.ts'],
-          onstart(options) {
-            if (process.env.VSCODE_DEBUG) {
-              console.log(/* For `.vscode/.debug.script.mjs` */'[startup] Electron App')
-            } else {
-              options.startup()
-            }
-          },
+          // ...
+        },
+        // preload
+        {
+          // ...
           vite: {
             plugins: [
-              updater({ // options see below
+              updater({ // !make sure the plugin run pack asar after all build finish
                 productName: pkg.name,
                 version: pkg.version,
                 isBuild,
               }),
             ],
-            build: {
-              sourcemap,
-              minify: false,
-              outDir: 'dist-electron/main',
-              rollupOptions: {
-                external: Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
-                treeshake: true,
-              },
-            },
-          },
-        },
-        {
-          // ...preload
+            // ...
+          }
         },
       ]),
       // ... other plugins
@@ -201,7 +179,7 @@ export default defineConfig(({ command }) => {
 })
 ```
 
-#### option
+#### plugin options
 
 ```ts
 type Options = {
