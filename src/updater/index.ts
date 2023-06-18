@@ -6,7 +6,7 @@ import { createReadStream, createWriteStream, existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
 import { app } from 'electron'
 import { downloadBufferDefault, downloadJSONDefault } from './download'
-import type { CheckResultType, Options, UpdateJSON, UpdateOption, Updater } from './types'
+import type { BaseOption, CheckResultType, UpdateJSON, Updater, UpdaterOption } from './types'
 
 export * from './types'
 export * from './utils'
@@ -18,7 +18,7 @@ export function createUpdater({
   releaseAsarURL: _release,
   updateJsonURL: _update,
   downloadConfig,
-}: Options): Updater {
+}: UpdaterOption): Updater {
   // hack to make typesafe
   const updater = new EventEmitter() as unknown as Updater
 
@@ -89,7 +89,7 @@ export function createUpdater({
     && parseVersion(app.getVersion()) < parseVersion(version)
   }
 
-  async function checkUpdate(option?: UpdateOption): Promise<CheckResultType> {
+  async function checkUpdate(option?: BaseOption): Promise<CheckResultType> {
     let {
       updateJsonURL = _update,
       releaseAsarURL = _release,
@@ -145,7 +145,7 @@ export function createUpdater({
 
     return 'success'
   }
-  const onCheck = async (option?: UpdateOption) => {
+  const onCheck = async (option?: BaseOption) => {
     try {
       const result = await checkUpdate(option)
       updater.emit('checkResult', result)

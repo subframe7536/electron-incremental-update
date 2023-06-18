@@ -16,7 +16,7 @@ export type UpdateJSON = {
   size: number
 }
 type MaybeArray<T> = T extends undefined | null | never ? [] : T extends any[] ? T['length'] extends 1 ? [data: T[0]] : T : [data: T]
-export interface UpdateOption {
+export interface BaseOption {
   /**
    * URL of version info json
    * @default `${repository.replace('github.com', 'raw.githubusercontent.com')}/version.json`
@@ -41,11 +41,11 @@ interface TypedUpdater<
   once<E extends Event>(eventName: E, listener: (...args: MaybeArray<T[E]>) => void): this
   emit<E extends Event>(eventName: E, ...args: MaybeArray<T[E]>): boolean
   off<E extends Event>(eventName: E, listener: (...args: MaybeArray<T[E]>) => void): this
-  checkUpdate(options?: UpdateOption): Promise<void>
+  checkUpdate(options?: BaseOption): Promise<void>
 }
 
 export type Updater = TypedUpdater<UpdateEvents>
-export interface Options extends UpdateOption {
+export interface UpdaterOption extends BaseOption {
   /**
    * public key of signature
    *
