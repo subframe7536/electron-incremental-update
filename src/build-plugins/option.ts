@@ -79,13 +79,13 @@ export type Options = {
     /**
      * Path to the pem file that contains private key
      * if not ended with .pem, it will be appended
-     * @default 'public/private.pem'
+     * @default 'keys/private.pem'
      */
     privateKeyPath?: string
     /**
      * Path to the pem file that contains public key
      * if not ended with .pem, it will be appended
-     * @default 'public/public.pem'
+     * @default 'keys/public.pem'
      */
     publicKeyPath?: string
     /**
@@ -107,8 +107,8 @@ export function parseOptions(options: Options) {
     versionPath = 'version.json',
   } = paths
   const {
-    privateKeyPath = 'public/private.pem',
-    publicKeyPath = 'public/public.pem',
+    privateKeyPath = 'keys/private.pem',
+    publicKeyPath = 'keys/public.pem',
     keyLength = 2048,
   } = keys
 
