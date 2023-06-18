@@ -54,10 +54,10 @@ export async function buildAsar({
   await rename(rendererDistPath, `${electronDistPath}/renderer`)
   await writeFile(`${electronDistPath}/version`, version)
   await pack(electronDistPath, asarOutputPath)
+  await gzipFile(asarOutputPath)
   if (isCI) {
     return
   }
-  await gzipFile(asarOutputPath)
   const buffer = await readFile(`${asarOutputPath}.gz`)
   const signature = generateSignature(buffer, await readFile(privateKeyPath, 'utf-8'))
   await writeFile(versionPath, JSON.stringify({
