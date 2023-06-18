@@ -34,7 +34,7 @@ type MaybeArray<T> = T extends undefined | null | never
 interface UpdateOption {
   /**
    * URL of version info json
-   * @default `${repository}/version.json`
+   * @default `${repository.replace('github.com', 'raw.githubusercontent.com')}/version.json`
    * @throws if `updateJsonURL` and `repository` are all not set
    */
   updateJsonURL?: string
@@ -250,12 +250,13 @@ export function createUpdater({
       releaseAsarURL = _release,
     } = option || {}
 
-    if ((!updateJsonURL || !releaseAsarURL) && !repository) {
-      throw new Error('updateJsonURL or releaseAsarURL are not set')
+    if (!updateJsonURL || !releaseAsarURL) {
+      if (!repository) {
+        throw new Error('updateJsonURL or releaseAsarURL are not set')
+      }
+      updateJsonURL = `${repository.replace('github.com', 'raw.githubusercontent.com')}/version.json`
+      releaseAsarURL = `${repository}/releases/download/latest/${productName}.asar.gz`
     }
-
-    updateJsonURL ??= `${repository}/version.json`
-    releaseAsarURL ??= `${repository}/releases/download/latest/${productName}.asar.gz`
 
     const gzipPath = `../${productName}.asar.gz`
     const tmpFile = gzipPath.replace('.asar.gz', '.tmp.gz')
