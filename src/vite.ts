@@ -1,9 +1,8 @@
 import type { Plugin as VitePlugin } from 'vite'
 import { createLogger } from 'vite'
-import { buildEntry } from './build-entry'
-import { buildAsar } from './build-asar'
-import type { Options } from './option'
-import { parseOptions } from './option'
+import { buildAsar, buildEntry } from './build-plugins'
+import type { Options } from './build-plugins/option'
+import { parseOptions } from './build-plugins/option'
 
 export default function (options: Options): VitePlugin[] {
   const { isBuild, buildAsarOption, buildEntryOption } = parseOptions(options)

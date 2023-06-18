@@ -1,10 +1,8 @@
 import { resolve } from 'node:path'
 import { app } from 'electron'
-import type { Updater } from './updater'
+import type { Updater } from './updater/types'
 
-export * from './utils'
-export { createUpdater } from './updater'
-export type { Options, Updater } from './updater'
+export * from './updater'
 
 interface PathConfig {
   /**
