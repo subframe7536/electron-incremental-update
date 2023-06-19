@@ -22,7 +22,7 @@ export function getEntryVersion() {
  */
 export function getAppVersion(name: string) {
   return app.isPackaged
-    ? readFileSync(join(getAppAsarPath(name), 'version'), 'utf-8').trim()
+    ? readFileSync(join(getAppAsarPath(name), 'version'), 'utf-8')
     : getEntryVersion()
 }
 
@@ -46,9 +46,9 @@ export function parseGithubCdnURL(repository: string, cdnPrefix: string, relativ
     throw new Error('url must start with https://github.com/')
   }
 
-  repository = repository.trim().replace(/\/?$/, '/')
-  relativeFilePath = relativeFilePath.trim().replace(/^\/*/, '')
-  cdnPrefix = cdnPrefix.trim().replace(/^\/?|\/?$/g, '')
+  repository = repository.trim().replace(/\/?$/, '/').trim()
+  relativeFilePath = relativeFilePath.trim().replace(/^\/|\/?$/g, '').trim()
+  cdnPrefix = cdnPrefix.trim().replace(/^\/?|\/?$/g, '').trim()
 
   return repository.replace('github.com', cdnPrefix) + relativeFilePath
 }

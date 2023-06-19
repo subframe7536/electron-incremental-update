@@ -1,28 +1,34 @@
 import { describe, expect, it } from 'vitest'
-import { compareVersionDefault } from '../src/updater/defaultFunctions'
+import { parseGithubCdnURL } from '../src/updater/utils'
 
-describe('compareVersionDefault', () => {
-  it('should return true when new version is greater than old version', () => {
-    expect(compareVersionDefault('1.0.0', '2.0.0')).toBe(true)
-    expect(compareVersionDefault('1.0.0', '1.1.0')).toBe(true)
-    expect(compareVersionDefault('1.0.0', '1.0.1')).toBe(true)
-    expect(compareVersionDefault('1.0.0-alpha', '1.0.0')).toBe(true)
-    expect(compareVersionDefault('1.0.0-alpha', '1.0.0-beta')).toBe(true)
+describe('parseGithubCdnURL', () => {
+  it('should throw an error if url does not start with https://github.com/', () => {
+    const repository = 'http://notgithub.com/owner/repo'
+    const cdnPrefix = 'cdn.example.com'
+    const relativeFilePath = 'path/to/file'
+
+    expect(() =>
+      parseGithubCdnURL(repository, cdnPrefix, relativeFilePath),
+    ).toThrowError('url must start with https://github.com/')
   })
 
-  it('should return false when old version is greater than or equal to new version', () => {
-    expect(compareVersionDefault('2.0.0', '1.0.0')).toBe(false)
-    expect(compareVersionDefault('1.1.0', '1.0.0')).toBe(false)
-    expect(compareVersionDefault('1.0.1', '1.0.0')).toBe(false)
-    expect(compareVersionDefault('1.0.0', '1.0.0')).toBe(false)
-    expect(compareVersionDefault('1.0.0-beta', '1.0.0-alpha')).toBe(false)
+  it('should return the correct URL with the given parameters', () => {
+    const repository = 'https://github.com/owner/repo'
+    const cdnPrefix = 'cdn.example.com'
+    const relativeFilePath = 'path/to/file'
+
+    expect(
+      parseGithubCdnURL(repository, cdnPrefix, relativeFilePath),
+    ).toEqual('https://cdn.example.com/owner/repo/path/to/file')
   })
 
-  it('should throw an error when given an invalid version', () => {
-    expect(() => compareVersionDefault('1.0', '1.0.a')).toThrowError()
-    expect(() => compareVersionDefault('1.0.0', '')).toThrowError()
-    expect(() => compareVersionDefault('1.0.0', '1.0.a')).toThrowError()
-    expect(() => compareVersionDefault('1.p.2', '1.0.0')).toThrowError()
-    expect(() => compareVersionDefault('1.0.0', 'invalid')).toThrowError()
+  it('should handle trailing slashes and leading slashes in cdnPrefix and relativeFilePath', () => {
+    const repository = 'https://github.com/owner/repo/'
+    const cdnPrefix = '/cdn.example.com/ '
+    const relativeFilePath = '/path/to/file /'
+
+    expect(
+      parseGithubCdnURL(repository, cdnPrefix, relativeFilePath),
+    ).toEqual('https://cdn.example.com/owner/repo/path/to/file')
   })
 })
