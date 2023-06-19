@@ -39,32 +39,38 @@ export function requireNative<T = any>(packageName: string): T {
 }
 
 /**
- * get group of parsed github release CDN links for accelerating the speed of downloading release
+ * get github version.json CDN URL for accelerating the speed of downloading version info
  */
-export function getReleaseCdnLink(url: string) {
-  const hub = 'https://github.com/'
-  if (!url.startsWith(hub)) {
-    throw new Error('URL must start with \'https://github.com/\'')
+export function parseGithubCdnURL(repository: string, cdnPrefix: string, relativeFilePath: string) {
+  if (!repository.startsWith('https://github.com/')) {
+    throw new Error('url must start with https://github.com/')
   }
-  if (url.endsWith('/')) {
-    url = url.slice(0, -1)
-  }
-  const _url = url.replace(hub, '')
+
+  repository = repository.trim().replace(/\/?$/, '/')
+  relativeFilePath = relativeFilePath.trim().replace(/^\/*/, '')
+  cdnPrefix = cdnPrefix.trim().replace(/^\/?|\/?$/g, '')
+
+  return repository.replace('github.com', cdnPrefix) + relativeFilePath
+}
+
+/**
+ * get group of github release CDN prefix for accelerating the speed of downloading release
+ */
+export function getGithubReleaseCdnGroup() {
   return [
-    { url: `https://gh.gh2233.ml/${url}`, maintainer: '@X.I.U/XIU2' },
-    { url: `https://ghproxy.com/${url}`, maintainer: 'gh-proxy' },
-    { url: `https://gh.ddlc.top/${url}`, maintainer: '@mtr-static-official' },
-    { url: `https://ghdl.feizhuqwq.cf/${url}`, maintainer: 'feizhuqwq.com' },
-    { url: `https://slink.ltd/${url}`, maintainer: '知了小站' },
-    { url: `https://git.xfj0.cn/${url}`, maintainer: 'anonymous1' },
-    { url: `https://gh.con.sh/${url}`, maintainer: 'anonymous2' },
-    { url: `https://ghps.cc/${url}`, maintainer: 'anonymous3' },
-    { url: `https://cors.isteed.cc/github.com/${_url}`, maintainer: 'Lufs\'s' },
-    { url: `https://hub.gitmirror.com/${url}`, maintainer: 'GitMirror' },
-    { url: `https://js.xxooo.ml/${url}`, maintainer: '饭太硬' },
-    { url: `https://proxy.freecdn.ml/?url=${url}`, maintainer: 'anonymous4' },
-    { url: `https://download.njuu.cf/${_url}`, maintainer: 'LibraryCloud-njuu' },
-    { url: `https://download.yzuu.cf/${_url}`, maintainer: 'LibraryCloud-yzuu' },
-    { url: `https://download.nuaa.cf/${_url}`, maintainer: 'LibraryCloud-nuaa' },
+    { cdnPrefix: 'gh.gh2233.ml', maintainer: '@X.I.U/XIU2' },
+    { cdnPrefix: 'ghproxy.com', maintainer: 'gh-proxy' },
+    { cdnPrefix: 'gh.ddlc.top', maintainer: '@mtr-static-official' },
+    { cdnPrefix: 'ghdl.feizhuqwq.cf', maintainer: 'feizhuqwq.com' },
+    { cdnPrefix: 'slink.ltd', maintainer: '知了小站' },
+    { cdnPrefix: 'git.xfj0.cn', maintainer: 'anonymous1' },
+    { cdnPrefix: 'gh.con.sh', maintainer: 'anonymous2' },
+    { cdnPrefix: 'ghps.cc', maintainer: 'anonymous3' },
+    { cdnPrefix: 'cors.isteed.cc/github.com', maintainer: 'Lufs\'s' },
+    { cdnPrefix: 'hub.gitmirror.com', maintainer: 'GitMirror' },
+    { cdnPrefix: 'js.xxooo.ml', maintainer: '饭太硬' },
+    { cdnPrefix: 'download.njuu.cf', maintainer: 'LibraryCloud-njuu' },
+    { cdnPrefix: 'download.yzuu.cf', maintainer: 'LibraryCloud-yzuu' },
+    { cdnPrefix: 'download.nuaa.cf', maintainer: 'LibraryCloud-nuaa' },
   ]
 }
