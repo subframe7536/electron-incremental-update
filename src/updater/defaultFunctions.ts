@@ -45,3 +45,36 @@ export function downloadBufferDefault(url: string, updater: Updater, headers: Re
     })
   })
 }
+export function compareVersionDefault(oldVersion: string, newVersion: string): boolean {
+  if (!oldVersion || !newVersion) {
+    throw new TypeError('invalid version')
+  }
+
+  const parseVersion = (version: string) => {
+    const [versionNumber, stage] = version.split('-')
+    const [major, minor, patch] = versionNumber.split('.').map(Number)
+
+    if (isNaN(major) || isNaN(minor) || isNaN(patch)) {
+      throw new TypeError('invalid version')
+    }
+
+    return { major, minor, patch, stage }
+  }
+
+  const oldV = parseVersion(oldVersion)
+  const newV = parseVersion(newVersion)
+
+  if (
+    oldV.major < newV.major
+    || (oldV.major === newV.major && oldV.minor < newV.minor)
+    || (oldV.major === newV.major && oldV.minor === newV.minor && oldV.patch < newV.patch)
+  ) {
+    return true
+  }
+
+  if (oldV.stage < newV.stage || (!newV.stage && oldV.stage)) {
+    return true
+  }
+
+  return false
+}

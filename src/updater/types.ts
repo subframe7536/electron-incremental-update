@@ -78,6 +78,10 @@ export interface UpdaterOption extends BaseOption {
    */
   repository?: string
   debug?: boolean
+  compareVersion?: (
+    oldVersion: string,
+    newVersion: string,
+  ) => boolean
   downloadConfig?: {
     /**
      * download user agent
