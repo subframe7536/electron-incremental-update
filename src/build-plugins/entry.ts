@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
-import { readFile, writeFile } from 'node:fs/promises'
+import { dirname } from 'node:path'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { generateKeyPairSync } from 'node:crypto'
 import { EOL } from 'node:os'
 import { isCI } from 'ci-info'
@@ -61,6 +62,8 @@ export async function buildEntry({
   keyLength,
 }: BuildEntryOption) {
   if (!isCI) {
+    const keysDir = dirname(privateKeyPath)
+    !existsSync(keysDir) && await mkdir(keysDir)
     !existsSync(privateKeyPath) && await generateKey(privateKeyPath, publicKeyPath, keyLength)
     await writePublicKeyToMain(entryPath, publicKeyPath)
   }
