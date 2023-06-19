@@ -4,7 +4,7 @@ import { buildAsar, buildEntry } from './build-plugins'
 import type { Options } from './build-plugins/option'
 import { parseOptions } from './build-plugins/option'
 
-export default function (options: Options): VitePlugin[] {
+export default function (options: Options): VitePlugin {
   const { isBuild, buildAsarOption, buildEntryOption } = parseOptions(options)
   const { entryPath, entryOutputPath } = buildEntryOption
   const { asarOutputPath } = buildAsarOption
@@ -12,25 +12,19 @@ export default function (options: Options): VitePlugin[] {
   const id = 'electron-incremental-updater'
   const log = createLogger('info', { prefix: `[${id}]` })
 
-  return [
-    {
-      name: `vite-plugin-${id}-entry`,
-      async buildStart() {
-        log.info('build entry start')
-        await buildEntry(buildEntryOption)
-        log.info(`build entry end, ${entryPath} -> ${entryOutputPath}`)
-      },
+  return {
+    name: `vite-plugin-${id}`,
+    enforce: 'post',
+    async closeBundle() {
+      log.info('build entry start')
+      await buildEntry(buildEntryOption)
+      log.info(`build entry end, ${entryPath} -> ${entryOutputPath}`)
+      if (!isBuild) {
+        return
+      }
+      log.info('build asar start')
+      await buildAsar(buildAsarOption)
+      log.info(`build asar end, output to ${asarOutputPath}`)
     },
-    {
-      name: `vite-plugin-${id}-asar`,
-      async closeBundle() {
-        if (!isBuild) {
-          return
-        }
-        log.info('build asar start')
-        await buildAsar(buildAsarOption)
-        log.info(`build asar end, output to ${asarOutputPath}`)
-      },
-    },
-  ]
+  }
 }
