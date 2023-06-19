@@ -77,6 +77,7 @@ export interface UpdaterOption extends BaseOption {
    * `repository` will be used to determine the url
    */
   repository?: string
+  debug?: boolean
   downloadConfig?: {
     /**
      * download user agent

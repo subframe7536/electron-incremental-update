@@ -4,7 +4,11 @@
   "description": "electron incremental update tools, powered by vite",
   "scripts": {
     "build": "tsup",
-    "release": "tsup && bumpp"
+    "release": "pnpm run build && bumpp && npm publish"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": "https://github.com/subframe7536/electron-incremental-update",
   "type": "module",
@@ -56,9 +60,5 @@
   },
   "dependencies": {
     "ci-info": "^3.8.0"
-  },
-  "peerDependencies": {
-    "@electron/asar": "*",
-    "asar": "*"
   }
 }
