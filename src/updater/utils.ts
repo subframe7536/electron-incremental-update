@@ -11,19 +11,19 @@ export function getAppAsarPath(name: string) {
 }
 
 /**
- * get the version of electron
+ * get the version of entry (app.asar)
  */
-export function getElectronVersion() {
+export function getEntryVersion() {
   return app.getVersion()
 }
 /**
- * get the version of application
+ * get the version of application (name.asar)
  * @param name - The name of the application
  */
 export function getAppVersion(name: string) {
   return app.isPackaged
     ? readFileSync(join(getAppAsarPath(name), 'version'), 'utf-8').trim()
-    : getElectronVersion()
+    : getEntryVersion()
 }
 
 /**
