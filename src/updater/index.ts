@@ -6,7 +6,7 @@ import { createReadStream, createWriteStream, existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
 import { app } from 'electron'
 import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
-import type { BaseOption, CheckResultType, UpdateJSON, Updater, UpdaterOption } from './types'
+import type { CheckResultType, UpdateJSON, Updater, UpdaterOption } from './types'
 import { getEntryVersion } from './utils'
 
 export function createUpdater({
@@ -22,10 +22,14 @@ export function createUpdater({
   // hack to make typesafe
   const updater = new EventEmitter() as unknown as Updater
 
+  let signature = ''
+  const gzipPath = `../${productName}.asar.gz`
+  const tmpFile = gzipPath.replace('.asar.gz', '.tmp.gz')
+
   const { downloadBuffer, downloadJSON, extraHeader, userAgent } = downloadConfig || {}
 
-  function log(...args: any[]) {
-    debug && console.log(...args)
+  function log(msg: string | Error) {
+    debug && updater.emit('debug', msg)
   }
 
   async function download(
@@ -46,7 +50,7 @@ export function createUpdater({
       UserAgent: ua,
       ...extraHeader,
     }
-    log('[updater] headers', headers)
+    log(`headers: ${headers}`)
     const downloadFn = format === 'json'
       ? downloadJSON ?? downloadJSONDefault
       : downloadBuffer ?? downloadBufferDefault
@@ -64,19 +68,19 @@ export function createUpdater({
       const outputFilePath = gzipFilePath.replace('.tmp.gz', '.asar')
       const output = createWriteStream(outputFilePath)
 
-      log('[updater] outputFilePath', outputFilePath)
+      log(`outputFilePath: ${outputFilePath}`)
 
       input
         .pipe(gunzip)
         .pipe(output)
         .on('finish', async () => {
           await rm(gzipFilePath)
-          log('[updater] finish')
+          log('finish')
           resolve(outputFilePath)
         })
         .on('error', async (err) => {
           await rm(gzipFilePath)
-          log('[updater] error', err)
+          log(`error: ${err}`)
           output.destroy(err)
           reject(err)
         })
@@ -84,11 +88,12 @@ export function createUpdater({
   }
 
   function verify(buffer: Buffer, signature: string): boolean {
-    log('[updater] signature', signature)
+    log(`signature: ${signature}`)
     return createVerify('RSA-SHA256')
       .update(buffer)
       .verify(SIGNATURE_PUB, signature, 'base64')
   }
+
   function needUpdate(version: string) {
     if (!version || !app.isPackaged) {
       return false
@@ -96,89 +101,103 @@ export function createUpdater({
 
     const currentVersion = getEntryVersion()
 
-    log('[updater] currentVersion', currentVersion)
-    log('[updater] newVersion', version)
+    log(`currentVersion: ${currentVersion}`)
+    log(`newVersion: ${version}`)
 
     const _compare = compareVersion ?? compareVersionDefault
 
     return _compare(currentVersion, version)
   }
-  async function checkUpdate(option?: BaseOption): Promise<CheckResultType> {
-    let {
-      updateJsonURL = _update,
-      releaseAsarURL = _release,
-    } = option || {}
 
-    if (!updateJsonURL || !releaseAsarURL) {
-      log('[updater] no updateJsonURL or releaseAsarURL, use repository')
+  async function checkUpdate(url?: string): Promise<CheckResultType> {
+    url ??= _update
+    if (!url) {
+      log('no updateJsonURL, use repository')
       if (!repository) {
-        throw new Error('updateJsonURL or releaseAsarURL are not set')
+        throw new Error('updateJsonURL or repository are not set')
       }
-      updateJsonURL = `${repository.replace('github.com', 'raw.githubusercontent.com')}/version.json`
-      releaseAsarURL = `${repository}/releases/download/latest/${productName}.asar.gz`
+      url = `${repository.replace('github.com', 'raw.githubusercontent.com')}/version.json`
     }
 
-    log('[updater] updateJsonURL', updateJsonURL)
-    log('[updater] releaseAsarURL', releaseAsarURL)
-
-    const gzipPath = `../${productName}.asar.gz`
-    const tmpFile = gzipPath.replace('.asar.gz', '.tmp.gz')
+    log(`updateJsonURL: ${url}`)
 
     // remove temp file
     if (existsSync(tmpFile)) {
-      log('[updater] remove tmp file', tmpFile)
+      log(`remove tmp file: ${tmpFile}`)
       await rm(tmpFile)
     }
 
     // fetch update json
-    const json = await download(updateJsonURL, 'json')
-
-    if (!json) {
-      throw new Error('fetch update json failed')
-    }
+    const json = await download(url, 'json')
 
     const {
-      signature,
+      signature: _sig,
       version,
       size,
     } = json
 
-    log('[updater] UpdateJSON', json)
+    log(`UpdateJSON: ${JSON.stringify(json, null, 2)}`)
 
     // if not need update, return
     if (!needUpdate(version)) {
-      return 'unavailable'
+      return false
+    } else {
+      signature = _sig
+      return { size, version }
+    }
+  }
+  async function downloadUpdate(src?: string | Buffer): Promise<void> {
+    if (typeof src !== 'object') {
+      let _url = src ?? _release
+      if (!_url) {
+        log('no releaseAsarURL, use repository')
+        if (!repository) {
+          throw new Error('releaseAsarURL or repository are not set')
+        }
+        _url = `${repository}/releases/download/latest/${productName}.asar.gz`
+      }
+
+      log(`releaseAsarURL: ${_url}`)
+
+      // download update file buffer
+      src = await download(_url, 'buffer')
     }
 
-    updater.emit('downloadStart', size)
-
-    // download update file buffer
-    const buffer = await download(releaseAsarURL, 'buffer')
-
     // verify update file
-    log('[updater] start verify')
-    if (!verify(buffer, signature)) {
+    log('start verify')
+    if (!verify(src, signature)) {
       throw new Error('file broken, invalid signature!')
     }
 
     // replace old file with new file
-    log('[updater] write file', gzipPath)
-    await writeFile(gzipPath, buffer)
-    log('[updater] extract file', gzipPath)
+    log(`write file: ${gzipPath}`)
+    await writeFile(gzipPath, src)
+    log(`extract file: ${gzipPath}`)
     await extractFile(gzipPath)
 
-    return 'success'
+    updater.emit('downloaded')
   }
-  const onCheck = async (option?: BaseOption) => {
+  const onCheck = async (url?: string) => {
     try {
-      const result = await checkUpdate(option)
+      const result = await checkUpdate(url)
       updater.emit('checkResult', result)
     } catch (error) {
-      updater.emit('checkResult', 'fail', error)
+      log(error as Error)
+      updater.emit('checkResult', error as Error)
     }
   }
   updater.on('check', onCheck)
   updater.checkUpdate = onCheck
+  const onDownload = async (src?: string | Buffer) => {
+    try {
+      await downloadUpdate(src)
+    } catch (error) {
+      log(error as Error)
+      updater.emit('donwnloadError', error)
+    }
+  }
+  updater.on('download', onDownload)
+  updater.downloadUpdate = onDownload
   return updater
 }
 

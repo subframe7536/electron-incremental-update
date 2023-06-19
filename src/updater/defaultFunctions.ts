@@ -10,7 +10,6 @@ export function downloadJSONDefault(url: string, updater: Updater, headers: Reco
       res.headers = headers
       res.on('data', chunk => (data += chunk))
       res.on('end', () => {
-        updater.emit('downloadEnd', true)
         const json = JSON.parse(data)
         if ('signature' in json && 'version' in json && 'size' in json) {
           resolve(json)
@@ -19,8 +18,6 @@ export function downloadJSONDefault(url: string, updater: Updater, headers: Reco
         }
       })
     }).on('error', (e) => {
-      e && updater.emit('donwnloadError', e)
-      updater.emit('downloadEnd', false)
       reject(e)
     })
   })
@@ -35,12 +32,9 @@ export function downloadBufferDefault(url: string, updater: Updater, headers: Re
         data.push(chunk)
       })
       res.on('end', () => {
-        updater.emit('downloadEnd', true)
         resolve(Buffer.concat(data))
       })
     }).on('error', (e) => {
-      e && updater.emit('donwnloadError', e)
-      updater.emit('downloadEnd', false)
       reject(e)
     })
   })

@@ -1,13 +1,14 @@
 import type { Buffer } from 'node:buffer'
 
-export type CheckResultType = 'success' | 'fail' | 'unavailable'
+export type CheckResultType = Error | false | Omit<UpdateJSON, 'signature'>
 type UpdateEvents = {
   check: null
-  checkResult: [data: CheckResultType, err?: unknown]
-  downloadStart: [size: number]
+  checkResult: [data: CheckResultType]
+  download: null
   downloading: [current: number]
-  downloadEnd: [success: boolean]
+  downloaded: null
   donwnloadError: [error: unknown]
+  debug: [msg: string | Error]
 }
 
 export type UpdateJSON = {
@@ -41,7 +42,13 @@ interface TypedUpdater<
   once<E extends Event>(eventName: E, listener: (...args: MaybeArray<T[E]>) => void): this
   emit<E extends Event>(eventName: E, ...args: MaybeArray<T[E]>): boolean
   off<E extends Event>(eventName: E, listener: (...args: MaybeArray<T[E]>) => void): this
-  checkUpdate(options?: BaseOption): Promise<void>
+  /**
+   * - `undefined`: errror
+   * - `false`: unavailable
+   * - `{size: number, version: string}`: success
+   */
+  checkUpdate(url?: BaseOption['updateJsonURL']): Promise<void>
+  downloadUpdate(url?: BaseOption['releaseAsarURL'] | Buffer): Promise<void>
 }
 
 export type Updater = TypedUpdater<UpdateEvents>
