@@ -74,3 +74,8 @@ export function getGithubReleaseCdnGroup() {
     { cdnPrefix: 'download.nuaa.cf', maintainer: 'LibraryCloud-nuaa' },
   ]
 }
+
+export function restartApp() {
+  app.relaunch()
+  app.quit()
+}
