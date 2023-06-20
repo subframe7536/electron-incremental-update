@@ -16,6 +16,8 @@ using RSA + Signature to sign the new `main.asar` downloaded from remote and rep
 
 develop with [vite-plugin-electron](https://github.com/electron-vite/vite-plugin-electron), and may be effect in other electron vite frameworks
 
+**all options are documented in the jsdoc**
+
 ## install
 
 ### npm
@@ -50,32 +52,28 @@ src
 
 ### setup app
 
-more example see comment on `initApp()`
 
 ```ts
 // electron/app.ts
-import { getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
+import { createUpdater, getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
 import { name, repository } from '../package.json'
 
 const SIGNATURE_PUB = '' // auto generate RSA public key when start app
 
-// create updater manually
+// create updater when init, no need to set productName
+initApp({ name }, { SIGNATURE_PUB, repository })
+
+// or create updater manually
+const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
 const updater = createUpdater({
   SIGNATURE_PUB,
-  repository,
   productName: name,
-})
-initApp(name, updater)
-
-// or create updater when init, no need to set productName
-const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
-initApp(name, {
-  SIGNATURE_PUB,
   repository,
   updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
   releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
   debug: true,
 })
+initApp({ name }).setUpdater(updater)
 ```
 
 ### setup main
@@ -155,7 +153,12 @@ db.close()
 
 ### setup vite.config.ts
 
+make sure the plugin is set in the **last** build task plugin option
+
+- set it to preload task plugin, as the end of build task
+
 ```ts
+// vite.config.ts
 export default defineConfig(({ command }) => {
 
   const isBuild = command === 'build'
@@ -173,7 +176,7 @@ export default defineConfig(({ command }) => {
           // ...
           vite: {
             plugins: [
-              updater({ // !make sure the plugin run pack asar after all build finish
+              updater({
                 productName: pkg.name,
                 version: pkg.version,
                 isBuild,
@@ -188,90 +191,6 @@ export default defineConfig(({ command }) => {
     // ... other config
   }
 })
-```
-
-#### plugin options
-
-```ts
-type Options = {
-  /**
-   * whether is in build mode
-   */
-  isBuild: boolean
-  /**
-   * the name of you application
-   *
-   * you can set as 'name' in package.json
-  */
-  productName: string
-  /**
-   * the version of you application
-   *
-   * you can set as 'version' in package.json
-   */
-  version: string
-  /**
-   * Whether to minify
-   */
-  minify?: boolean
-  /**
-   * path config
-   */
-  paths?: {
-    /**
-     * Path to app entry file
-     * @default 'electron/app.ts'
-     */
-    entryPath?: string
-    /**
-     * Path to app entry output file
-     * @default 'app.js'
-     */
-    entryOutputPath?: string
-    /**
-     * Path to asar file
-     * @default `release/${ProductName}.asar`
-     */
-    asarOutputPath?: string
-    /**
-     * Path to electron build output
-     * @default `dist-electron`
-     */
-    electronDistPath?: string
-    /**
-     * Path to renderer build output
-     * @default `dist`
-     */
-    rendererDistPath?: string
-    /**
-     * Path to version info output
-     * @default `version.json`
-     */
-    versionPath?: string
-  }
-  /**
-   * signature config
-   */
-  keys?: {
-    /**
-     * Path to the pem file that contains private key
-     * if not ended with .pem, it will be appended
-     * @default 'public/private.pem'
-     */
-    privateKeyPath?: string
-    /**
-     * Path to the pem file that contains public key
-     * if not ended with .pem, it will be appended
-     * @default 'public/public.pem'
-     */
-    publicKeyPath?: string
-    /**
-     * Length of the key
-     * @default 2048
-     */
-    keyLength?: number
-  }
-}
 ```
 
 ### electron-builder config

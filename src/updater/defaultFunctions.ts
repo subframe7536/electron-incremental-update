@@ -15,10 +15,10 @@ export function downloadJSONDefault(url: string, updater: Updater, headers: Reco
           if ('signature' in json && 'version' in json && 'size' in json) {
             resolve(json)
           } else {
-            throw new Error('invalid json')
+            throw Error
           }
         } catch (e) {
-          reject(e)
+          reject(new Error('invalid json'))
         }
       })
     }).on('error', (e) => {

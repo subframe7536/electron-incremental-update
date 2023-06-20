@@ -5,68 +5,77 @@ import { createUpdater } from './updater'
 
 export * from './updater'
 
-interface AppOption {
+export type AppOption = {
+  /**
+   * name of your application
+  *
+   * you can use the `name` in `package.json`
+  */
+  name: string
   /**
    * path of electron output dist
    * @default 'dist-electron'
-   */
+  */
   electronDistPath?: string
   /**
    * relative path of main entry in electron dist
    * @default 'main/index.js'
-   */
+  */
   mainPath?: string
 }
+type OptionalProperty<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+export type InitUpdaterOptions = OptionalProperty<UpdaterOption, 'productName'>
+
 /**
- * Initialize application
- * @param productName name of your application
- * @param updater updater instance or updater options
- * @param option options for entry, will be used to generate electron main path, default target path: `dist-electron/main/index.js`
- * @returns a function to init your application with a updater
- *
+ * create updater manually
  * @example
- * **manual** generate updater
  * ```ts
- * import { initApp } from 'electron-incremental-updater'
+ * import { createUpdater, getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
  * import { name, repository } from '../package.json'
  *
- * const SIGNATURE_PUB = '' // auto generate RSA public key when start app
+ * const SIGNATURE_PUB = '' // auto generate
+ *
+ * const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
  * const updater = createUpdater({
  *   SIGNATURE_PUB,
  *   productName: name,
  *   repository,
+ *   updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
+ *   releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
+ *   debug: true,
  * })
- * initApp(name, updater)
+ * initApp({ name }).setUpdater(updater)
  * ```
- * @example
- * **auto** generate updater and set update URL
+ */
+export function initApp(
+  appOptions: AppOption,
+): { setUpdater: (updater: Updater) => void }
+/**
+ * create updater when init, no need to set productName
  *
+ * @example
  * ```ts
- * import { getReleaseDnsPrefix, initApp } from 'electron-incremental-update'
+ * import { initApp } from 'electron-incremental-update'
  * import { name, repository } from '../package.json'
  *
- * const SIGNATURE_PUB = '' // auto generate RSA public key when start app
+ * const SIGNATURE_PUB = '' // auto generate
  *
- * const { urlPrefix } = getReleaseCdnPrefix()[0]
- * initApp(name, {
- *   SIGNATURE_PUB,
- *   repository,
- *   updateJsonURL: `https://cdn.jsdelivr.net/gh/${repository.replace('https://github.com', '')}/version.json`,
- *   releaseAsarURL: `${urlPrefix}/download/latest/${name}.asar.gz`,
- * }, {
- *  // options for main entry
- * })
+ * initApp({ name }, { SIGNATURE_PUB, repository })
  * ```
-*/
+ */
 export function initApp(
-  productName: string,
-  updater: Updater | Omit<UpdaterOption, 'productName'> & { productName?: string },
-  option?: AppOption,
+  appOptions: AppOption,
+  updaterOptions: InitUpdaterOptions,
+): undefined
+export function initApp(
+  appOptions: AppOption,
+  updaterOptions?: InitUpdaterOptions,
 ) {
   const {
+    name: productName,
     electronDistPath = 'dist-electron',
     mainPath = 'main/index.js',
-  } = option ?? { }
+  } = appOptions ?? { }
 
   const mainDir = app.isPackaged
     ? `../${productName}.asar`
@@ -74,15 +83,17 @@ export function initApp(
 
   const entry = resolve(__dirname, mainDir, mainPath)
 
-  let _updater: Updater | undefined
-
-  if ('SIGNATURE_PUB' in updater) {
-    const _option = updater.productName ? updater as UpdaterOption : { ...updater, productName }
-    _updater = createUpdater(_option)
+  if (updaterOptions) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+    require(entry)(
+      createUpdater({ ...updaterOptions, productName }),
+    )
   } else {
-    _updater = updater
+    return {
+      setUpdater(updater: Updater) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+        require(entry)(updater)
+      },
+    }
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-  return require(entry)(_updater)
 }

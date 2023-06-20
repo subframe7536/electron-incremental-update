@@ -125,7 +125,7 @@ export function createUpdater({
       if (!repository) {
         throw new Error('updateJsonURL or repository are not set')
       }
-      url = `${repository.replace('github.com', 'raw.githubusercontent.com')}/version.json`
+      url = `${repository.replace('github.com', 'raw.githubusercontent.com')}/master/version.json`
     }
 
     // remove temp file

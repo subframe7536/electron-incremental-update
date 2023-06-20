@@ -56,7 +56,7 @@ export interface UpdaterOption {
    */
   SIGNATURE_PUB: string
   /**
-   * product name
+   * name of your application
    *
    * you can use the `name` in `package.json`
    */
@@ -72,7 +72,7 @@ export interface UpdaterOption {
   repository?: string
   /**
    * URL of version info json
-   * @default `${repository.replace('github.com', 'raw.githubusercontent.com')}/version.json`
+   * @default `${repository.replace('github.com', 'raw.githubusercontent.com')}/master/version.json`
    * @throws if `updateJsonURL` and `repository` are all not set
    */
   updateJsonURL?: string
