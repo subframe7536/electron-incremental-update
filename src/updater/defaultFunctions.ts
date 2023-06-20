@@ -27,12 +27,14 @@ export function downloadJSONDefault(url: string, updater: Updater, headers: Reco
   })
 }
 export function downloadBufferDefault(url: string, updater: Updater, headers: Record<string, any>) {
+  let progress = 0
   return new Promise<Buffer>((resolve, reject) => {
     https.get(url, (res) => {
       let data: any[] = []
       res.headers = headers
       res.on('data', (chunk) => {
-        updater.emit('downloading', chunk.length)
+        progress += chunk.length
+        updater.emit('downloading', progress)
         data.push(chunk)
       })
       res.on('end', () => {

@@ -1,13 +1,9 @@
 import type { Buffer } from 'node:buffer'
 
-export type CheckResultType = Error | false | Omit<UpdateJSON, 'signature'>
+export type CheckResultType = Omit<UpdateJSON, 'signature'> | undefined | Error
+export type DownloadResult = true | Error
 type UpdateEvents = {
-  check: [url?: string]
-  checkResult: [data: CheckResultType]
-  download: [src?: string | Buffer]
-  downloading: [current: number]
-  downloaded: null
-  donwnloadError: [error: unknown]
+  downloading: [progress: number]
   debug: [msg: string | Error]
 }
 
@@ -25,16 +21,19 @@ interface TypedUpdater<
   listeners<E extends Event>(eventName: E): Function[]
   eventNames(): (Event)[]
   on<E extends Event>(eventName: E, listener: (...data: MaybeArray<T[E]>) => void): this
-  once<E extends Event>(eventName: E, listener: (...args: MaybeArray<T[E]>) => void): this
   emit<E extends Event>(eventName: E, ...args: MaybeArray<T[E]>): boolean
   off<E extends Event>(eventName: E, listener: (...args: MaybeArray<T[E]>) => void): this
   /**
-   * - `undefined`: errror
+   * - `{size: number, version: string}`: available
    * - `false`: unavailable
-   * - `{size: number, version: string}`: success
+   * - `Error`: fail
    */
-  checkUpdate(url?: string): Promise<void>
-  downloadUpdate(url?: string | Buffer): Promise<void>
+  checkUpdate(url?: string): Promise<CheckResultType>
+  /**
+   * - `true`: success
+   * - `Error`: fail
+   */
+  downloadUpdate(url?: string | Buffer): Promise<DownloadResult>
 }
 
 export type Updater = TypedUpdater<UpdateEvents>

@@ -6,7 +6,7 @@ import { createReadStream, createWriteStream, existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
 import { app } from 'electron'
 import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
-import type { CheckResultType, UpdateJSON, Updater, UpdaterOption } from './types'
+import type { CheckResultType, DownloadResult, UpdateJSON, Updater, UpdaterOption } from './types'
 import { getEntryVersion } from './utils'
 
 export function createUpdater({
@@ -118,101 +118,90 @@ export function createUpdater({
     return _compare(currentVersion, version)
   }
 
-  async function checkUpdate(url?: string): Promise<CheckResultType> {
-    url ??= _update
-    if (!url) {
-      log('no updateJsonURL, fallback to use repository')
-      if (!repository) {
-        throw new Error('updateJsonURL or repository are not set')
-      }
-      url = `${repository.replace('github.com', 'raw.githubusercontent.com')}/master/version.json`
-    }
-
-    // remove temp file
-    if (existsSync(tmpFile)) {
-      log(`remove tmp file: ${tmpFile}`)
-      await rm(tmpFile)
-    }
-
-    if (existsSync(gzipPath)) {
-      log(`remove .gz file: ${gzipPath}`)
-      await rm(gzipPath)
-    }
-
-    // fetch update json
-    const json = await download(url, 'json')
-
-    const {
-      signature: _sig,
-      version: _v,
-      size,
-    } = json
-
-    log(`update info: ${JSON.stringify(json, null, 2)}`)
-
-    // if not need update, return
-    if (!await needUpdate(_v)) {
-      log(`update unavailable: ${_v}`)
-      return false
-    } else {
-      log(`update available: ${_v}`)
-      signature = _sig
-      version = _v
-      return { size, version }
-    }
-  }
-  async function downloadUpdate(src?: string | Buffer): Promise<void> {
-    if (typeof src !== 'object') {
-      let _url = src ?? _release
-      if (!_url) {
-        log('no releaseAsarURL, fallback to use repository')
+  updater.checkUpdate = async (url?: string): Promise<CheckResultType> => {
+    try {
+      url ??= _update
+      if (!url) {
+        log('no updateJsonURL, fallback to use repository')
         if (!repository) {
-          throw new Error('releaseAsarURL or repository are not set')
+          throw new Error('updateJsonURL or repository are not set')
         }
-        _url = `${repository}/releases/download/latest/${productName}.asar.gz`
+        url = `${repository.replace('github.com', 'raw.githubusercontent.com')}/master/version.json`
       }
-      // download update file buffer
-      src = await download(_url, 'buffer')
-    }
 
-    // verify update file
-    log('verify start')
-    if (!verify(src, signature)) {
-      log('verify failed')
-      throw new Error('invalid signature')
-    }
-    log('verify success')
+      // remove temp file
+      if (existsSync(tmpFile)) {
+        log(`remove tmp file: ${tmpFile}`)
+        await rm(tmpFile)
+      }
 
-    // replace old file with new file
-    log(`write file: ${gzipPath}`)
-    await writeFile(gzipPath, src)
-    log(`extract file: ${gzipPath}`)
-    await extractFile(gzipPath)
+      if (existsSync(gzipPath)) {
+        log(`remove .gz file: ${gzipPath}`)
+        await rm(gzipPath)
+      }
 
-    log(`update success, version: ${version}`)
-    updater.emit('downloaded')
-  }
-  const onCheck = async (url?: string) => {
-    try {
-      const result = await checkUpdate(url)
-      updater.emit('checkResult', result)
+      // fetch update json
+      const json = await download(url, 'json')
+
+      const {
+        signature: _sig,
+        version: _v,
+        size,
+      } = json
+
+      log(`update info: ${JSON.stringify(json, null, 2)}`)
+
+      // if not need update, return
+      if (!await needUpdate(_v)) {
+        log(`update unavailable: ${_v}`)
+        return undefined
+      } else {
+        log(`update available: ${_v}`)
+        signature = _sig
+        version = _v
+        return { size, version }
+      }
     } catch (error) {
       log(error as Error)
-      updater.emit('checkResult', error as Error)
+      return error as Error
     }
   }
-  updater.on('check', onCheck)
-  updater.checkUpdate = onCheck
-  const onDownload = async (src?: string | Buffer) => {
+  updater.downloadUpdate = async (src?: string | Buffer): Promise<DownloadResult> => {
     try {
-      await downloadUpdate(src)
+      if (typeof src !== 'object') {
+        let _url = src ?? _release
+        if (!_url) {
+          log('no releaseAsarURL, fallback to use repository')
+          if (!repository) {
+            throw new Error('releaseAsarURL or repository are not set')
+          }
+          _url = `${repository}/releases/download/latest/${productName}.asar.gz`
+        }
+        // download update file buffer
+        src = await download(_url, 'buffer')
+      }
+
+      // verify update file
+      log('verify start')
+      if (!verify(src, signature)) {
+        log('verify failed')
+        throw new Error('invalid signature')
+      }
+      log('verify success')
+
+      // replace old file with new file
+      log(`write file: ${gzipPath}`)
+      await writeFile(gzipPath, src)
+      log(`extract file: ${gzipPath}`)
+      await extractFile(gzipPath)
+
+      log(`update success, version: ${version}`)
+      return true
     } catch (error) {
       log(error as Error)
-      updater.emit('donwnloadError', error)
+      return error as Error
     }
   }
-  updater.on('download', onDownload)
-  updater.downloadUpdate = onDownload
   return updater
 }
 
