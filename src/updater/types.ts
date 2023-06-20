@@ -2,9 +2,9 @@ import type { Buffer } from 'node:buffer'
 
 export type CheckResultType = Error | false | Omit<UpdateJSON, 'signature'>
 type UpdateEvents = {
-  check: null
+  check: [url?: string]
   checkResult: [data: CheckResultType]
-  download: null
+  download: [src?: string | Buffer]
   downloading: [current: number]
   downloaded: null
   donwnloadError: [error: unknown]
