@@ -151,7 +151,7 @@ export function createUpdater({
     log(`update info: ${JSON.stringify(json, null, 2)}`)
 
     // if not need update, return
-    if (!needUpdate(_v)) {
+    if (!await needUpdate(_v)) {
       log(`update unavailable: ${_v}`)
       return false
     } else {

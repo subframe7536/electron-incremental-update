@@ -17,20 +17,6 @@ export type UpdateJSON = {
   size: number
 }
 type MaybeArray<T> = T extends undefined | null | never ? [] : T extends any[] ? T['length'] extends 1 ? [data: T[0]] : T : [data: T]
-export interface BaseOption {
-  /**
-   * URL of version info json
-   * @default `${repository.replace('github.com', 'raw.githubusercontent.com')}/version.json`
-   * @throws if `updateJsonURL` and `repository` are all not set
-   */
-  updateJsonURL?: string
-  /**
-   * URL of release asar.gz
-   * @default `${repository}/releases/download/latest/${productName}.asar.gz`
-   * @throws if `releaseAsarURL` and `repository` are all not set
-   */
-  releaseAsarURL?: string
-}
 interface TypedUpdater<
   T extends Record<string | symbol, MaybeArray<any>>,
   Event extends Exclude<keyof T, number> = Exclude<keyof T, number>,
@@ -47,12 +33,12 @@ interface TypedUpdater<
    * - `false`: unavailable
    * - `{size: number, version: string}`: success
    */
-  checkUpdate(url?: BaseOption['updateJsonURL']): Promise<void>
-  downloadUpdate(url?: BaseOption['releaseAsarURL'] | Buffer): Promise<void>
+  checkUpdate(url?: string): Promise<void>
+  downloadUpdate(url?: string | Buffer): Promise<void>
 }
 
 export type Updater = TypedUpdater<UpdateEvents>
-export interface UpdaterOption extends BaseOption {
+export interface UpdaterOption {
   /**
    * public key of signature
    *
@@ -84,11 +70,31 @@ export interface UpdaterOption extends BaseOption {
    * `repository` will be used to determine the url
    */
   repository?: string
+  /**
+   * URL of version info json
+   * @default `${repository.replace('github.com', 'raw.githubusercontent.com')}/version.json`
+   * @throws if `updateJsonURL` and `repository` are all not set
+   */
+  updateJsonURL?: string
+  /**
+   * URL of release asar.gz
+   * @default `${repository}/releases/download/latest/${productName}.asar.gz`
+   * @throws if `releaseAsarURL` and `repository` are all not set
+   */
+  releaseAsarURL?: string
+  /**
+   * whether to enable debug listener
+   */
   debug?: boolean
+  /**
+   * custom version compare function
+   * @param oldVersion old version string
+   * @param newVersion new version string
+   * @returns whether to update
+   */
   compareVersion?: (
-    oldVersion: string,
-    newVersion: string,
-  ) => boolean
+    oldVersion: string, newVersion: string,
+  ) => boolean | Promise<boolean>
   downloadConfig?: {
     /**
      * download user agent
@@ -102,18 +108,22 @@ export interface UpdaterOption extends BaseOption {
     /**
      * download JSON function
      * @param url download url
-     * @param updater updater, emit events
+     * @param updater updater, to trigger events
      * @param header download header
      * @returns `UpdateJSON`
      */
-    downloadJSON?: (url: string, updater: Updater, headers: Record<string, any>) => Promise<UpdateJSON>
+    downloadJSON?: (
+      url: string, updater: Updater, headers: Record<string, any>
+    ) => Promise<UpdateJSON>
     /**
      * download buffer function
      * @param url download url
-     * @param updater updater, emit events
+     * @param updater updater, to trigger events
      * @param header download header
      * @returns `Buffer`
      */
-    downloadBuffer?: (url: string, updater: Updater, headers: Record<string, any>) => Promise<Buffer>
+    downloadBuffer?: (
+      url: string, updater: Updater, headers: Record<string, any>
+    ) => Promise<Buffer>
   }
 }
