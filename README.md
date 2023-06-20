@@ -54,17 +54,28 @@ more example see comment on `initApp()`
 
 ```ts
 // electron/app.ts
-import { createUpdater, initApp } from 'electron-incremental-update'
+import { getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
 import { name, repository } from '../package.json'
 
 const SIGNATURE_PUB = '' // auto generate RSA public key when start app
 
+// create updater manually
 const updater = createUpdater({
   SIGNATURE_PUB,
   repository,
   productName: name,
 })
 initApp(name, updater)
+
+// or create updater when init, no need to set productName
+const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
+initApp(name, {
+  SIGNATURE_PUB,
+  repository,
+  updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
+  releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
+  debug: true,
+})
 ```
 
 ### setup main
@@ -72,43 +83,43 @@ initApp(name, updater)
 ```ts
 // electron/main/index.ts
 import type { Updater } from 'electron-incremental-update'
-import { getAppAsarPath, getAppVersion, getElectronVersion } from 'electron-incremental-update'
+import { getAppAsarPath, getAppVersion, getEntryVersion } from 'electron-incremental-update'
 import { app } from 'electron'
 import { name } from '../../package.json'
 
 export default function (updater: Updater) {
   console.log('\ncurrent:')
-  console.log(`\telectron:  ${getElectronVersion()}`)
   console.log(`\tasar path: ${getAppAsarPath(name)}`)
+  console.log(`\tentry:     ${getEntryVersion()}`)
   console.log(`\tapp:       ${getAppVersion(name)}`)
-
-  updater.checkUpdate()
-  updater.on('checkResult', async (result, err) => {
-    switch (result) {
-      case 'success':
-        await dialog.showMessageBox({
-          type: 'info',
-          buttons: ['Restart', 'Later'],
-          message: 'Application successfully updated!',
-        }).then(({ response }) => {
-          if (response === 0) {
-            app.relaunch()
-            app.quit()
-          }
-        })
-        break
-      case 'unavailable':
-        console.log('Update Unavailable')
-        break
-      case 'fail':
-        console.error(err)
-        break
+  let size = 0
+  let currentSize = 0
+  updater.on('checkResult', async (result) => {
+    if (result === false) {
+      console.log('Update Unavailable')
+    } else if (result instanceof Error) {
+      console.error(result)
+    } else {
+      size = result.size
+      console.log('new version: ', result.version)
+      const { response } = await dialog.showMessageBox({
+        type: 'info',
+        buttons: ['Download', 'Later'],
+        message: 'Application update available!',
+      })
+      response === 0 && await updater.downloadUpdate()
     }
   })
-  updater.on('downloadStart', console.log)
-  updater.on('downloading', console.log)
-  updater.on('downloadEnd', console.log)
+  updater.on('download', () => console.log('download start'))
+  updater.on('downloading', (len) => {
+    currentSize += len
+    console.log(`${(currentSize / size).toFixed(2)}%`)
+  })
+  updater.on('downloaded', () => console.log('download end'))
   updater.on('donwnloadError', console.error)
+  // to debug, it need to set debug to true in updater options
+  updater.on('debug', data => console.log('[updater]:', data))
+  updater.checkUpdate()
 
   // app logics
   app.whenReady().then(() => {
