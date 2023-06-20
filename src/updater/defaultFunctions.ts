@@ -10,11 +10,15 @@ export function downloadJSONDefault(url: string, updater: Updater, headers: Reco
       res.headers = headers
       res.on('data', chunk => (data += chunk))
       res.on('end', () => {
-        const json = JSON.parse(data)
-        if ('signature' in json && 'version' in json && 'size' in json) {
-          resolve(json)
-        } else {
-          throw new Error('invalid update json')
+        try {
+          const json = JSON.parse(data)
+          if ('signature' in json && 'version' in json && 'size' in json) {
+            resolve(json)
+          } else {
+            throw new Error('invalid json')
+          }
+        } catch (e) {
+          reject(e)
         }
       })
     }).on('error', (e) => {
