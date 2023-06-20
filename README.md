@@ -91,9 +91,12 @@ export default function (updater: Updater) {
   console.log(`\tentry:     ${getEntryVersion()}`)
   console.log(`\tapp:       ${getAppVersion(name)}`)
   let size = 0
-  let currentSize = 0
-  updater.on('checkResult', async (result) => {
-    if (result === false) {
+  updater.on('downloading', (progress) => {
+    console.log(`${(progress / size).toFixed(2)}%`)
+  })
+  updater.on('debug', data => console.log('[updater]:', data))
+  updater.checkUpdate().then(async (result) => {
+    if (result === undefined) {
       console.log('Update Unavailable')
     } else if (result instanceof Error) {
       console.error(result)
@@ -105,20 +108,9 @@ export default function (updater: Updater) {
         buttons: ['Download', 'Later'],
         message: 'Application update available!',
       })
-      response === 0 && await updater.downloadUpdate()
+      response === 0 && console.log(await updater.downloadUpdate())
     }
   })
-  updater.on('download', () => console.log('download start'))
-  updater.on('downloading', (len) => {
-    currentSize += len
-    console.log(`${(currentSize / size).toFixed(2)}%`)
-  })
-  updater.on('downloaded', () => console.log('download end'))
-  updater.on('donwnloadError', console.error)
-  // to debug, it need to set debug to true in updater options
-  updater.on('debug', data => console.log('[updater]:', data))
-  updater.checkUpdate()
-
   // app logics
   app.whenReady().then(() => {
     // ...
