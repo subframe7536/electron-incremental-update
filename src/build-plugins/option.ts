@@ -13,7 +13,6 @@ export type BuildVersionOption = {
   version: string
   privateKey: string
   publicKey: string
-  productName: string
   versionPath: string
 }
 
@@ -148,7 +147,6 @@ export function parseOptions(options: Options) {
       asarOutputPath,
       privateKey,
       publicKey,
-      productName,
       versionPath,
     }
   }

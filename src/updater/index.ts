@@ -177,7 +177,7 @@ export function createUpdater({
 
       // verify update file
       log('verify start')
-      if (!verify(src, signature, SIGNATURE_PUB, productName)) {
+      if (!verify(src, signature, SIGNATURE_PUB)) {
         log('verify failed')
         throw new Error('invalid signature')
       }

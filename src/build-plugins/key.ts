@@ -4,7 +4,7 @@ import { EOL } from 'node:os'
 import { generateRSA } from '../crypto'
 import type { BuildKeysOption } from './option'
 
-function generateKey(
+function generateKeyFile(
   privateKeyPath: string,
   publicKeyPath: string,
   length: number,
@@ -56,7 +56,7 @@ export function getKeys({
   !existsSync(keysDir) && mkdirSync(keysDir)
   let privateKey, publicKey
   if (!existsSync(privateKeyPath)) {
-    const keys = generateKey(privateKeyPath, publicKeyPath, keyLength)
+    const keys = generateKeyFile(privateKeyPath, publicKeyPath, keyLength)
     privateKey = keys.privateKey
     publicKey = keys.publicKey
   } else {
