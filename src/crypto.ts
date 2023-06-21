@@ -1,5 +1,8 @@
+import type { Encoding } from 'node:crypto'
 import { constants, createCipheriv, createDecipheriv, createHash, createSign, createVerify, generateKeyPairSync } from 'node:crypto'
 import { Buffer } from 'node:buffer'
+
+const aesEncode: Encoding = 'base64url'
 
 export function generateRSA(length = 2048) {
   const pair = generateKeyPairSync('rsa', { modulusLength: length })
@@ -11,21 +14,21 @@ export function generateRSA(length = 2048) {
   }
 }
 
-function encrypt(text: string, key: string | Buffer, iv: string | Buffer): string {
+export function encrypt(plainText: string, key: string | Buffer, iv: string | Buffer): string {
   const cipher = createCipheriv('aes-256-cbc', key, iv)
-  let encrypted = cipher.update(text, 'utf8', 'hex')
-  encrypted += cipher.final('hex')
+  let encrypted = cipher.update(plainText, 'utf8', aesEncode)
+  encrypted += cipher.final(aesEncode)
   return encrypted
 }
 
-function decrypt(encryptedText: string, key: string | Buffer, iv: string | Buffer): string {
+export function decrypt(encryptedText: string, key: string | Buffer, iv: string | Buffer): string {
   const decipher = createDecipheriv('aes-256-cbc', key, iv)
-  let decrypted = decipher.update(encryptedText, 'hex', 'utf8')
+  let decrypted = decipher.update(encryptedText, aesEncode, 'utf8')
   decrypted += decipher.final('utf8')
   return decrypted
 }
 
-function generateKey(buffer: Buffer, str: string, length: number) {
+export function generateKey(buffer: Buffer, str: string, length: number) {
   str += createHash('md5').update(buffer.map((v, i) => i & length / 4 && v)).digest('hex')
   const hash = createHash('SHA256').update(str).digest('binary')
   return Buffer.from(hash).subarray(0, length)
