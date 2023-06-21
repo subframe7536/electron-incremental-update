@@ -1,18 +1,32 @@
+import { isCI } from 'ci-info'
+import { getKeys } from './key'
+
 export type BuildAsarOption = {
   version: string
   asarOutputPath: string
-  privateKeyPath: string
   electronDistPath: string
   rendererDistPath: string
+}
+
+export type BuildVersionOption = {
+  asarOutputPath: string
+  version: string
+  privateKey: string
+  publicKey: string
+  productName: string
   versionPath: string
 }
 
 export type BuildEntryOption = {
-  privateKeyPath: string
-  publicKeyPath: string
   entryPath: string
   entryOutputPath: string
   minify: boolean
+}
+
+export type BuildKeysOption = {
+  entryPath: string
+  privateKeyPath: string
+  publicKeyPath: string
   keyLength: number
 }
 
@@ -115,19 +129,29 @@ export function parseOptions(options: Options) {
   const buildAsarOption: BuildAsarOption = {
     version,
     asarOutputPath,
-    privateKeyPath,
     electronDistPath,
     rendererDistPath,
-    versionPath,
   }
   const buildEntryOption: BuildEntryOption = {
-    privateKeyPath,
-    publicKeyPath,
     entryPath,
     entryOutputPath,
     minify,
-    keyLength,
+  }
+  let buildVersionOption: BuildVersionOption | undefined
+  if (!isCI) {
+    // generate keys or get from file
+    const { privateKey, publicKey } = getKeys({
+      keyLength, privateKeyPath, publicKeyPath, entryPath,
+    })
+    buildVersionOption = {
+      version,
+      asarOutputPath,
+      privateKey,
+      publicKey,
+      productName,
+      versionPath,
+    }
   }
 
-  return { isBuild, buildAsarOption, buildEntryOption }
+  return { isBuild, buildAsarOption, buildEntryOption, buildVersionOption }
 }

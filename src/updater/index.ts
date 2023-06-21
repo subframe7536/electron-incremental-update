@@ -1,10 +1,10 @@
 import { EventEmitter } from 'node:events'
 import type { Buffer } from 'node:buffer'
-import { createVerify } from 'node:crypto'
 import { createGunzip } from 'node:zlib'
 import { createReadStream, createWriteStream, existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
 import { app } from 'electron'
+import { verify } from '../crypto'
 import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
 import type { CheckResultType, DownloadResult, UpdateJSON, Updater, UpdaterOption } from './types'
 import { getEntryVersion } from './utils'
@@ -95,12 +95,6 @@ export function createUpdater({
     })
   }
 
-  function verify(buffer: Buffer, signature: string): boolean {
-    return createVerify('RSA-SHA256')
-      .update(buffer)
-      .verify(SIGNATURE_PUB, signature, 'base64')
-  }
-
   function needUpdate(version: string) {
     if (!app.isPackaged) {
       log('in dev mode, no need to update')
@@ -183,7 +177,7 @@ export function createUpdater({
 
       // verify update file
       log('verify start')
-      if (!verify(src, signature)) {
+      if (!verify(src, signature, SIGNATURE_PUB, productName)) {
         log('verify failed')
         throw new Error('invalid signature')
       }
