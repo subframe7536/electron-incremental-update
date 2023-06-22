@@ -58,15 +58,15 @@ src
 import { createUpdater, getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
 import { name, repository } from '../package.json'
 
-const SIGNATURE_PUB = '' // auto generate RSA public key when start app
+const SIGNATURE_CERT = '' // auto generate certificate when start app
 
 // create updater when init, no need to set productName
-initApp({ name }, { SIGNATURE_PUB, repository })
+initApp({ name }, { SIGNATURE_CERT, repository })
 
 // or create updater manually
 const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
 const updater = createUpdater({
-  SIGNATURE_PUB,
+  SIGNATURE_CERT,
   productName: name,
   repository,
   updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
@@ -81,15 +81,15 @@ initApp({ name }).setUpdater(updater)
 ```ts
 // electron/main/index.ts
 import type { Updater } from 'electron-incremental-update'
-import { getAppAsarPath, getAppVersion, getEntryVersion } from 'electron-incremental-update'
+import { getEntryVersion, getProductAsarPath, getProductVersion } from 'electron-incremental-update'
 import { app } from 'electron'
 import { name } from '../../package.json'
 
 export default function (updater: Updater) {
   console.log('\ncurrent:')
-  console.log(`\tasar path: ${getAppAsarPath(name)}`)
+  console.log(`\tasar path: ${getProductAsarPath(name)}`)
   console.log(`\tentry:     ${getEntryVersion()}`)
-  console.log(`\tapp:       ${getAppVersion(name)}`)
+  console.log(`\tapp:       ${getProductVersion(name)}`)
   let size = 0
   updater.on('downloading', (progress) => {
     console.log(`${(progress / size).toFixed(2)}%`)
@@ -108,7 +108,7 @@ export default function (updater: Updater) {
         buttons: ['Download', 'Later'],
         message: 'Application update available!',
       })
-      response === 0 && console.log(await updater.downloadUpdate())
+      response === 0 && console.log(await updater.downloadAndInstall())
     }
   })
   // app logics

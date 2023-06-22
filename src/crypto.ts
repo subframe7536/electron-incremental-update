@@ -1,18 +1,8 @@
 import type { Encoding } from 'node:crypto'
-import { constants, createCipheriv, createDecipheriv, createHash, createSign, createVerify, generateKeyPairSync } from 'node:crypto'
+import { constants, createCipheriv, createDecipheriv, createHash, createSign, createVerify } from 'node:crypto'
 import { Buffer } from 'node:buffer'
 
 const aesEncode: Encoding = 'base64url'
-
-export function generateRSA(length = 2048) {
-  const pair = generateKeyPairSync('rsa', { modulusLength: length })
-  const privateKey = pair.privateKey.export({ type: 'pkcs1', format: 'pem' }) as string
-  const publicKey = pair.publicKey.export({ type: 'pkcs1', format: 'pem' }) as string
-  return {
-    privateKey,
-    publicKey,
-  }
-}
 
 export function encrypt(plainText: string, key: Buffer, iv: Buffer): string {
   const cipher = createCipheriv('aes-256-cbc', key, iv)
@@ -28,12 +18,12 @@ export function decrypt(encryptedText: string, key: Buffer, iv: Buffer): string 
   return decrypted
 }
 
-export function generateKey(data: string | Buffer, length: number) {
+export function key(data: string | Buffer, length: number) {
   const hash = createHash('SHA256').update(data).digest('binary')
   return Buffer.from(hash).subarray(0, length)
 }
 
-export function signature(buffer: Buffer, privateKey: string, publicKey: string) {
+export function signature(buffer: Buffer, privateKey: string, cert: string, version: string) {
   const sig = createSign('RSA-SHA256')
     .update(buffer)
     .sign({
@@ -42,15 +32,16 @@ export function signature(buffer: Buffer, privateKey: string, publicKey: string)
       saltLength: constants.RSA_PSS_SALTLEN_DIGEST,
     }, 'base64')
 
-  return encrypt(sig, generateKey(publicKey, 32), generateKey(buffer, 16))
+  return encrypt(`${sig}%${version}`, key(cert, 32), key(buffer, 16))
 }
 
-export function verify(buffer: Buffer, signature: string, publicKey: string): boolean {
+export function verify(buffer: Buffer, signature: string, cert: string): string | false {
   try {
-    const sig = decrypt(signature, generateKey(publicKey, 32), generateKey(buffer, 16))
-    return createVerify('RSA-SHA256')
+    const [sig, version] = decrypt(signature, key(cert, 32), key(buffer, 16)).split('%')
+    const result = createVerify('RSA-SHA256')
       .update(buffer)
-      .verify(publicKey, sig, 'base64')
+      .verify(cert, sig, 'base64')
+    return result ? version : false
   } catch (error) {
     return false
   }

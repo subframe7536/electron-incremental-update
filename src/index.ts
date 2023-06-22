@@ -33,11 +33,11 @@ export type InitUpdaterOptions = OptionalProperty<UpdaterOption, 'productName'>
  * import { createUpdater, getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
  * import { name, repository } from '../package.json'
  *
- * const SIGNATURE_PUB = '' // auto generate
+ * const SIGNATURE_CERT = '' // auto generate
  *
  * const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
  * const updater = createUpdater({
- *   SIGNATURE_PUB,
+ *   SIGNATURE_CERT,
  *   productName: name,
  *   repository,
  *   updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
@@ -58,9 +58,9 @@ export function initApp(
  * import { initApp } from 'electron-incremental-update'
  * import { name, repository } from '../package.json'
  *
- * const SIGNATURE_PUB = '' // auto generate
+ * const SIGNATURE_CERT = '' // auto generate
  *
- * initApp({ name }, { SIGNATURE_PUB, repository })
+ * initApp({ name }, { SIGNATURE_CERT, repository })
  * ```
  */
 export function initApp(

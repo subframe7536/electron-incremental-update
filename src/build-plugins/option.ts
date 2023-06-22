@@ -1,4 +1,5 @@
 import { isCI } from 'ci-info'
+import type { DistinguishedName } from '@cyyynthia/jscert'
 import { getKeys } from './key'
 
 export type BuildAsarOption = {
@@ -12,7 +13,7 @@ export type BuildVersionOption = {
   asarOutputPath: string
   version: string
   privateKey: string
-  publicKey: string
+  cert: string
   versionPath: string
 }
 
@@ -25,8 +26,10 @@ export type BuildEntryOption = {
 export type BuildKeysOption = {
   entryPath: string
   privateKeyPath: string
-  publicKeyPath: string
+  certPath: string
   keyLength: number
+  subject: DistinguishedName
+  expires: Date
 }
 
 export type Options = {
@@ -98,14 +101,35 @@ export type Options = {
     /**
      * Path to the pem file that contains public key
      * if not ended with .pem, it will be appended
-     * @default 'keys/public.pem'
+     * @default 'keys/cert.pem'
      */
-    publicKeyPath?: string
+    certPath?: string
     /**
      * Length of the key
      * @default 2048
      */
     keyLength?: number
+    /**
+     * X509 certificate info
+     *
+     * only generate simple **self-signed** certificate **without extensions**
+     */
+    certInfo?: {
+      /**
+       * the subject of the certificate
+       *
+       * @default { commonName: productName, organization: `org.${productName}` }
+       */
+      subject?: DistinguishedName
+      /**
+       * expires of the certificate
+       * - `Date`: expire date
+       * - `number`: expire duration in seconds
+       *
+       * @default Date.now() + 365 * 864e5 (1 year)
+       */
+      expires?: Date | number
+    }
   }
 }
 
@@ -121,10 +145,17 @@ export function parseOptions(options: Options) {
   } = paths
   const {
     privateKeyPath = 'keys/private.pem',
-    publicKeyPath = 'keys/public.pem',
+    certPath = 'keys/cert.pem',
     keyLength = 2048,
+    certInfo,
   } = keys
-
+  let {
+    subject = {
+      commonName: productName,
+      organization: `org.${productName}`,
+    },
+    expires = Date.now() + 365 * 864e5,
+  } = certInfo || {}
   const buildAsarOption: BuildAsarOption = {
     version,
     asarOutputPath,
@@ -138,15 +169,18 @@ export function parseOptions(options: Options) {
   }
   let buildVersionOption: BuildVersionOption | undefined
   if (!isCI) {
+    if (typeof expires === 'number') {
+      expires = new Date(Date.now() + expires)
+    }
     // generate keys or get from file
-    const { privateKey, publicKey } = getKeys({
-      keyLength, privateKeyPath, publicKeyPath, entryPath,
+    const { privateKey, cert } = getKeys({
+      keyLength, privateKeyPath, certPath, entryPath, subject, expires,
     })
     buildVersionOption = {
       version,
       asarOutputPath,
       privateKey,
-      publicKey,
+      cert,
       versionPath,
     }
   }

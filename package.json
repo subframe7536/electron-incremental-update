@@ -61,6 +61,7 @@
     "vitest": "^0.32.2"
   },
   "dependencies": {
+    "@cyyynthia/jscert": "^0.1.2",
     "ci-info": "^3.8.0"
   }
 }

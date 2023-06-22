@@ -1,7 +1,7 @@
 import type { Buffer } from 'node:buffer'
 
 export type CheckResultType = Omit<UpdateJSON, 'signature'> | undefined | Error
-export type DownloadResult = true | Error
+export type InstallResult = true | Error
 type UpdateEvents = {
   downloading: [progress: number]
   debug: [msg: string | Error]
@@ -12,6 +12,11 @@ export type UpdateJSON = {
   version: string
   size: number
 }
+
+export function isUpdateJSON(json: any): json is UpdateJSON {
+  return 'signature' in json && 'version' in json && 'size' in json
+}
+
 type MaybeArray<T> = T extends undefined | null | never ? [] : T extends any[] ? T['length'] extends 1 ? [data: T[0]] : T : [data: T]
 interface TypedUpdater<
   T extends Record<string | symbol, MaybeArray<any>>,
@@ -21,19 +26,29 @@ interface TypedUpdater<
   listeners<E extends Event>(eventName: E): Function[]
   eventNames(): (Event)[]
   on<E extends Event>(eventName: E, listener: (...data: MaybeArray<T[E]>) => void): this
+  once<E extends Event>(eventName: E, listener: (...data: MaybeArray<T[E]>) => void): this
   emit<E extends Event>(eventName: E, ...args: MaybeArray<T[E]>): boolean
   off<E extends Event>(eventName: E, listener: (...args: MaybeArray<T[E]>) => void): this
   /**
+   * check update info
+   * @param data update json url
+   * @returns
    * - `{size: number, version: string}`: available
    * - `false`: unavailable
    * - `Error`: fail
    */
-  checkUpdate(url?: string): Promise<CheckResultType>
+  checkUpdate(data?: string | UpdateJSON): Promise<CheckResultType>
   /**
+   * download update and install
+   *
+   * if you want to update **offline**, you can set both `src` and `sig` to verify and install
+   * @param data asar download url or buffer
+   * @param sig signature
+   * @returns
    * - `true`: success
    * - `Error`: fail
    */
-  downloadUpdate(url?: string | Buffer): Promise<DownloadResult>
+  downloadAndInstall(data?: string | Buffer, sig?: string): Promise<InstallResult>
 }
 
 export type Updater = TypedUpdater<UpdateEvents>
@@ -45,15 +60,15 @@ export interface UpdaterOption {
    * @example
    * ```ts
    * // auto filled by plugin
-   * const SIGNATURE_PUB = ''
+   * const SIGNATURE_CERT = ''
    *
    * const updater = createUpdater({
-   *   SIGNATURE_PUB,
+   *   SIGNATURE_CERT,
    *   ...
    * })
    * ```
    */
-  SIGNATURE_PUB: string
+  SIGNATURE_CERT: string
   /**
    * name of your application
    *
@@ -93,7 +108,7 @@ export interface UpdaterOption {
    */
   compareVersion?: (
     oldVersion: string, newVersion: string,
-  ) => boolean | Promise<boolean>
+  ) => boolean
   downloadConfig?: {
     /**
      * download user agent

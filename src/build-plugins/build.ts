@@ -1,8 +1,9 @@
 import { createReadStream, createWriteStream } from 'node:fs'
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import zlib from 'node:zlib'
+import { build } from 'esbuild'
 import { signature } from '../crypto'
-import type { BuildAsarOption, BuildVersionOption } from './option'
+import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 
 function gzipFile(filePath: string) {
   return new Promise((resolve, reject) => {
@@ -44,18 +45,33 @@ export async function buildAsar({
   await pack(electronDistPath, asarOutputPath)
   await gzipFile(asarOutputPath)
 }
-export async function generateVersion({
+export async function buildVersion({
   asarOutputPath,
   versionPath,
   privateKey,
-  publicKey,
+  cert,
   version,
 }: BuildVersionOption) {
   const buffer = await readFile(`${asarOutputPath}.gz`)
 
   await writeFile(versionPath, JSON.stringify({
-    signature: signature(buffer, privateKey, publicKey),
+    signature: signature(buffer, privateKey, cert, version),
     version,
     size: buffer.length,
   }, null, 2))
+}
+
+export async function buildEntry({
+  entryPath,
+  entryOutputPath: outfile,
+  minify,
+}: BuildEntryOption) {
+  await build({
+    entryPoints: [entryPath],
+    bundle: true,
+    platform: 'node',
+    outfile,
+    minify,
+    external: ['electron'],
+  })
 }

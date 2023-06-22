@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import https from 'node:https'
 import type { UpdateJSON, Updater } from './types'
+import { isUpdateJSON } from './types'
 
 export function downloadJSONDefault(url: string, updater: Updater, headers: Record<string, any>) {
   return new Promise<UpdateJSON>((resolve, reject) => {
@@ -12,7 +13,7 @@ export function downloadJSONDefault(url: string, updater: Updater, headers: Reco
       res.on('end', () => {
         try {
           const json = JSON.parse(data)
-          if ('signature' in json && 'version' in json && 'size' in json) {
+          if (isUpdateJSON(json)) {
             resolve(json)
           } else {
             throw Error
@@ -26,6 +27,7 @@ export function downloadJSONDefault(url: string, updater: Updater, headers: Reco
     })
   })
 }
+
 export function downloadBufferDefault(url: string, updater: Updater, headers: Record<string, any>) {
   let progress = 0
   return new Promise<Buffer>((resolve, reject) => {

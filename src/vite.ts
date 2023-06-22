@@ -1,6 +1,6 @@
 import type { Plugin as VitePlugin } from 'vite'
 import { createLogger } from 'vite'
-import { buildAsar, buildEntry, generateVersion } from './build-plugins'
+import { buildAsar, buildEntry, buildVersion } from './build-plugins'
 import type { Options } from './build-plugins/option'
 import { parseOptions } from './build-plugins/option'
 
@@ -27,7 +27,7 @@ export default function (options: Options): VitePlugin {
       log.info('build asar start')
       await buildAsar(buildAsarOption)
 
-      buildVersionOption && await generateVersion(buildVersionOption)
+      buildVersionOption && await buildVersion(buildVersionOption)
 
       log.info(`build asar end, output to ${asarOutputPath}`)
     },

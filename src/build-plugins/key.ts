@@ -1,24 +1,41 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { EOL } from 'node:os'
-import { generateRSA } from '../crypto'
+import { generateKeyPairSync } from 'node:crypto'
+import type { KeyObject } from 'node:crypto'
+import { CertificateSigningRequest } from '@cyyynthia/jscert'
+import type { DistinguishedName } from '@cyyynthia/jscert'
 import type { BuildKeysOption } from './option'
 
-function generateKeyFile(
-  privateKeyPath: string,
-  publicKeyPath: string,
-  length: number,
-) {
-  const ret = generateRSA(length)
-  writeFileSync(privateKeyPath, ret.privateKey)
-  writeFileSync(publicKeyPath, ret.publicKey)
-  return ret
+export function generateCert(privateKey: KeyObject) {
+  const dn: DistinguishedName = {
+    country: 'zh-CN',
+    state: 'zj',
+    locality: 'hz',
+    organization: 'test',
+    organizationalUnit: 'test unit',
+    commonName: 'test.test',
+    emailAddress: 'test@example.com',
+  }
+
+  const csr = new CertificateSigningRequest(dn, privateKey, { digest: 'sha256' })
+  const expiry = new Date(Date.now() + 365 * 864e5)
+  return csr.createSelfSignedCertificate(expiry).toPem()
 }
-function writePublicKeyToMain(entryPath: string, publicKey: string) {
+export function generateKeys(length = 2048) {
+  const { privateKey: _key } = generateKeyPairSync('rsa', { modulusLength: length })
+  const cert = generateCert(_key)
+  const privateKey = _key.export({ type: 'pkcs1', format: 'pem' }) as string
+  return {
+    privateKey,
+    cert,
+  }
+}
+function writeCertToMain(entryPath: string, cert: string) {
   const file = readFileSync(entryPath, 'utf-8')
 
-  const regex = /const SIGNATURE_PUB = ['`][\s\S]*?['`]/
-  const replacement = `const SIGNATURE_PUB = \`${publicKey}\``
+  const regex = /const SIGNATURE_CERT = ['`][\s\S]*?['`]/
+  const replacement = `const SIGNATURE_CERT = \`${cert}\``
 
   let replaced = file
   const signaturePubExists = regex.test(file)
@@ -49,23 +66,27 @@ function writePublicKeyToMain(entryPath: string, publicKey: string) {
 export function getKeys({
   keyLength,
   privateKeyPath,
-  publicKeyPath,
+  certPath,
   entryPath,
-}: BuildKeysOption): { privateKey: string ; publicKey: string } {
+}: BuildKeysOption): { privateKey: string ; cert: string } {
   const keysDir = dirname(privateKeyPath)
   !existsSync(keysDir) && mkdirSync(keysDir)
-  let privateKey, publicKey
-  if (!existsSync(privateKeyPath)) {
-    const keys = generateKeyFile(privateKeyPath, publicKeyPath, keyLength)
+
+  let privateKey: string, cert: string
+
+  if (!existsSync(privateKeyPath) || !existsSync(certPath)) {
+    const keys = generateKeys(keyLength)
     privateKey = keys.privateKey
-    publicKey = keys.publicKey
+    cert = keys.cert
+    writeFileSync(privateKeyPath, privateKey)
+    writeFileSync(certPath, cert)
   } else {
     privateKey = readFileSync(privateKeyPath, 'utf-8')
-    publicKey = readFileSync(publicKeyPath, 'utf-8')
+    cert = readFileSync(certPath, 'utf-8')
   }
-  writePublicKeyToMain(entryPath, publicKey)
+  writeCertToMain(entryPath, cert)
   return {
     privateKey,
-    publicKey,
+    cert,
   }
 }

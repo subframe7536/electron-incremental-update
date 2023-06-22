@@ -1,6 +1,9 @@
 lockfileVersion: '6.0'
 
 dependencies:
+  '@cyyynthia/jscert':
+    specifier: ^0.1.2
+    version: 0.1.2
   ci-info:
     specifier: ^3.8.0
     version: 3.8.0
@@ -161,6 +164,10 @@ packages:
       chalk: 2.4.2
       js-tokens: 4.0.0
     dev: true
+
+  /@cyyynthia/jscert@0.1.2:
+    resolution: {integrity: sha512-MN7N0hzIitLZ8bX21I5T+rkZCF0Dk3UKLRCol+cF/b7/FgjtvMgnxZHxwaYB4BUWtlsHcYlZyVK/Z/k8VFE00g==}
+    dev: false
 
   /@electron/asar@3.2.4:
     resolution: {integrity: sha512-lykfY3TJRRWFeTxccEKdf1I6BLl2Plw81H0bbp4Fc5iEc67foDCa5pjJQULVgo0wF+Dli75f3xVcdb/67FFZ/g==}

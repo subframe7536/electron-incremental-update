@@ -1,16 +1,18 @@
 import { EventEmitter } from 'node:events'
-import type { Buffer } from 'node:buffer'
+import { Buffer } from 'node:buffer'
 import { createGunzip } from 'node:zlib'
-import { createReadStream, createWriteStream, existsSync } from 'node:fs'
-import { rm, writeFile } from 'node:fs/promises'
+import { createReadStream, createWriteStream, existsSync, rmSync } from 'node:fs'
+import { readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { app } from 'electron'
 import { verify } from '../crypto'
 import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
-import type { CheckResultType, DownloadResult, UpdateJSON, Updater, UpdaterOption } from './types'
-import { getEntryVersion } from './utils'
+import type { CheckResultType, InstallResult, UpdateJSON, Updater, UpdaterOption } from './types'
+import { isUpdateJSON } from './types'
+import { getEntryVersion, getProductAsarPath } from './utils'
 
 export function createUpdater({
-  SIGNATURE_PUB,
+  SIGNATURE_CERT,
   repository,
   productName,
   releaseAsarURL: _release,
@@ -23,9 +25,10 @@ export function createUpdater({
   const updater = new EventEmitter() as unknown as Updater
 
   let signature = ''
-  let version = ''
-  const gzipPath = `../${productName}.asar.gz`
-  const tmpFile = gzipPath.replace('.asar.gz', '.tmp.gz')
+  // asar path will not be used until in production mode, so the path will always correct
+  const asarPath = getProductAsarPath(productName)
+  const gzipPath = `${asarPath}.gz`
+  const tmpFilePath = gzipPath.replace('.asar.gz', '.tmp.asar')
 
   const { downloadBuffer, downloadJSON, extraHeader, userAgent } = downloadConfig || {}
 
@@ -33,62 +36,28 @@ export function createUpdater({
     debug && updater.emit('debug', msg)
   }
 
-  async function download(
-    url: string,
-    format: 'json',
-  ): Promise<UpdateJSON>
-  async function download(
-    url: string,
-    format: 'buffer',
-  ): Promise<Buffer>
-  async function download(
-    url: string,
-    format: 'json' | 'buffer',
-  ): Promise<UpdateJSON | Buffer> {
-    const ua = userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
-    const headers = {
-      Accept: `application/${format === 'json' ? 'json' : 'octet-stream'}`,
-      UserAgent: ua,
-      ...extraHeader,
+  async function extractFile() {
+    if (!gzipPath.endsWith('.asar.gz') || !existsSync(gzipPath)) {
+      throw new Error('.asar.gz file not exist')
     }
 
-    log(`download headers: ${JSON.stringify(headers, null, 2)}`)
-
-    const downloadFn = format === 'json'
-      ? downloadJSON ?? downloadJSONDefault
-      : downloadBuffer ?? downloadBufferDefault
-
-    log(`download ${format} from ${url}`)
-    const ret = await downloadFn(url, updater, headers)
-    log(`download ${format} success`)
-
-    return ret
-  }
-
-  async function extractFile(gzipFilePath: string) {
-    if (!gzipFilePath.endsWith('.asar.gz') || !existsSync(gzipFilePath)) {
-      log('update .asar.gz file not exist')
-      return
-    }
-    gzipFilePath = gzipFilePath.replace('.asar.gz', '.tmp.gz')
     return new Promise((resolve, reject) => {
       const gunzip = createGunzip()
-      const input = createReadStream(gzipFilePath)
-      const outputFilePath = gzipFilePath.replace('.tmp.gz', '.asar')
-      const output = createWriteStream(outputFilePath)
+      const input = createReadStream(gzipPath)
+      const output = createWriteStream(tmpFilePath)
 
-      log(`outputFilePath: ${outputFilePath}`)
+      log(`outputFilePath: ${tmpFilePath}`)
 
       input
         .pipe(gunzip)
         .pipe(output)
         .on('finish', async () => {
-          await rm(gzipFilePath)
-          log(`${gzipFilePath} unzipped`)
-          resolve(outputFilePath)
+          await rm(gzipPath)
+          log(`${gzipPath} unzipped`)
+          resolve(null)
         })
         .on('error', async (err) => {
-          await rm(gzipFilePath)
+          await rm(gzipPath)
           output.destroy(err)
           reject(err)
         })
@@ -102,57 +71,93 @@ export function createUpdater({
     }
 
     const currentVersion = getEntryVersion()
-
-    log(`check update:
-    current version is ${currentVersion},
-    new version is ${version}`)
+    log(`check update: current version is ${currentVersion}, new version is ${version}`)
 
     const _compare = compareVersion ?? compareVersionDefault
-
     return _compare(currentVersion, version)
   }
 
-  updater.checkUpdate = async (url?: string): Promise<CheckResultType> => {
-    try {
-      url ??= _update
-      if (!url) {
-        log('no updateJsonURL, fallback to use repository')
+  async function parseData(
+    format: 'json',
+    data?: string | UpdateJSON,
+  ): Promise<UpdateJSON>
+  async function parseData(
+    format: 'buffer',
+    data?: string | Buffer,
+  ): Promise<Buffer>
+  async function parseData(
+    format: 'json' | 'buffer',
+    data?: string | Buffer | UpdateJSON,
+  ) {
+    // remove tmp file
+    if (existsSync(tmpFilePath)) {
+      log(`remove tmp file: ${tmpFilePath}`)
+      await rm(tmpFilePath)
+    }
+
+    if (existsSync(gzipPath)) {
+      log(`remove .gz file: ${gzipPath}`)
+      await rm(gzipPath)
+    }
+    if (typeof data === 'object') {
+      if ((format === 'json' && isUpdateJSON(data)) || (format === 'buffer' && Buffer.isBuffer(data))) {
+        return data
+      } else {
+        throw new Error(`invalid type at format '${format}': ${data}`)
+      }
+    } else if (['string', 'undefined'].includes(typeof data)) {
+      const ua = userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
+      const headers = {
+        Accept: `application/${format === 'json' ? 'json' : 'octet-stream'}`,
+        UserAgent: ua,
+        ...extraHeader,
+      }
+
+      log(`download headers: ${JSON.stringify(headers, null, 2)}`)
+
+      const info = format === 'json'
+        ? {
+            name: 'updateJsonURL',
+            url: _update,
+            repoFallback: `${repository!.replace('github.com', 'raw.githubusercontent.com')}/master/version.json`,
+            fn: downloadJSON ?? downloadJSONDefault,
+          }
+        : {
+            name: 'releaseAsarURL',
+            url: _release,
+            repoFallback: `${repository}/releases/download/latest/${productName}.asar.gz`,
+            fn: downloadBuffer ?? downloadBufferDefault,
+          }
+      data ??= info.url
+      if (!data) {
+        log(`no ${info.name}, fallback to use repository`)
         if (!repository) {
-          throw new Error('updateJsonURL or repository are not set')
+          throw new Error(`${info.name} or repository are not set`)
         }
-        url = `${repository.replace('github.com', 'raw.githubusercontent.com')}/master/version.json`
+        data = info.repoFallback
       }
+      // fetch data from remote
+      log(`download ${format} from ${data}`)
+      const ret = await info.fn(data, updater, headers)
+      log(`download ${format} success`)
+      return ret
+    } else {
+      throw new Error(`invalid type at format '${format}': ${data}`)
+    }
+  }
 
-      // remove temp file
-      if (existsSync(tmpFile)) {
-        log(`remove tmp file: ${tmpFile}`)
-        await rm(tmpFile)
-      }
-
-      if (existsSync(gzipPath)) {
-        log(`remove .gz file: ${gzipPath}`)
-        await rm(gzipPath)
-      }
-
-      // fetch update json
-      const json = await download(url, 'json')
-
-      const {
-        signature: _sig,
-        version: _v,
-        size,
-      } = json
-
-      log(`update info: ${JSON.stringify(json, null, 2)}`)
+  updater.checkUpdate = async (data?: string | UpdateJSON): Promise<CheckResultType> => {
+    try {
+      const { signature: _sig, size, version } = await parseData('json', data)
+      log(`checked version: ${version}, size: ${size}`)
 
       // if not need update, return
-      if (!await needUpdate(_v)) {
-        log(`update unavailable: ${_v}`)
+      if (!await needUpdate(version)) {
+        log(`update unavailable: ${version}`)
         return undefined
       } else {
-        log(`update available: ${_v}`)
+        log(`update available: ${version}`)
         signature = _sig
-        version = _v
         return { size, version }
       }
     } catch (error) {
@@ -160,36 +165,44 @@ export function createUpdater({
       return error as Error
     }
   }
-  updater.downloadUpdate = async (src?: string | Buffer): Promise<DownloadResult> => {
+  updater.downloadAndInstall = async (data?: string | Buffer, sig?: string): Promise<InstallResult> => {
     try {
-      if (typeof src !== 'object') {
-        let _url = src ?? _release
-        if (!_url) {
-          log('no releaseAsarURL, fallback to use repository')
-          if (!repository) {
-            throw new Error('releaseAsarURL or repository are not set')
-          }
-          _url = `${repository}/releases/download/latest/${productName}.asar.gz`
-        }
-        // download update file buffer
-        src = await download(_url, 'buffer')
+      const _sig = sig ?? signature
+      if (!_sig) {
+        throw new Error('signature are not set, please checkUpdate first or set the second parameter')
       }
+      const buffer = await parseData('buffer', data)
 
       // verify update file
       log('verify start')
-      if (!verify(src, signature, SIGNATURE_PUB)) {
-        log('verify failed')
-        throw new Error('invalid signature')
+      const version = verify(buffer, _sig, SIGNATURE_CERT)
+      if (!version) {
+        throw new Error('verify failed, invalid signature')
       }
       log('verify success')
+      if (!await needUpdate(version as string)) {
+        throw new Error(`update unavailable: ${version}`)
+      }
 
-      // replace old file with new file
+      // write file
       log(`write file: ${gzipPath}`)
-      await writeFile(gzipPath, src)
+      await writeFile(gzipPath, buffer)
+      // extract file to tmp path
       log(`extract file: ${gzipPath}`)
-      await extractFile(gzipPath)
+      await extractFile()
+
+      // check asar version
+      const asarVersion = await readFile(resolve(tmpFilePath, 'version'), 'utf8')
+
+      if (asarVersion !== version) {
+        rmSync(tmpFilePath)
+        throw new Error(`update failed: asar version is ${asarVersion}, but it should be ${version}`)
+      } else {
+        await rename(tmpFilePath, asarPath)
+      }
 
       log(`update success, version: ${version}`)
+      signature = ''
       return true
     } catch (error) {
       log(error as Error)

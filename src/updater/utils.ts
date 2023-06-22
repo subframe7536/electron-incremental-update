@@ -6,7 +6,7 @@ import { app } from 'electron'
  * get the application asar absolute path
  * @param name The name of the application
  */
-export function getAppAsarPath(name: string) {
+export function getProductAsarPath(name: string) {
   return app.isPackaged ? join(dirname(app.getAppPath()), `${name}.asar`) : 'dev'
 }
 
@@ -20,9 +20,9 @@ export function getEntryVersion() {
  * get the version of application (name.asar)
  * @param name - The name of the application
  */
-export function getAppVersion(name: string) {
+export function getProductVersion(name: string) {
   return app.isPackaged
-    ? readFileSync(join(getAppAsarPath(name), 'version'), 'utf-8')
+    ? readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
     : getEntryVersion()
 }
 
