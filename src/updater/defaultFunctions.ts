@@ -1,14 +1,22 @@
 import { Buffer } from 'node:buffer'
-import https from 'node:https'
+import { net } from 'electron'
 import type { UpdateJSON, Updater } from './types'
 import { isUpdateJSON } from './types'
+import { waitAppReady } from './utils'
 
-export function downloadJSONDefault(url: string, updater: Updater, headers: Record<string, any>) {
+export async function downloadJSONDefault(url: string, updater: Updater, headers: Record<string, any>) {
+  await waitAppReady()
   return new Promise<UpdateJSON>((resolve, reject) => {
-    https.get(url, (res) => {
+    const request = net.request({
+      url,
+      method: 'GET',
+      redirect: 'follow',
+    })
+    Object.keys(headers).forEach((key) => {
+      request.setHeader(key, headers[key])
+    })
+    request.on('response', (res) => {
       let data = ''
-      res.setEncoding('utf8')
-      res.headers = headers
       res.on('data', chunk => (data += chunk))
       res.on('end', () => {
         try {
@@ -22,18 +30,28 @@ export function downloadJSONDefault(url: string, updater: Updater, headers: Reco
           reject(new Error('invalid json'))
         }
       })
-    }).on('error', (e) => {
+    })
+    request.on('error', (e) => {
       reject(e)
     })
+    request.end()
   })
 }
 
-export function downloadBufferDefault(url: string, updater: Updater, headers: Record<string, any>) {
+export async function downloadBufferDefault(url: string, updater: Updater, headers: Record<string, any>) {
+  await waitAppReady()
   let progress = 0
   return new Promise<Buffer>((resolve, reject) => {
-    https.get(url, (res) => {
+    const request = net.request({
+      url,
+      method: 'GET',
+      redirect: 'follow',
+    })
+    Object.keys(headers).forEach((key) => {
+      request.setHeader(key, headers[key])
+    })
+    request.on('response', (res) => {
       let data: any[] = []
-      res.headers = headers
       res.on('data', (chunk) => {
         progress += chunk.length
         updater.emit('downloading', progress)
@@ -45,6 +63,7 @@ export function downloadBufferDefault(url: string, updater: Updater, headers: Re
     }).on('error', (e) => {
       reject(e)
     })
+    request.end()
   })
 }
 export function compareVersionDefault(oldVersion: string, newVersion: string): boolean {

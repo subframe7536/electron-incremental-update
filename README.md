@@ -76,7 +76,11 @@ const updater = createUpdater({
 initApp({ name }).setUpdater(updater)
 ```
 
-### setup main
+### usage in main process
+
+To utilize the electron `net` module for requesting update information, the `checkUpdate` and `downloadAndInstall` functions must be called after the app is ready by default.
+
+However, you have the option to customize the download function when creating the updater.
 
 ```ts
 // electron/main/index.ts
@@ -86,6 +90,7 @@ import { app } from 'electron'
 import { name } from '../../package.json'
 
 export default function (updater: Updater) {
+  await app.whenReady()
   console.log('\ncurrent:')
   console.log(`\tasar path: ${getProductAsarPath(name)}`)
   console.log(`\tentry:     ${getEntryVersion()}`)
@@ -110,10 +115,6 @@ export default function (updater: Updater) {
       })
       response === 0 && console.log(await updater.downloadAndInstall())
     }
-  })
-  // app logics
-  app.whenReady().then(() => {
-    // ...
   })
 }
 ```

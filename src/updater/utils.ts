@@ -79,3 +79,16 @@ export function restartApp() {
   app.relaunch()
   app.quit()
 }
+
+export function waitAppReady(duration = 1000) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('app is not ready'))
+    }, duration)
+
+    app.whenReady().then(() => {
+      clearTimeout(timeout)
+      resolve(null)
+    })
+  })
+}

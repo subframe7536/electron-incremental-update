@@ -149,10 +149,10 @@ export function createUpdater({
   updater.checkUpdate = async (data?: string | UpdateJSON): Promise<CheckResultType> => {
     try {
       const { signature: _sig, size, version } = await parseData('json', data)
-      log(`checked version: ${version}, size: ${size}`)
+      log(`checked version: ${version}, size: ${size}, signature: ${_sig}`)
 
       // if not need update, return
-      if (!await needUpdate(version)) {
+      if (!needUpdate(version)) {
         log(`update unavailable: ${version}`)
         return undefined
       } else {
@@ -180,7 +180,7 @@ export function createUpdater({
         throw new Error('verify failed, invalid signature')
       }
       log('verify success')
-      if (!await needUpdate(version as string)) {
+      if (!needUpdate(version)) {
         throw new Error(`update unavailable: ${version}`)
       }
 

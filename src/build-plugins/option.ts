@@ -69,7 +69,7 @@ export type Options = {
     entryOutputPath?: string
     /**
      * Path to asar file
-     * @default `release/${ProductName}.asar`
+     * @default `release/${productName}.asar`
      */
     asarOutputPath?: string
     /**
@@ -138,7 +138,7 @@ export function parseOptions(options: Options) {
   const {
     entryPath = 'electron/app.ts',
     entryOutputPath = 'app.js',
-    asarOutputPath = `release/${productName}.asar`,
+    asarOutputPath = `release/${productName}-${version}.asar`,
     electronDistPath = 'dist-electron',
     rendererDistPath = 'dist',
     versionPath = 'version.json',
