@@ -49,6 +49,7 @@ interface TypedUpdater<
    * - `Error`: fail
    */
   downloadAndInstall(data?: string | Buffer, sig?: string): Promise<InstallResult>
+  setDebug(debug: boolean): void
 }
 
 export type Updater = TypedUpdater<UpdateEvents>

@@ -145,7 +145,7 @@ export function createUpdater({
       throw new Error(`invalid type at format '${format}': ${data}`)
     }
   }
-
+  updater.setDebug = (isDebug: boolean) => debug = isDebug
   updater.checkUpdate = async (data?: string | UpdateJSON): Promise<CheckResultType> => {
     try {
       const { signature: _sig, size, version } = await parseData('json', data)
