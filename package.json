@@ -1,6 +1,6 @@
 {
   "name": "electron-incremental-update",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "electron incremental update tools, powered by vite",
   "scripts": {
     "build": "tsup",
