@@ -5,26 +5,15 @@ import { generateKeyPairSync } from 'node:crypto'
 import type { KeyObject } from 'node:crypto'
 import { CertificateSigningRequest } from '@cyyynthia/jscert'
 import type { DistinguishedName } from '@cyyynthia/jscert'
-import type { BuildKeysOption } from './option'
+import type { GetKeysOption } from './option'
 
-export function generateCert(privateKey: KeyObject) {
-  const dn: DistinguishedName = {
-    country: 'zh-CN',
-    state: 'zj',
-    locality: 'hz',
-    organization: 'test',
-    organizationalUnit: 'test unit',
-    commonName: 'test.test',
-    emailAddress: 'test@example.com',
-  }
-
+export function generateCert(privateKey: KeyObject, dn: DistinguishedName, expires: Date) {
   const csr = new CertificateSigningRequest(dn, privateKey, { digest: 'sha256' })
-  const expiry = new Date(Date.now() + 365 * 864e5)
-  return csr.createSelfSignedCertificate(expiry).toPem()
+  return csr.createSelfSignedCertificate(expires).toPem()
 }
-export function generateKeys(length = 2048) {
+export function generateKeys(length = 2048, subjects: DistinguishedName, expires: Date) {
   const { privateKey: _key } = generateKeyPairSync('rsa', { modulusLength: length })
-  const cert = generateCert(_key)
+  const cert = generateCert(_key, subjects, expires)
   const privateKey = _key.export({ type: 'pkcs1', format: 'pem' }) as string
   return {
     privateKey,
@@ -68,14 +57,16 @@ export function getKeys({
   privateKeyPath,
   certPath,
   entryPath,
-}: BuildKeysOption): { privateKey: string ; cert: string } {
+  subject,
+  expires,
+}: GetKeysOption): { privateKey: string ; cert: string } {
   const keysDir = dirname(privateKeyPath)
   !existsSync(keysDir) && mkdirSync(keysDir)
 
   let privateKey: string, cert: string
 
   if (!existsSync(privateKeyPath) || !existsSync(certPath)) {
-    const keys = generateKeys(keyLength)
+    const keys = generateKeys(keyLength, subject, expires)
     privateKey = keys.privateKey
     cert = keys.cert
     writeFileSync(privateKeyPath, privateKey)

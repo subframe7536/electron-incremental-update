@@ -23,7 +23,7 @@ export type BuildEntryOption = {
   minify: boolean
 }
 
-export type BuildKeysOption = {
+export type GetKeysOption = {
   entryPath: string
   privateKeyPath: string
   certPath: string
