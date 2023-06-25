@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { describe, expect, test } from 'vitest'
 import { decrypt, encrypt, key, signature, verify } from '../src/crypto'
-import { generateKeys } from '../src/build-plugins/key'
+import { generateKeyPairDefault } from '../src/build-plugins/key'
 
 let plain = ''
 for (let i = 0; i < 1_000; i++) {
@@ -17,7 +17,7 @@ describe('test aes', async () => {
 })
 describe('test verify', () => {
   const buffer = Buffer.from(plain, 'utf-8')
-  const { privateKey, cert } = generateKeys()
+  const { privateKey, cert } = generateKeyPairDefault(2048, {}, new Date())
   const version = '0.0.0-alpha1'
   const sig = signature(buffer, privateKey, cert, version)
   test('verify passed', async () => {

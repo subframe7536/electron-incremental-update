@@ -1,3 +1,4 @@
+import type { Buffer } from 'node:buffer'
 import { isCI } from 'ci-info'
 import type { DistinguishedName } from '@cyyynthia/jscert'
 import { getKeys } from './key'
@@ -15,6 +16,7 @@ export type BuildVersionOption = {
   privateKey: string
   cert: string
   versionPath: string
+  generateSignature?: FuncGenerateSignature
 }
 
 export type BuildEntryOption = {
@@ -30,7 +32,15 @@ export type GetKeysOption = {
   keyLength: number
   subject: DistinguishedName
   expires: Date
+  generateKeyPair?: FuncGenerateKeyPair
 }
+
+export type FuncGenerateKeyPair = (keyLength: number, subject: DistinguishedName, expires: Date) => {
+  privateKey: string
+  cert: string
+}
+
+export type FuncGenerateSignature = (buffer: Buffer, privateKey: string, cert: string, version: string) => string
 
 export type Options = {
   /**
@@ -130,32 +140,58 @@ export type Options = {
        */
       expires?: Date | number
     }
+    overrideFunctions?: {
+      /**
+       * custom key pair generate function
+       * @param keyLength key length
+       * @param subject subject info
+       * @param expires expire date
+       */
+      generateKeyPair?: FuncGenerateKeyPair
+      /**
+       * custom signature generate function
+       * @param buffer file buffer
+       * @param privateKey private key
+       * @param cert certificate
+       */
+      generateSignature?: FuncGenerateSignature
+    }
   }
 }
 
 export function parseOptions(options: Options) {
-  const { isBuild, productName, version, minify = false, paths = {}, keys = {} } = options
   const {
-    entryPath = 'electron/app.ts',
-    entryOutputPath = 'app.js',
-    asarOutputPath = `release/${productName}-${version}.asar`,
-    electronDistPath = 'dist-electron',
-    rendererDistPath = 'dist',
-    versionPath = 'version.json',
-  } = paths
+    isBuild,
+    productName,
+    version,
+    minify = false,
+    paths: {
+      entryPath = 'electron/app.ts',
+      entryOutputPath = 'app.js',
+      asarOutputPath = `release/${productName}-${version}.asar`,
+      electronDistPath = 'dist-electron',
+      rendererDistPath = 'dist',
+      versionPath = 'version.json',
+    } = {},
+    keys: {
+      privateKeyPath = 'keys/private.pem',
+      certPath = 'keys/cert.pem',
+      keyLength = 2048,
+      certInfo = {},
+      overrideFunctions = {},
+    } = {},
+  } = options
   const {
-    privateKeyPath = 'keys/private.pem',
-    certPath = 'keys/cert.pem',
-    keyLength = 2048,
-    certInfo,
-  } = keys
+    generateKeyPair,
+    generateSignature,
+  } = overrideFunctions
   let {
     subject = {
       commonName: productName,
       organization: `org.${productName}`,
     },
     expires = Date.now() + 365 * 864e5,
-  } = certInfo || {}
+  } = certInfo
   const buildAsarOption: BuildAsarOption = {
     version,
     asarOutputPath,
@@ -174,7 +210,13 @@ export function parseOptions(options: Options) {
     }
     // generate keys or get from file
     const { privateKey, cert } = getKeys({
-      keyLength, privateKeyPath, certPath, entryPath, subject, expires,
+      keyLength,
+      privateKeyPath,
+      certPath,
+      entryPath,
+      subject,
+      expires,
+      generateKeyPair,
     })
     buildVersionOption = {
       version,
@@ -182,6 +224,7 @@ export function parseOptions(options: Options) {
       privateKey,
       cert,
       versionPath,
+      generateSignature,
     }
   }
 

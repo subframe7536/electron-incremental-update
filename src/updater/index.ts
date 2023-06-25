@@ -19,7 +19,7 @@ export function createUpdater({
   updateJsonURL: _update,
   debug = false,
   downloadConfig,
-  compareVersion,
+  overrideFunctions: { compareVersion, verifySignaure } = {},
 }: UpdaterOption): Updater {
   // hack to make typesafe
   const updater = new EventEmitter() as unknown as Updater
@@ -175,7 +175,8 @@ export function createUpdater({
 
       // verify update file
       log('verify start')
-      const version = verify(buffer, _sig, SIGNATURE_CERT)
+      const _verify = verifySignaure ?? verify
+      const version = _verify(buffer, _sig, SIGNATURE_CERT)
       if (!version) {
         throw new Error('verify failed, invalid signature')
       }

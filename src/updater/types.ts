@@ -51,8 +51,12 @@ interface TypedUpdater<
   downloadAndInstall(data?: string | Buffer, sig?: string): Promise<InstallResult>
   setDebug(debug: boolean): void
 }
-
+export type FuncVerifySignature = (
+  buffer: Buffer, signature: string, cert: string
+) => string | false
+type FunctionCompareVersion = (oldVersion: string, newVersion: string) => boolean
 export type Updater = TypedUpdater<UpdateEvents>
+
 export interface UpdaterOption {
   /**
    * public key of signature
@@ -101,15 +105,22 @@ export interface UpdaterOption {
    * whether to enable debug listener
    */
   debug?: boolean
-  /**
-   * custom version compare function
-   * @param oldVersion old version string
-   * @param newVersion new version string
-   * @returns whether to update
-   */
-  compareVersion?: (
-    oldVersion: string, newVersion: string,
-  ) => boolean
+  overrideFunctions?: {
+    /**
+     * custom version compare function
+     * @param oldVersion old version string
+     * @param newVersion new version string
+     * @returns whether to update
+     */
+    compareVersion?: FunctionCompareVersion
+    /**
+     * custom verify signature function
+     * @param buffer file buffer
+     * @param signature signature
+     * @param cert certificate
+     */
+    verifySignaure?: FuncVerifySignature
+  }
   downloadConfig?: {
     /**
      * download user agent

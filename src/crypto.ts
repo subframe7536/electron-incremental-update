@@ -1,6 +1,8 @@
 import type { Encoding } from 'node:crypto'
 import { constants, createCipheriv, createDecipheriv, createHash, createSign, createVerify } from 'node:crypto'
 import { Buffer } from 'node:buffer'
+import type { FuncGenerateSignature } from './build-plugins/option'
+import type { FuncVerifySignature } from './updater'
 
 const aesEncode: Encoding = 'base64url'
 
@@ -23,7 +25,7 @@ export function key(data: string | Buffer, length: number) {
   return Buffer.from(hash).subarray(0, length)
 }
 
-export function signature(buffer: Buffer, privateKey: string, cert: string, version: string) {
+export const signature: FuncGenerateSignature = (buffer: Buffer, privateKey: string, cert: string, version: string) => {
   const sig = createSign('RSA-SHA256')
     .update(buffer)
     .sign({
@@ -35,7 +37,7 @@ export function signature(buffer: Buffer, privateKey: string, cert: string, vers
   return encrypt(`${sig}%${version}`, key(cert, 32), key(buffer, 16))
 }
 
-export function verify(buffer: Buffer, signature: string, cert: string): string | false {
+export const verify: FuncVerifySignature = (buffer: Buffer, signature: string, cert: string) => {
   try {
     const [sig, version] = decrypt(signature, key(cert, 32), key(buffer, 16)).split('%')
     const result = createVerify('RSA-SHA256')

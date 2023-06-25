@@ -51,11 +51,12 @@ export async function buildVersion({
   privateKey,
   cert,
   version,
+  generateSignature,
 }: BuildVersionOption) {
   const buffer = await readFile(`${asarOutputPath}.gz`)
-
+  const _func = generateSignature ?? signature
   await writeFile(versionPath, JSON.stringify({
-    signature: signature(buffer, privateKey, cert, version),
+    signature: _func(buffer, privateKey, cert, version),
     version,
     size: buffer.length,
   }, null, 2))

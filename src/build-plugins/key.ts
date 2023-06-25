@@ -11,7 +11,7 @@ export function generateCert(privateKey: KeyObject, dn: DistinguishedName, expir
   const csr = new CertificateSigningRequest(dn, privateKey, { digest: 'sha256' })
   return csr.createSelfSignedCertificate(expires).toPem()
 }
-export function generateKeys(length = 2048, subjects: DistinguishedName, expires: Date) {
+export function generateKeyPairDefault(length: number, subjects: DistinguishedName, expires: Date) {
   const { privateKey: _key } = generateKeyPairSync('rsa', { modulusLength: length })
   const cert = generateCert(_key, subjects, expires)
   const privateKey = _key.export({ type: 'pkcs1', format: 'pem' }) as string
@@ -59,6 +59,7 @@ export function getKeys({
   entryPath,
   subject,
   expires,
+  generateKeyPair,
 }: GetKeysOption): { privateKey: string ; cert: string } {
   const keysDir = dirname(privateKeyPath)
   !existsSync(keysDir) && mkdirSync(keysDir)
@@ -66,7 +67,8 @@ export function getKeys({
   let privateKey: string, cert: string
 
   if (!existsSync(privateKeyPath) || !existsSync(certPath)) {
-    const keys = generateKeys(keyLength, subject, expires)
+    const _func = generateKeyPair ?? generateKeyPairDefault
+    const keys = _func(keyLength, subject, expires)
     privateKey = keys.privateKey
     cert = keys.cert
     writeFileSync(privateKeyPath, privateKey)
