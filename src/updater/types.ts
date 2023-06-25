@@ -51,10 +51,10 @@ interface TypedUpdater<
   downloadAndInstall(data?: string | Buffer, sig?: string): Promise<InstallResult>
   setDebug(debug: boolean): void
 }
-export type FuncVerifySignature = (
+export type FunctionVerifySignature = (
   buffer: Buffer, signature: string, cert: string
 ) => string | false
-type FunctionCompareVersion = (oldVersion: string, newVersion: string) => boolean
+export type FunctionCompareVersion = (oldVersion: string, newVersion: string) => boolean
 export type Updater = TypedUpdater<UpdateEvents>
 
 export interface UpdaterOption {
@@ -107,32 +107,21 @@ export interface UpdaterOption {
   debug?: boolean
   overrideFunctions?: {
     /**
-     * custom version compare function
+     * custom version compare function {@link FunctionCompareVersion}
      * @param oldVersion old version string
      * @param newVersion new version string
      * @returns whether to update
      */
     compareVersion?: FunctionCompareVersion
     /**
-     * custom verify signature function
+     * custom verify signature function {@link FunctionVerifySignature}
      * @param buffer file buffer
      * @param signature signature
      * @param cert certificate
      */
-    verifySignaure?: FuncVerifySignature
-  }
-  downloadConfig?: {
+    verifySignaure?: FunctionVerifySignature
     /**
-     * download user agent
-   * @default 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
-    */
-    userAgent?: string
-    /**
-    * extra download header, `accept` and `user-agent` is set by default
-   */
-    extraHeader?: Record<string, string>
-    /**
-     * download JSON function
+     * custom download JSON function
      * @param url download url
      * @param updater updater, to trigger events
      * @param header download header
@@ -142,7 +131,7 @@ export interface UpdaterOption {
       url: string, updater: Updater, headers: Record<string, any>
     ) => Promise<UpdateJSON>
     /**
-     * download buffer function
+     * custom download buffer function
      * @param url download url
      * @param updater updater, to trigger events
      * @param header download header
@@ -151,5 +140,16 @@ export interface UpdaterOption {
     downloadBuffer?: (
       url: string, updater: Updater, headers: Record<string, any>
     ) => Promise<Buffer>
+  }
+  downloadConfig?: {
+    /**
+     * download user agent
+     * @default 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
+     */
+    userAgent?: string
+    /**
+     * extra download header, `accept` and `user-agent` is set by default
+     */
+    extraHeader?: Record<string, string>
   }
 }

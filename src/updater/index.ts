@@ -18,8 +18,13 @@ export function createUpdater({
   releaseAsarURL: _release,
   updateJsonURL: _update,
   debug = false,
-  downloadConfig,
-  overrideFunctions: { compareVersion, verifySignaure } = {},
+  downloadConfig: { extraHeader, userAgent } = {},
+  overrideFunctions: {
+    compareVersion,
+    verifySignaure,
+    downloadBuffer,
+    downloadJSON,
+  } = {},
 }: UpdaterOption): Updater {
   // hack to make typesafe
   const updater = new EventEmitter() as unknown as Updater
@@ -29,8 +34,6 @@ export function createUpdater({
   const asarPath = getProductAsarPath(productName)
   const gzipPath = `${asarPath}.gz`
   const tmpFilePath = gzipPath.replace('.asar.gz', '.tmp.asar')
-
-  const { downloadBuffer, downloadJSON, extraHeader, userAgent } = downloadConfig || {}
 
   function log(msg: string | Error) {
     debug && updater.emit('debug', msg)

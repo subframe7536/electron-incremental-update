@@ -16,7 +16,7 @@ export type BuildVersionOption = {
   privateKey: string
   cert: string
   versionPath: string
-  generateSignature?: FuncGenerateSignature
+  generateSignature?: FunctionGenerateSignature
 }
 
 export type BuildEntryOption = {
@@ -32,15 +32,15 @@ export type GetKeysOption = {
   keyLength: number
   subject: DistinguishedName
   expires: Date
-  generateKeyPair?: FuncGenerateKeyPair
+  generateKeyPair?: FunctionGenerateKeyPair
 }
 
-export type FuncGenerateKeyPair = (keyLength: number, subject: DistinguishedName, expires: Date) => {
+export type FunctionGenerateKeyPair = (keyLength: number, subject: DistinguishedName, expires: Date) => {
   privateKey: string
   cert: string
 }
 
-export type FuncGenerateSignature = (buffer: Buffer, privateKey: string, cert: string, version: string) => string
+export type FunctionGenerateSignature = (buffer: Buffer, privateKey: string, cert: string, version: string) => string
 
 export type Options = {
   /**
@@ -142,19 +142,19 @@ export type Options = {
     }
     overrideFunctions?: {
       /**
-       * custom key pair generate function
+       * custom key pair generate function {@link FunctionGenerateKeyPair}
        * @param keyLength key length
        * @param subject subject info
        * @param expires expire date
        */
-      generateKeyPair?: FuncGenerateKeyPair
+      generateKeyPair?: FunctionGenerateKeyPair
       /**
-       * custom signature generate function
+       * custom signature generate function {@link FunctionGenerateSignature}
        * @param buffer file buffer
        * @param privateKey private key
        * @param cert certificate
        */
-      generateSignature?: FuncGenerateSignature
+      generateSignature?: FunctionGenerateSignature
     }
   }
 }

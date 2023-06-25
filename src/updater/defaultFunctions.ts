@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer'
 import { net } from 'electron'
-import type { UpdateJSON, Updater } from './types'
+import type { FunctionCompareVersion, UpdateJSON, Updater } from './types'
 import { isUpdateJSON } from './types'
 import { waitAppReady } from './utils'
 
@@ -66,7 +66,7 @@ export async function downloadBufferDefault(url: string, updater: Updater, heade
     request.end()
   })
 }
-export function compareVersionDefault(oldVersion: string, newVersion: string): boolean {
+export const compareVersionDefault: FunctionCompareVersion = (oldVersion, newVersion) => {
   if (!oldVersion || !newVersion) {
     throw new TypeError('invalid version')
   }
