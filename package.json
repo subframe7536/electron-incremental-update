@@ -1,7 +1,7 @@
 {
   "name": "electron-incremental-update",
   "author": "subframe7536",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "description": "electron incremental update tools, powered by vite",
   "scripts": {
     "build": "tsup",
@@ -25,21 +25,21 @@
     ".": {
       "import": {
         "default": "./dist/index.mjs",
-        "types": "./dist/index.d.mts"
+        "types": "./dist/index.d.ts"
       },
       "require": {
         "default": "./dist/index.cjs",
-        "types": "./dist/index.d.ts"
+        "types": "./dist/index.d.cts"
       }
     },
     "./vite": {
       "import": {
-        "default": "./dist/index.mjs",
-        "types": "./dist/index.d.mts"
+        "default": "./dist/vite.mjs",
+        "types": "./dist/vite.d.ts"
       },
       "require": {
-        "default": "./dist/index.cjs",
-        "types": "./dist/index.d.ts"
+        "default": "./dist/vite.cjs",
+        "types": "./dist/vite.d.cts"
       }
     }
   },
