@@ -25,7 +25,7 @@ export type AppOption = {
 }
 type OptionalProperty<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 export type InitUpdaterOptions = OptionalProperty<UpdaterOption, 'productName'>
-
+export type StartupWithUpdater = (updater: Updater) => void
 /**
  * create updater manually
  * @example

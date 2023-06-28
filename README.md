@@ -82,14 +82,16 @@ To utilize the electron `net` module for requesting update information, the `che
 
 However, you have the option to customize the download function when creating the updater.
 
+**NOTE: There can only be one function and should be default export in the entry file**
+
 ```ts
 // electron/main/index.ts
-import type { Updater } from 'electron-incremental-update'
+import type { StartupWithUpdater, Updater } from 'electron-incremental-update'
 import { getEntryVersion, getProductAsarPath, getProductVersion } from 'electron-incremental-update'
 import { app } from 'electron'
 import { name } from '../../package.json'
 
-export default function (updater: Updater) {
+const startup: StartupWithUpdater = (updater: Updater) => {
   await app.whenReady()
   console.log('\ncurrent:')
   console.log(`\tasar path: ${getProductAsarPath(name)}`)
@@ -117,6 +119,7 @@ export default function (updater: Updater) {
     }
   })
 }
+export default startup
 ```
 
 ### use native modules
@@ -184,6 +187,15 @@ export default defineConfig(({ command }) => {
     // ... other config
   }
 })
+```
+
+### modify package.json
+
+```json
+{
+  // ...
+  "main": "app.js" // <- app entry file
+}
 ```
 
 ### electron-builder config
