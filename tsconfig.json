@@ -17,11 +17,7 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "exclude": [
-    "**/node_modules/**",
-    "**/es/**",
-    "**/lib/**",
-    "**/dist/**",
-    "playground"
+  "include": [
+    "src"
   ]
 }

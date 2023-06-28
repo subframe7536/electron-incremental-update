@@ -10,9 +10,4 @@ export default defineConfig({
   ],
   external: ['electron', 'asar', '@electron/asar', 'vite', 'esbuild'],
   outDir: 'dist',
-  outExtension(ctx) {
-    return {
-      js: ctx.format === 'esm' ? '.mjs' : '.cjs',
-    }
-  },
 })

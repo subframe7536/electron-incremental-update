@@ -4,7 +4,7 @@
   "version": "0.6.4",
   "description": "electron incremental update tools, powered by vite",
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node fix-module.js",
     "release": "pnpm test && pnpm run build && bumpp --all && npm publish",
     "test": "vitest --run"
   },
@@ -13,34 +13,22 @@
     "registry": "https://registry.npmjs.org/"
   },
   "repository": "https://github.com/subframe7536/electron-incremental-update",
-  "type": "module",
   "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "vite.js",
+    "vite.d.ts"
   ],
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "default": "./dist/index.mjs",
-        "types": "./dist/index.d.ts"
-      },
-      "require": {
-        "default": "./dist/index.cjs",
-        "types": "./dist/index.d.cts"
-      }
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./vite": {
-      "import": {
-        "default": "./dist/vite.mjs",
-        "types": "./dist/vite.d.ts"
-      },
-      "require": {
-        "default": "./dist/vite.cjs",
-        "types": "./dist/vite.d.cts"
-      }
+      "import": "./dist/vite.mjs",
+      "require": "./dist/vite.js"
     }
   },
   "keywords": [

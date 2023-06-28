@@ -4,7 +4,8 @@ import { buildAsar, buildEntry, buildVersion } from './build-plugins'
 import type { Options } from './build-plugins/option'
 import { parseOptions } from './build-plugins/option'
 
-export default function (options: Options): VitePlugin {
+export type { Options }
+export function ElectronUpdater(options: Options): VitePlugin {
   const { isBuild, buildAsarOption, buildEntryOption, buildVersionOption } = parseOptions(options)
   const { entryPath, entryOutputPath } = buildEntryOption
   const { asarOutputPath } = buildAsarOption
