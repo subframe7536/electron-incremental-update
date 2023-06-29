@@ -1,15 +1,14 @@
 import { EventEmitter } from 'node:events'
 import { Buffer } from 'node:buffer'
-import { createGunzip } from 'node:zlib'
-import { createReadStream, createWriteStream, existsSync, rmSync } from 'node:fs'
+import { existsSync, rmSync } from 'node:fs'
 import { readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { app } from 'electron'
 import { verify } from '../crypto'
+import { getEntryVersion, getProductAsarPath, unzipFile } from '../utils'
 import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
 import type { CheckResultType, InstallResult, UpdateJSON, Updater, UpdaterOption } from './types'
 import { isUpdateJSON } from './types'
-import { getEntryVersion, getProductAsarPath } from './utils'
 
 export function createUpdater({
   SIGNATURE_CERT,
@@ -37,34 +36,6 @@ export function createUpdater({
 
   function log(msg: string | Error) {
     debug && updater.emit('debug', msg)
-  }
-
-  async function extractFile() {
-    if (!gzipPath.endsWith('.asar.gz') || !existsSync(gzipPath)) {
-      throw new Error('.asar.gz file not exist')
-    }
-
-    return new Promise((resolve, reject) => {
-      const gunzip = createGunzip()
-      const input = createReadStream(gzipPath)
-      const output = createWriteStream(tmpFilePath)
-
-      log(`outputFilePath: ${tmpFilePath}`)
-
-      input
-        .pipe(gunzip)
-        .pipe(output)
-        .on('finish', async () => {
-          await rm(gzipPath)
-          log(`${gzipPath} unzipped`)
-          resolve(null)
-        })
-        .on('error', async (err) => {
-          await rm(gzipPath)
-          output.destroy(err)
-          reject(err)
-        })
-    })
   }
 
   function needUpdate(version: string) {
@@ -142,7 +113,7 @@ export function createUpdater({
       // fetch data from remote
       log(`download ${format} from ${data}`)
       const ret = await info.fn(data, updater, headers)
-      log(`download ${format} success`)
+      log(`download ${format} success${format === 'buffer' ? `, file size: ${(ret as Buffer).length}` : ''}`)
       return ret
     } else {
       throw new Error(`invalid type at format '${format}': ${data}`)
@@ -193,7 +164,7 @@ export function createUpdater({
       await writeFile(gzipPath, buffer)
       // extract file to tmp path
       log(`extract file: ${gzipPath}`)
-      await extractFile()
+      await unzipFile(gzipPath, tmpFilePath)
 
       // check asar version
       const asarVersion = await readFile(resolve(tmpFilePath, 'version'), 'utf8')
@@ -216,5 +187,4 @@ export function createUpdater({
   return updater
 }
 
-export * from './types'
-export * from './utils'
+export type { FunctionCompareVersion, FunctionVerifySignature, UpdateJSON, Updater, UpdaterOption } from './types'

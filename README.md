@@ -201,9 +201,9 @@ export default defineConfig(({ command }) => {
 ### electron-builder config
 
 ```js
-const { name } = require('./package.json')
+const { name, version } = require('./package.json')
 
-const target = `${name}.asar`
+const target = `${name}-${version}.asar`
 /**
  * @type {import('electron-builder').Configuration}
  */

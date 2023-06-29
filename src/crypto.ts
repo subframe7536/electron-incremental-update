@@ -1,21 +1,18 @@
-import type { Encoding } from 'node:crypto'
 import { constants, createCipheriv, createDecipheriv, createHash, createSign, createVerify } from 'node:crypto'
 import { Buffer } from 'node:buffer'
 import type { FunctionGenerateSignature } from './build-plugins/option'
 import type { FunctionVerifySignature } from './updater'
 
-const aesEncode: Encoding = 'base64url'
-
 export function encrypt(plainText: string, key: Buffer, iv: Buffer): string {
   const cipher = createCipheriv('aes-256-cbc', key, iv)
-  let encrypted = cipher.update(plainText, 'utf8', aesEncode)
-  encrypted += cipher.final(aesEncode)
+  let encrypted = cipher.update(plainText, 'utf8', 'base64url')
+  encrypted += cipher.final('base64url')
   return encrypted
 }
 
 export function decrypt(encryptedText: string, key: Buffer, iv: Buffer): string {
   const decipher = createDecipheriv('aes-256-cbc', key, iv)
-  let decrypted = decipher.update(encryptedText, aesEncode, 'utf8')
+  let decrypted = decipher.update(encryptedText, 'base64url', 'utf8')
   decrypted += decipher.final('utf8')
   return decrypted
 }

@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs'
+import { createReadStream, createWriteStream, existsSync, readFileSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { createGunzip, createGzip } from 'node:zlib'
 import { app } from 'electron'
 
 /**
@@ -91,4 +92,57 @@ export function waitAppReady(duration = 1000) {
       resolve(null)
     })
   })
+}
+
+export async function unzipFile(gzipPath: string, targetFilePath: string) {
+  if (!existsSync(gzipPath)) {
+    throw new Error(`path to zipped file not exist: ${gzipPath}`)
+  }
+
+  return new Promise((resolve, reject) => {
+    const gunzip = createGunzip()
+    const input = createReadStream(gzipPath)
+    const output = createWriteStream(targetFilePath)
+
+    input
+      .pipe(gunzip)
+      .pipe(output)
+      .on('finish', () => {
+        rmSync(gzipPath)
+        resolve(null)
+      })
+      .on('error', (err) => {
+        rmSync(gzipPath)
+        output.destroy(err)
+        reject(err)
+      })
+  })
+}
+
+export async function zipFile(filePath: string, targetFilePath = `${filePath}.gz`) {
+  if (!existsSync(filePath)) {
+    throw new Error(`path to be zipped not exist: ${filePath}`)
+  }
+  return new Promise((resolve, reject) => {
+    const gzip = createGzip()
+    const input = createReadStream(filePath)
+    const output = createWriteStream(targetFilePath)
+
+    input
+      .pipe(gzip)
+      .pipe(output)
+      .on('finish', () => resolve(null))
+      .on('error', err => reject(err))
+  })
+}
+
+export function handleUnexpectedErrors(callback: (err: Error) => void) {
+  const listener = (err: unknown) => {
+    const e = err instanceof Error
+      ? err
+      : new Error(typeof err === 'string' ? err : JSON.stringify(err))
+    callback(e)
+  }
+  process.on('uncaughtException', listener)
+  process.on('unhandledRejection', listener)
 }

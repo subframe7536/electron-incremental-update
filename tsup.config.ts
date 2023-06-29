@@ -7,6 +7,7 @@ export default defineConfig({
   entry: [
     'src/vite.ts',
     'src/index.ts',
+    'src/utils.ts',
   ],
   external: ['electron', 'asar', '@electron/asar', 'vite', 'esbuild'],
   outDir: 'dist',

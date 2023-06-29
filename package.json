@@ -17,7 +17,9 @@
   "files": [
     "dist",
     "vite.js",
-    "vite.d.ts"
+    "vite.d.ts",
+    "utils.js",
+    "utils.d.ts"
   ],
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -29,6 +31,10 @@
     "./vite": {
       "import": "./dist/vite.mjs",
       "require": "./dist/vite.js"
+    },
+    "./utils": {
+      "import": "./dist/utils.mjs",
+      "require": "./dist/utils.js"
     }
   },
   "keywords": [
