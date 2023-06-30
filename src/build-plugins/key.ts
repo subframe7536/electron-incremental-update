@@ -52,7 +52,7 @@ function writeCertToMain(entryPath: string, cert: string) {
   writeFileSync(entryPath, replaced)
 }
 
-export function getKeys({
+export function parseKeys({
   keyLength,
   privateKeyPath,
   certPath,

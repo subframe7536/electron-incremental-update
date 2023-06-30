@@ -1,4 +1,4 @@
-import { constants, createCipheriv, createDecipheriv, createHash, createSign, createVerify } from 'node:crypto'
+import { createCipheriv, createDecipheriv, createHash, createPrivateKey, createSign, createVerify } from 'node:crypto'
 import { Buffer } from 'node:buffer'
 import type { FunctionGenerateSignature } from './build-plugins/option'
 import type { FunctionVerifySignature } from './updater'
@@ -25,11 +25,7 @@ export function key(data: string | Buffer, length: number) {
 export const signature: FunctionGenerateSignature = (buffer, privateKey, cert, version) => {
   const sig = createSign('RSA-SHA256')
     .update(buffer)
-    .sign({
-      key: privateKey,
-      padding: constants.RSA_PKCS1_PADDING,
-      saltLength: constants.RSA_PSS_SALTLEN_DIGEST,
-    }, 'base64')
+    .sign(createPrivateKey(privateKey), 'base64')
 
   return encrypt(`${sig}%${version}`, key(cert, 32), key(buffer, 16))
 }

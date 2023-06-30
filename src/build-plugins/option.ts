@@ -1,7 +1,7 @@
 import type { Buffer } from 'node:buffer'
 import { isCI } from 'ci-info'
 import type { DistinguishedName } from '@cyyynthia/jscert'
-import { getKeys } from './key'
+import { parseKeys } from './key'
 
 export type BuildAsarOption = {
   version: string
@@ -217,7 +217,7 @@ export function parseOptions(options: Options) {
       expires = new Date(Date.now() + expires)
     }
     // generate keys or get from file
-    const { privateKey, cert } = getKeys({
+    const { privateKey, cert } = parseKeys({
       keyLength,
       privateKeyPath,
       certPath,
