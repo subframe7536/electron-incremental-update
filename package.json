@@ -50,7 +50,6 @@
     "bumpp": "^9.1.1",
     "electron": "^25.2.0",
     "eslint": "^8.43.0",
-    "fs-jetpack": "^5.1.0",
     "tsup": "^7.1.0",
     "typescript": "^5.1.5",
     "vite": "^4.3.9",

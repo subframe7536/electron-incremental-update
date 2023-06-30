@@ -22,23 +22,24 @@ async function pack(dir: string, target: string) {
 export async function buildAsar({
   version,
   asarOutputPath,
+  gzipPath,
   electronDistPath,
   rendererDistPath,
 }: BuildAsarOption) {
   await rename(rendererDistPath, `${electronDistPath}/renderer`)
   await writeFile(`${electronDistPath}/version`, version)
   await pack(electronDistPath, asarOutputPath)
-  await zipFile(asarOutputPath)
+  await zipFile(asarOutputPath, gzipPath)
 }
 export async function buildVersion({
-  asarOutputPath,
+  gzipPath,
   versionPath,
   privateKey,
   cert,
   version,
   generateSignature,
 }: BuildVersionOption) {
-  const buffer = await readFile(`${asarOutputPath}.gz`)
+  const buffer = await readFile(gzipPath)
   const _func = generateSignature ?? signature
   await writeFile(versionPath, JSON.stringify({
     signature: _func(buffer, privateKey, cert, version),

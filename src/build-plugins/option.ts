@@ -6,12 +6,13 @@ import { getKeys } from './key'
 export type BuildAsarOption = {
   version: string
   asarOutputPath: string
+  gzipPath: string
   electronDistPath: string
   rendererDistPath: string
 }
 
 export type BuildVersionOption = {
-  asarOutputPath: string
+  gzipPath: string
   version: string
   privateKey: string
   cert: string
@@ -82,6 +83,11 @@ export type Options = {
      * @default `release/${productName}.asar`
      */
     asarOutputPath?: string
+    /**
+     * Path to gzipped asar file
+     * @default `release/${productName}-${version}.asar.gz`
+     */
+    gzipPath?: string
     /**
      * Path to electron build output
      * @default `dist-electron`
@@ -168,7 +174,8 @@ export function parseOptions(options: Options) {
     paths: {
       entryPath = 'electron/app.ts',
       entryOutputPath = 'app.js',
-      asarOutputPath = `release/${productName}-${version}.asar`,
+      asarOutputPath = `release/${productName}.asar`,
+      gzipPath = `release/${productName}-${version}.asar.gz`,
       electronDistPath = 'dist-electron',
       rendererDistPath = 'dist',
       versionPath = 'version.json',
@@ -195,6 +202,7 @@ export function parseOptions(options: Options) {
   const buildAsarOption: BuildAsarOption = {
     version,
     asarOutputPath,
+    gzipPath,
     electronDistPath,
     rendererDistPath,
   }
@@ -220,7 +228,7 @@ export function parseOptions(options: Options) {
     })
     buildVersionOption = {
       version,
-      asarOutputPath,
+      gzipPath,
       privateKey,
       cert,
       versionPath,

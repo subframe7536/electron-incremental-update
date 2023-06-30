@@ -27,9 +27,7 @@ export function ElectronUpdater(options: Options): VitePlugin {
 
       log.info('build asar start')
       await buildAsar(buildAsarOption)
-
       buildVersionOption && await buildVersion(buildVersionOption)
-
       log.info(`build asar end, output to ${asarOutputPath}`)
     },
   }
