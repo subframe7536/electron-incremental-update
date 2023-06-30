@@ -28,7 +28,8 @@ export function createUpdater({
   // hack to make typesafe
   const updater = new EventEmitter() as unknown as Updater
 
-  let signature = ''
+  let signature: string | undefined,
+    version: string | undefined
   // asar path will not be used until in production mode, so the path will always correct
   const asarPath = getProductAsarPath(productName)
   const gzipPath = `${asarPath}.gz`
@@ -58,10 +59,12 @@ export function createUpdater({
   async function parseData(
     format: 'buffer',
     data?: string | Buffer,
+    version?: string
   ): Promise<Buffer>
   async function parseData(
     format: 'json' | 'buffer',
     data?: string | Buffer | UpdateJSON,
+    version?: string,
   ) {
     // remove tmp file
     if (existsSync(tmpFilePath)) {
@@ -99,7 +102,7 @@ export function createUpdater({
         : {
             name: 'releaseAsarURL',
             url: _release,
-            repoFallback: `${repository}/releases/download/latest/${productName}.asar.gz`,
+            repoFallback: `${repository}/releases/download/v${version}/${productName}-${version}.asar.gz`,
             fn: downloadBuffer ?? downloadBufferDefault,
           }
       data ??= info.url
@@ -107,6 +110,9 @@ export function createUpdater({
         log(`no ${info.name}, fallback to use repository`)
         if (!repository) {
           throw new Error(`${info.name} or repository are not set`)
+        }
+        if (format === 'buffer' && !version) {
+          throw new Error('version are not set')
         }
         data = info.repoFallback
       }
@@ -122,17 +128,18 @@ export function createUpdater({
   updater.setDebug = (isDebug: boolean) => debug = isDebug
   updater.checkUpdate = async (data?: string | UpdateJSON): Promise<CheckResultType> => {
     try {
-      const { signature: _sig, size, version } = await parseData('json', data)
-      log(`checked version: ${version}, size: ${size}, signature: ${_sig}`)
+      const { signature: _sig, size, version: _ver } = await parseData('json', data)
+      log(`checked version: ${_ver}, size: ${size}, signature: ${_sig}`)
 
       // if not need update, return
-      if (!needUpdate(version)) {
-        log(`update unavailable: ${version}`)
+      if (!needUpdate(_ver)) {
+        log(`update unavailable: ${_ver}`)
         return undefined
       } else {
-        log(`update available: ${version}`)
+        log(`update available: ${_ver}`)
         signature = _sig
-        return { size, version }
+        version = _ver
+        return { size, version: _ver }
       }
     } catch (error) {
       log(error as Error)
@@ -145,18 +152,18 @@ export function createUpdater({
       if (!_sig) {
         throw new Error('signature are not set, please checkUpdate first or set the second parameter')
       }
-      const buffer = await parseData('buffer', data)
+      const buffer = await parseData('buffer', data, version)
 
       // verify update file
       log('verify start')
       const _verify = verifySignaure ?? verify
-      const version = _verify(buffer, _sig, SIGNATURE_CERT)
-      if (!version) {
+      const _ver = _verify(buffer, _sig, SIGNATURE_CERT)
+      if (!_ver) {
         throw new Error('verify failed, invalid signature')
       }
       log('verify success')
-      if (!needUpdate(version)) {
-        throw new Error(`update unavailable: ${version}`)
+      if (!needUpdate(_ver)) {
+        throw new Error(`update unavailable: ${_ver}`)
       }
 
       // write file
@@ -169,14 +176,14 @@ export function createUpdater({
       // check asar version
       const asarVersion = await readFile(resolve(tmpFilePath, 'version'), 'utf8')
 
-      if (asarVersion !== version) {
+      if (asarVersion !== _ver) {
         rmSync(tmpFilePath)
-        throw new Error(`update failed: asar version is ${asarVersion}, but it should be ${version}`)
+        throw new Error(`update failed: asar version is ${asarVersion}, but it should be ${_ver}`)
       } else {
         await rename(tmpFilePath, asarPath)
       }
 
-      log(`update success, version: ${version}`)
+      log(`update success, version: ${_ver}`)
       signature = ''
       return true
     } catch (error) {
