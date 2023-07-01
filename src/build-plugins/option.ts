@@ -1,8 +1,24 @@
 import type { Buffer } from 'node:buffer'
 import { isCI } from 'ci-info'
-import type { DistinguishedName } from '@cyyynthia/jscert'
 import { parseKeys } from './key'
 
+export type DistinguishedName = {
+  countryName?: string
+  stateOrProvinceName?: string
+  localityName?: string
+  organizationName?: string
+  organizationalUnitName?: string
+  commonName?: string
+  serialNumber?: string
+  title?: string
+  description?: string
+  businessCategory?: string
+  emailAddress?: string
+}
+export type CertSubject = {
+  name: string
+  value: string
+}[]
 export type BuildAsarOption = {
   version: string
   asarOutputPath: string
@@ -32,13 +48,7 @@ export type GetKeysOption = {
   certPath: string
   keyLength: number
   subject: DistinguishedName
-  expires: Date
-  generateKeyPair?: FunctionGenerateKeyPair
-}
-
-export type FunctionGenerateKeyPair = (keyLength: number, subject: DistinguishedName, expires: Date) => {
-  privateKey: string
-  cert: string
+  days: number
 }
 
 export type FunctionGenerateSignature = (buffer: Buffer, privateKey: string, cert: string, version: string) => string
@@ -134,26 +144,17 @@ export type Options = {
       /**
        * the subject of the certificate
        *
-       * @default { commonName: productName, organization: `org.${productName}` }
+       * @default { commonName: productName, organizationName: `org.${productName}` }
        */
       subject?: DistinguishedName
       /**
-       * expires of the certificate
-       * - `Date`: expire date
-       * - `number`: expire duration in seconds
+       * expire days of the certificate
        *
-       * @default Date.now() + 365 * 864e5 (1 year)
+       * @default 365
        */
-      expires?: Date | number
+      days?: number
     }
     overrideFunctions?: {
-      /**
-       * custom key pair generate function {@link FunctionGenerateKeyPair}
-       * @param keyLength key length
-       * @param subject subject info
-       * @param expires expire date
-       */
-      generateKeyPair?: FunctionGenerateKeyPair
       /**
        * custom signature generate function {@link FunctionGenerateSignature}
        * @param buffer file buffer
@@ -188,16 +189,13 @@ export function parseOptions(options: Options) {
       overrideFunctions = {},
     } = {},
   } = options
-  const {
-    generateKeyPair,
-    generateSignature,
-  } = overrideFunctions
+  const { generateSignature } = overrideFunctions
   let {
     subject = {
       commonName: productName,
-      organization: `org.${productName}`,
+      organizationName: `org.${productName}`,
     },
-    expires = Date.now() + 365 * 864e5,
+    days = 365,
   } = certInfo
   const buildAsarOption: BuildAsarOption = {
     version,
@@ -213,9 +211,6 @@ export function parseOptions(options: Options) {
   }
   let buildVersionOption: BuildVersionOption | undefined
   if (!isCI) {
-    if (typeof expires === 'number') {
-      expires = new Date(Date.now() + expires)
-    }
     // generate keys or get from file
     const { privateKey, cert } = parseKeys({
       keyLength,
@@ -223,8 +218,7 @@ export function parseOptions(options: Options) {
       certPath,
       entryPath,
       subject,
-      expires,
-      generateKeyPair,
+      days,
     })
     buildVersionOption = {
       version,

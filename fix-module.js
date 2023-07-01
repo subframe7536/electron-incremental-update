@@ -7,7 +7,7 @@ generate(exp, __dirname)
 console.log('fix finish')
 function generate(exportMap, ROOT_PATH) {
   for (const ex of Object.keys(exportMap)) {
-    if (ex === '.') {
+    if (ex === '.' || exportMap[ex].require === undefined) {
       continue
     }
 

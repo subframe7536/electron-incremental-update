@@ -1,6 +1,6 @@
 import type { Plugin as VitePlugin } from 'vite'
 import { createLogger } from 'vite'
-import { buildAsar, buildEntry, buildVersion } from './build-plugins'
+import { buildAsar, buildEntry, buildVersion } from './build-plugins/build'
 import type { Options } from './build-plugins/option'
 import { parseOptions } from './build-plugins/option'
 

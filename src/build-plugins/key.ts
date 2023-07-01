@@ -1,23 +1,45 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { EOL } from 'node:os'
-import { generateKeyPairSync } from 'node:crypto'
-import type { KeyObject } from 'node:crypto'
-import { CertificateSigningRequest } from '@cyyynthia/jscert'
-import type { DistinguishedName } from '@cyyynthia/jscert'
-import type { GetKeysOption } from './option'
+import { execSync } from 'node:child_process'
+import type { CertSubject, DistinguishedName, GetKeysOption } from './option'
 
-export function generateCert(privateKey: KeyObject, dn: DistinguishedName, expires: Date) {
-  const csr = new CertificateSigningRequest(dn, privateKey, { digest: 'sha256' })
-  return csr.createSelfSignedCertificate(expires).toPem()
+export function generateKeyPair(keyLength: number, subject: CertSubject, days: number, privateKeyPath: string, certPath: string) {
+  const starter = `try {
+  require('selfsigned')
+} catch (e) {
+  console.error('to generate private key, please run "npm install --dev selfsigned"')
 }
-export function generateKeyPairDefault(length: number, subjects: DistinguishedName, expires: Date) {
-  const { privateKey: _key } = generateKeyPairSync('rsa', { modulusLength: length })
-  const cert = generateCert(_key, subjects, expires)
-  const privateKey = _key.export({ type: 'pkcs1', format: 'pem' }) as string
-  return {
-    privateKey,
-    cert,
+try {
+  const { existsSync, mkdirSync, writeFileSync } = require('node:fs')
+  const { dirname } = require('node:path')
+  const { generate } = require('selfsigned')
+  const privateKeyPath = '${privateKeyPath.replace(/\\/g, '/')}'
+  const certPath = '${certPath.replace(/\\/g, '/')}'
+  const privateKeyDir = dirname(privateKeyPath)
+  existsSync(privateKeyDir) || mkdirSync(privateKeyDir, { recursive: true })
+  const certDir = dirname(certPath)
+  existsSync(certDir) || mkdirSync(certDir, { recursive: true })
+
+  const { cert, private: privateKey } = generate(${JSON.stringify(subject)}, {
+    keySize: ${keyLength}, algorithm: 'sha256', days: ${days},
+  })
+
+  writeFileSync(privateKeyPath, privateKey.replace(/\\r/g, ''))
+  writeFileSync(certPath, cert.replace(/\\r/g, ''))
+} catch (e) {
+  console.error(e)
+  process.exit(-1)
+} finally {
+  process.exit(0)
+}
+`
+  const fileName = 'key-gen.js'
+  writeFileSync(`./${fileName}`, starter)
+  try {
+    execSync(`npx electron ${fileName}`, { stdio: 'inherit' })
+  } finally {
+    rmSync(`./${fileName}`)
   }
 }
 function writeCertToMain(entryPath: string, cert: string) {
@@ -58,28 +80,27 @@ export function parseKeys({
   certPath,
   entryPath,
   subject,
-  expires,
-  generateKeyPair,
+  days,
 }: GetKeysOption): { privateKey: string ; cert: string } {
   const keysDir = dirname(privateKeyPath)
   !existsSync(keysDir) && mkdirSync(keysDir)
 
-  let privateKey: string, cert: string
-
   if (!existsSync(privateKeyPath) || !existsSync(certPath)) {
-    const _func = generateKeyPair ?? generateKeyPairDefault
-    const keys = _func(keyLength, subject, expires)
-    privateKey = keys.privateKey
-    cert = keys.cert
-    writeFileSync(privateKeyPath, privateKey)
-    writeFileSync(certPath, cert)
-  } else {
-    privateKey = readFileSync(privateKeyPath, 'utf-8')
-    cert = readFileSync(certPath, 'utf-8')
+    generateKeyPair(keyLength, parseSubjects(subject), days, privateKeyPath, certPath)
   }
+  const privateKey = readFileSync(privateKeyPath, 'utf-8')
+  const cert = readFileSync(certPath, 'utf-8')
   writeCertToMain(entryPath, cert)
   return {
     privateKey,
     cert,
   }
+}
+function parseSubjects(subject: DistinguishedName): CertSubject {
+  const ret = [] as CertSubject
+  Object.keys(subject).forEach((name: string) => {
+    const value = subject[name as keyof DistinguishedName]
+    value && ret.push({ name, value })
+  })
+  return ret
 }
