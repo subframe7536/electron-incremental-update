@@ -61,7 +61,7 @@ import { name, repository } from '../package.json'
 const SIGNATURE_CERT = '' // auto generate certificate when start app
 
 // create updater when init, no need to set productName
-initApp({ name }, { SIGNATURE_CERT, repository })
+initApp({ onStart: console.log }, { productName: name, SIGNATURE_CERT, repository })
 
 // or create updater manually
 const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
@@ -73,7 +73,7 @@ const updater = createUpdater({
   releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
   debug: true,
 })
-initApp({ name }).setUpdater(updater)
+initApp().setUpdater(updater)
 ```
 
 ### usage in main process
@@ -115,7 +115,7 @@ const startup: StartupWithUpdater = (updater: Updater) => {
         buttons: ['Download', 'Later'],
         message: 'Application update available!',
       })
-      response === 0 && console.log(await updater.downloadAndInstall())
+      response === 0 && console.log(await updater.download())
     }
   })
 }
@@ -201,9 +201,9 @@ export default defineConfig(({ command }) => {
 ### electron-builder config
 
 ```js
-const { name, version } = require('./package.json')
+const { name } = require('./package.json')
 
-const target = `${name}-${version}.asar`
+const target = `${name}.asar`
 /**
  * @type {import('electron-builder').Configuration}
  */

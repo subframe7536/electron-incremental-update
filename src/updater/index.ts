@@ -9,33 +9,39 @@ import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } fro
 import type { CheckResultType, InstallResult, UpdateJSON, Updater, UpdaterOption } from './types'
 import { isUpdateJSON } from './types'
 
-export function createUpdater({
-  SIGNATURE_CERT,
-  repository,
-  productName,
-  releaseAsarURL: _release,
-  updateJsonURL: _update,
-  debug = false,
-  downloadConfig: { extraHeader, userAgent } = {},
-  overrideFunctions: {
-    compareVersion,
-    verifySignaure,
-    downloadBuffer,
-    downloadJSON,
-  } = {},
-}: UpdaterOption): Updater {
+/**
+ * Creates an updater based on the provided options
+ */
+export function createUpdater(updaterOptions: UpdaterOption): Updater {
+  const {
+    SIGNATURE_CERT,
+    repository,
+    productName,
+    releaseAsarURL: _release,
+    updateJsonURL: _update,
+    debug = false,
+    downloadConfig: { extraHeader, userAgent } = {},
+    overrideFunctions: {
+      compareVersion,
+      verifySignaure,
+      downloadBuffer,
+      downloadJSON,
+    } = {},
+  } = updaterOptions
+
   // hack to make typesafe
   const updater = new EventEmitter() as unknown as Updater
 
   let signature: string | undefined
   let version: string | undefined
+  let _debug = debug
 
   const asarPath = getProductAsarPath(productName)
   const gzipPath = `${asarPath}.gz`
   const tmpFilePath = `${asarPath}.tmp`
 
   function log(msg: string | Error) {
-    debug && updater.emit('debug', msg)
+    _debug && updater.emit('debug', msg)
   }
 
   function needUpdate(version: string) {
@@ -125,7 +131,7 @@ export function createUpdater({
     }
   }
   updater.productName = productName
-  updater.setDebugMode = (isDebug: boolean) => debug = isDebug
+  updater.setDebugMode = (isDebug: boolean) => _debug = isDebug
   updater.checkUpdate = async (data?: string | UpdateJSON): Promise<CheckResultType> => {
     try {
       const { signature: _sig, size, version: _ver } = await parseData('json', data)

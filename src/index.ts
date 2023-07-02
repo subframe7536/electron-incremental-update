@@ -18,7 +18,13 @@ export type AppOption = {
    * @default 'main/index.js'
    */
   mainPath?: string
-  onStart?: (entryPath: string) => void
+  /**
+   * hooks for start up
+   */
+  onStart?: (productAsarPath: string) => void
+  /**
+   * hooks for start up error
+   */
   onStartError?: (err: unknown) => void
 }
 export type StartupWithUpdater = (updater: Updater) => void
@@ -56,7 +62,7 @@ export function initApp(
  *
  * const SIGNATURE_CERT = '' // auto generate
  *
- * initApp({ productName: name, SIGNATURE_CERT, repository })
+ * initApp({ onStart: console.log }, { productName: name, SIGNATURE_CERT, repository })
  * ```
  */
 export function initApp(
