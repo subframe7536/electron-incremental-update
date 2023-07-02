@@ -25,8 +25,8 @@ try {
     keySize: ${keyLength}, algorithm: 'sha256', days: ${days},
   })
 
-  writeFileSync(privateKeyPath, privateKey.replace(/\\r/g, ''))
-  writeFileSync(certPath, cert.replace(/\\r/g, ''))
+  writeFileSync(privateKeyPath, privateKey.replace(/\\r\\n?/g, '\\n'))
+  writeFileSync(certPath, cert.replace(/\\r\\n?/g, '\\n'))
 } catch (e) {
   console.error(e)
   process.exit(-1)

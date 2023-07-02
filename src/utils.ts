@@ -1,6 +1,6 @@
-import { createReadStream, createWriteStream, existsSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { createGunzip, createGzip } from 'node:zlib'
+import { gunzip, gzip } from 'node:zlib'
 import { app } from 'electron'
 
 /**
@@ -8,7 +8,7 @@ import { app } from 'electron'
  * @param name The name of the application
  */
 export function getProductAsarPath(name: string) {
-  return app.isPackaged ? join(dirname(app.getAppPath()), `${name}.asar`) : 'dev'
+  return app.isPackaged ? join(dirname(app.getAppPath()), `${name}.asar`) : 'dev.asar'
 }
 
 /**
@@ -99,23 +99,17 @@ export async function unzipFile(gzipPath: string, targetFilePath: string) {
     throw new Error(`path to zipped file not exist: ${gzipPath}`)
   }
 
-  return new Promise((resolve, reject) => {
-    const gunzip = createGunzip()
-    const input = createReadStream(gzipPath)
-    const output = createWriteStream(targetFilePath)
+  const compressedBuffer = readFileSync(gzipPath)
 
-    input
-      .pipe(gunzip)
-      .pipe(output)
-      .on('finish', () => {
-        rmSync(gzipPath)
-        resolve(null)
-      })
-      .on('error', (err) => {
-        rmSync(gzipPath)
-        output.destroy(err)
+  return new Promise((resolve, reject) => {
+    gunzip(compressedBuffer, (err, buffer) => {
+      rmSync(gzipPath)
+      if (err) {
         reject(err)
-      })
+      }
+      writeFileSync(targetFilePath, buffer)
+      resolve(null)
+    })
   })
 }
 
@@ -123,16 +117,15 @@ export async function zipFile(filePath: string, targetFilePath = `${filePath}.gz
   if (!existsSync(filePath)) {
     throw new Error(`path to be zipped not exist: ${filePath}`)
   }
+  const buffer = readFileSync(filePath)
   return new Promise((resolve, reject) => {
-    const gzip = createGzip()
-    const input = createReadStream(filePath)
-    const output = createWriteStream(targetFilePath)
-
-    input
-      .pipe(gzip)
-      .pipe(output)
-      .on('finish', () => resolve(null))
-      .on('error', err => reject(err))
+    gzip(buffer, (err, buffer) => {
+      if (err) {
+        reject(err)
+      }
+      writeFileSync(targetFilePath, buffer)
+      resolve(null)
+    })
   })
 }
 

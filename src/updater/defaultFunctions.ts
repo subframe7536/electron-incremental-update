@@ -67,12 +67,15 @@ export async function downloadBufferDefault(url: string, updater: Updater, heade
   })
 }
 export const compareVersionDefault: FunctionCompareVersion = (oldVersion, newVersion) => {
-  if (!oldVersion || !newVersion) {
+  if (!oldVersion || !newVersion || typeof oldVersion !== 'string' || typeof newVersion !== 'string') {
     throw new TypeError('invalid version')
   }
 
   const parseVersion = (version: string) => {
-    const [versionNumber, stage] = version.split('-')
+    const [versionNumber, stage] = version.split('-', 2)
+    if (!versionNumber || !versionNumber.includes('.')) {
+      throw new TypeError('invalid version')
+    }
     const [major, minor, patch] = versionNumber.split('.').map(Number)
 
     if (isNaN(major) || isNaN(minor) || isNaN(patch)) {

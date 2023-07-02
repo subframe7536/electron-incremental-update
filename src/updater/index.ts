@@ -1,8 +1,7 @@
 import { EventEmitter } from 'node:events'
 import { Buffer } from 'node:buffer'
-import { existsSync, rmSync } from 'node:fs'
-import { readFile, rename, rm, writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { existsSync } from 'node:fs'
+import { rm, writeFile } from 'node:fs/promises'
 import { app } from 'electron'
 import { verify } from '../crypto'
 import { getEntryVersion, getProductAsarPath, unzipFile } from '../utils'
@@ -28,12 +27,12 @@ export function createUpdater({
   // hack to make typesafe
   const updater = new EventEmitter() as unknown as Updater
 
-  let signature: string | undefined,
-    version: string | undefined
-  // asar path will not be used until in production mode, so the path will always correct
+  let signature: string | undefined
+  let version: string | undefined
+
   const asarPath = getProductAsarPath(productName)
   const gzipPath = `${asarPath}.gz`
-  const tmpFilePath = gzipPath.replace('.asar.gz', '.tmp.asar')
+  const tmpFilePath = `${asarPath}.tmp`
 
   function log(msg: string | Error) {
     debug && updater.emit('debug', msg)
@@ -125,7 +124,8 @@ export function createUpdater({
       throw new Error(`invalid type at format '${format}': ${data}`)
     }
   }
-  updater.setDebug = (isDebug: boolean) => debug = isDebug
+  updater.productName = productName
+  updater.setDebugMode = (isDebug: boolean) => debug = isDebug
   updater.checkUpdate = async (data?: string | UpdateJSON): Promise<CheckResultType> => {
     try {
       const { signature: _sig, size, version: _ver } = await parseData('json', data)
@@ -146,7 +146,7 @@ export function createUpdater({
       return error as Error
     }
   }
-  updater.downloadAndInstall = async (data?: string | Buffer, sig?: string): Promise<InstallResult> => {
+  updater.download = async (data?: string | Buffer, sig?: string): Promise<InstallResult> => {
     try {
       const _sig = sig ?? signature
       if (!_sig) {
@@ -162,28 +162,15 @@ export function createUpdater({
         throw new Error('verify failed, invalid signature')
       }
       log('verify success')
-      if (!needUpdate(_ver)) {
-        throw new Error(`update unavailable: ${_ver}`)
-      }
 
       // write file
-      log(`write file: ${gzipPath}`)
+      log(`write to ${gzipPath}`)
       await writeFile(gzipPath, buffer)
       // extract file to tmp path
-      log(`extract file: ${gzipPath}`)
+      log(`extract to ${tmpFilePath}`)
       await unzipFile(gzipPath, tmpFilePath)
 
-      // check asar version
-      const asarVersion = await readFile(resolve(tmpFilePath, 'version'), 'utf8')
-
-      if (asarVersion !== _ver) {
-        rmSync(tmpFilePath)
-        throw new Error(`update failed: asar version is ${asarVersion}, but it should be ${_ver}`)
-      } else {
-        await rename(tmpFilePath, asarPath)
-      }
-
-      log(`update success, version: ${_ver}`)
+      log(`download success, version: ${_ver}`)
       signature = ''
       return true
     } catch (error) {

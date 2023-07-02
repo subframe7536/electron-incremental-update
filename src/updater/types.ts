@@ -39,7 +39,7 @@ interface TypedUpdater<
    */
   checkUpdate(data?: string | UpdateJSON): Promise<CheckResultType>
   /**
-   * download update and install
+   * download update
    *
    * if you want to update **offline**, you can set both `src` and `sig` to verify and install
    * @param data asar download url or buffer
@@ -48,8 +48,9 @@ interface TypedUpdater<
    * - `true`: success
    * - `Error`: fail
    */
-  downloadAndInstall(data?: string | Buffer, sig?: string): Promise<InstallResult>
-  setDebug(debug: boolean): void
+  download(data?: string | Buffer, sig?: string): Promise<InstallResult>
+  setDebugMode(debug: boolean): void
+  productName: string
 }
 export type FunctionVerifySignature = (
   buffer: Buffer, signature: string, cert: string
@@ -110,7 +111,7 @@ export interface UpdaterOption {
      * custom version compare function {@link FunctionCompareVersion}
      * @param oldVersion old version string
      * @param newVersion new version string
-     * @returns whether to update
+     * @returns whether oldVersion < newVersion
      */
     compareVersion?: FunctionCompareVersion
     /**

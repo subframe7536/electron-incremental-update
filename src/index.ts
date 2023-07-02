@@ -1,30 +1,26 @@
 import { resolve } from 'node:path'
+import { existsSync, renameSync } from 'node:fs'
 import { app } from 'electron'
 import type { Updater, UpdaterOption } from './updater/types'
 import { createUpdater } from './updater'
+import { getProductAsarPath } from './utils'
 
 export * from './updater'
 
 export type AppOption = {
   /**
-   * name of your application
-  *
-   * you can use the `name` in `package.json`
-  */
-  name: string
-  /**
-   * path of electron output dist
+   * path of electron output dist when in development
    * @default 'dist-electron'
-  */
-  electronDistPath?: string
+   */
+  electronDevDistPath?: string
   /**
    * relative path of main entry in electron dist
    * @default 'main/index.js'
-  */
+   */
   mainPath?: string
+  onStart?: (entryPath: string) => void
+  onStartError?: (err: unknown) => void
 }
-type OptionalProperty<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
-export type InitUpdaterOptions = OptionalProperty<UpdaterOption, 'productName'>
 export type StartupWithUpdater = (updater: Updater) => void
 /**
  * create updater manually
@@ -44,7 +40,7 @@ export type StartupWithUpdater = (updater: Updater) => void
  *   releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
  *   debug: true,
  * })
- * initApp({ name }).setUpdater(updater)
+ * initApp().setUpdater(updater)
  * ```
  */
 export function initApp(
@@ -60,39 +56,60 @@ export function initApp(
  *
  * const SIGNATURE_CERT = '' // auto generate
  *
- * initApp({ name }, { SIGNATURE_CERT, repository })
+ * initApp({ productName: name, SIGNATURE_CERT, repository })
  * ```
  */
 export function initApp(
   appOptions: AppOption,
-  updaterOptions: InitUpdaterOptions,
+  updaterOptions: UpdaterOption,
 ): undefined
 export function initApp(
-  appOptions: AppOption,
-  updaterOptions?: InitUpdaterOptions,
-) {
-  const {
-    name: productName,
-    electronDistPath = 'dist-electron',
+  {
+    electronDevDistPath = 'dist-electron',
     mainPath = 'main/index.js',
-  } = appOptions ?? { }
+    onStart,
+    onStartError,
+  }: AppOption,
+  updaterOptions?: UpdaterOption,
+) {
+  function startup(updater: Updater) {
+    try {
+      const asarPath = getProductAsarPath(updater.productName)
 
-  const mainDir = app.isPackaged
-    ? `../${productName}.asar`
-    : electronDistPath
+      if (existsSync(`${asarPath}.tmp`)) {
+        renameSync(`${asarPath}.tmp`, asarPath)
+      }
 
-  const entry = resolve(__dirname, mainDir, mainPath)
+      const mainDir = app.isPackaged
+        ? asarPath
+        : electronDevDistPath
 
+      const entry = resolve(__dirname, mainDir, mainPath)
+      onStart?.(entry)
+      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+      require(entry)(updater)
+    } catch (error) {
+      if (onStartError) {
+        onStartError(error)
+      } else {
+        console.error('fail to start app,', error)
+        app.quit()
+        process.exit(1)
+      }
+    }
+  }
   if (updaterOptions) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-    require(entry)(
-      createUpdater({ ...updaterOptions, productName }),
-    )
+    startup(createUpdater(updaterOptions))
   } else {
+    let timer = setTimeout(() => {
+      console.error('start app timeout, please call .setUpdater() to set updater and start')
+      app.quit()
+      process.exit(1)
+    }, 3000)
     return {
       setUpdater(updater: Updater) {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-        require(entry)(updater)
+        clearTimeout(timer)
+        startup(updater)
       },
     }
   }
