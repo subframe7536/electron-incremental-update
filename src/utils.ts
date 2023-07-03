@@ -55,24 +55,36 @@ export function parseGithubCdnURL(repository: string, cdnPrefix: string, relativ
 }
 
 /**
+ * get group of github file CDN prefix for accelerating the speed of downloading release
+ */
+export function getGithubFileCdnGroup() {
+  return [
+    { cdnPrefix: 'cdn.jsdelivr.net/gh', source: 'jsdelivr' },
+    { cdnPrefix: 'fastly.jsdelivr.net/gh', source: 'jsdelivr-fastly' },
+    { cdnPrefix: 'cdn.statically.io/gh', source: 'statically' },
+    { cdnPrefix: 'rawcdn.githack.com/gh', source: 'githack' },
+    { cdnPrefix: 'raw.githack.com/gh', source: 'githack-dev' },
+  ]
+}
+/**
  * get group of github release CDN prefix for accelerating the speed of downloading release
  */
 export function getGithubReleaseCdnGroup() {
   return [
-    { cdnPrefix: 'gh.gh2233.ml', maintainer: '@X.I.U/XIU2' },
-    { cdnPrefix: 'ghproxy.com', maintainer: 'gh-proxy' },
-    { cdnPrefix: 'gh.ddlc.top', maintainer: '@mtr-static-official' },
-    { cdnPrefix: 'ghdl.feizhuqwq.cf', maintainer: 'feizhuqwq.com' },
-    { cdnPrefix: 'slink.ltd', maintainer: '知了小站' },
-    { cdnPrefix: 'git.xfj0.cn', maintainer: 'anonymous1' },
-    { cdnPrefix: 'gh.con.sh', maintainer: 'anonymous2' },
-    { cdnPrefix: 'ghps.cc', maintainer: 'anonymous3' },
-    { cdnPrefix: 'cors.isteed.cc/github.com', maintainer: 'Lufs\'s' },
-    { cdnPrefix: 'hub.gitmirror.com', maintainer: 'GitMirror' },
-    { cdnPrefix: 'js.xxooo.ml', maintainer: '饭太硬' },
-    { cdnPrefix: 'download.njuu.cf', maintainer: 'LibraryCloud-njuu' },
-    { cdnPrefix: 'download.yzuu.cf', maintainer: 'LibraryCloud-yzuu' },
-    { cdnPrefix: 'download.nuaa.cf', maintainer: 'LibraryCloud-nuaa' },
+    { cdnPrefix: 'gh.gh2233.ml', source: '@X.I.U/XIU2' },
+    { cdnPrefix: 'ghproxy.com', source: 'gh-proxy' },
+    { cdnPrefix: 'gh.ddlc.top', source: '@mtr-static-official' },
+    { cdnPrefix: 'ghdl.feizhuqwq.cf', source: 'feizhuqwq.com' },
+    { cdnPrefix: 'slink.ltd', source: '知了小站' },
+    { cdnPrefix: 'git.xfj0.cn', source: 'anonymous1' },
+    { cdnPrefix: 'gh.con.sh', source: 'anonymous2' },
+    { cdnPrefix: 'ghps.cc', source: 'anonymous3' },
+    { cdnPrefix: 'cors.isteed.cc/github.com', source: 'Lufs\'s' },
+    { cdnPrefix: 'hub.gitmirror.com', source: 'GitMirror' },
+    { cdnPrefix: 'js.xxooo.ml', source: '饭太硬' },
+    { cdnPrefix: 'download.njuu.cf', source: 'LibraryCloud-njuu' },
+    { cdnPrefix: 'download.yzuu.cf', source: 'LibraryCloud-yzuu' },
+    { cdnPrefix: 'download.nuaa.cf', source: 'LibraryCloud-nuaa' },
   ]
 }
 
