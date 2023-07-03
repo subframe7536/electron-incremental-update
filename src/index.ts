@@ -28,56 +28,48 @@ export type AppOption = {
   onStartError?: (err: unknown) => void
 }
 export type StartupWithUpdater = (updater: Updater) => void
+type SetUpdater = {
+  /**
+   * set updater option or create function
+   */
+  setUpdater: (updater: (() => Updater | Promise<Updater>) | UpdaterOption) => void
+}
+
 /**
  * create updater manually
  * @example
  * ```ts
- * import { createUpdater, getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
+ * import { getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
  * import { name, repository } from '../package.json'
  *
- * const SIGNATURE_CERT = '' // auto generate
+ * const SIGNATURE_CERT = '' // auto generate certificate when start app
  *
  * const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
- * const updater = createUpdater({
- *   SIGNATURE_CERT,
- *   productName: name,
- *   repository,
- *   updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
- *   releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
- *   debug: true,
- * })
- * initApp().setUpdater(updater)
+ * initApp({ onStart: console.log })
+ *   // can be updater option or function that return updater
+ *   .setUpdater({
+ *     SIGNATURE_CERT,
+ *     productName: name,
+ *     repository,
+ *     updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
+ *     releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
+ *     debug: true,
+ *   })
  * ```
  */
 export function initApp(
-  appOptions: AppOption,
-): { setUpdater: (updater: Updater) => void }
-/**
- * create updater when init, no need to set productName
- *
- * @example
- * ```ts
- * import { initApp } from 'electron-incremental-update'
- * import { name, repository } from '../package.json'
- *
- * const SIGNATURE_CERT = '' // auto generate
- *
- * initApp({ onStart: console.log }, { productName: name, SIGNATURE_CERT, repository })
- * ```
- */
-export function initApp(
-  appOptions: AppOption,
-  updaterOptions: UpdaterOption,
-): undefined
-export function initApp(
-  {
+  appOptions?: AppOption,
+): SetUpdater {
+  const {
     electronDevDistPath = 'dist-electron',
     mainPath = 'main/index.js',
     onStart,
     onStartError,
-  }: AppOption,
-  updaterOptions?: UpdaterOption,
-) {
+  } = appOptions || {}
+  function handleError(msg: string) {
+    onStartError?.(new Error(msg))
+    app.quit()
+  }
   function startup(updater: Updater) {
     try {
       const asarPath = getProductAsarPath(updater.productName)
@@ -95,28 +87,22 @@ export function initApp(
       // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
       require(entry)(updater)
     } catch (error) {
-      if (onStartError) {
-        onStartError(error)
-      } else {
-        console.error('fail to start app,', error)
-        app.quit()
-        process.exit(1)
-      }
+      handleError(`failed to start app, ${error}`)
     }
   }
-  if (updaterOptions) {
-    startup(createUpdater(updaterOptions))
-  } else {
-    let timer = setTimeout(() => {
-      console.error('start app timeout, please call .setUpdater() to set updater and start')
-      app.quit()
-      process.exit(1)
-    }, 3000)
-    return {
-      setUpdater(updater: Updater) {
-        clearTimeout(timer)
-        startup(updater)
-      },
-    }
+  let timer = setTimeout(() => {
+    handleError('start app timeout, please call .setUpdater() to set updater and start')
+  }, 3000)
+  return {
+    async setUpdater(updater: (() => Updater | Promise<Updater>) | UpdaterOption) {
+      clearTimeout(timer)
+      if (typeof updater === 'object') {
+        startup(createUpdater(updater))
+      } else if (typeof updater === 'function') {
+        startup(await updater())
+      } else {
+        handleError('invalid updater option or updater is not a function')
+      }
+    },
   }
 }

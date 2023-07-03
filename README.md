@@ -55,30 +55,27 @@ src
 
 ```ts
 // electron/app.ts
-import { createUpdater, getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
+import { getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
 import { name, repository } from '../package.json'
 
 const SIGNATURE_CERT = '' // auto generate certificate when start app
 
-// create updater when init, no need to set productName
-initApp({ onStart: console.log }, { productName: name, SIGNATURE_CERT, repository })
-
-// or create updater manually
 const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
-const updater = createUpdater({
-  SIGNATURE_CERT,
-  productName: name,
-  repository,
-  updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
-  releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
-  debug: true,
-})
-initApp().setUpdater(updater)
+initApp({ onStart: console.log })
+  // can be updater option or function that return updater
+  .setUpdater({
+    SIGNATURE_CERT,
+    productName: name,
+    repository,
+    updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
+    releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
+    debug: true,
+  })
 ```
 
 ### usage in main process
 
-To utilize the electron `net` module for requesting update information, the `checkUpdate` and `downloadAndInstall` functions must be called after the app is ready by default.
+To utilize the electron `net` module for requesting update information, the `checkUpdate` and `download` functions must be called after the app is ready by default.
 
 However, you have the option to customize the download function when creating the updater.
 
