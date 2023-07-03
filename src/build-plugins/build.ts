@@ -59,6 +59,6 @@ export async function buildEntry({
     platform: 'node',
     outfile,
     minify,
-    external: ['electron'],
+    external: ['electron', 'original-fs'],
   })
 }
