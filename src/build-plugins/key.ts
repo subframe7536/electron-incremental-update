@@ -1,46 +1,21 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { EOL } from 'node:os'
-import { execSync } from 'node:child_process'
+import { generate } from 'selfsigned'
 import type { CertSubject, DistinguishedName, GetKeysOption } from './option'
 
 export function generateKeyPair(keyLength: number, subject: CertSubject, days: number, privateKeyPath: string, certPath: string) {
-  const starter = `try {
-  require('selfsigned')
-} catch (e) {
-  console.error('to generate private key, please run "npm install --dev selfsigned"')
-}
-try {
-  const { existsSync, mkdirSync, writeFileSync } = require('node:fs')
-  const { dirname } = require('node:path')
-  const { generate } = require('selfsigned')
-  const privateKeyPath = '${privateKeyPath.replace(/\\/g, '/')}'
-  const certPath = '${certPath.replace(/\\/g, '/')}'
   const privateKeyDir = dirname(privateKeyPath)
   existsSync(privateKeyDir) || mkdirSync(privateKeyDir, { recursive: true })
   const certDir = dirname(certPath)
   existsSync(certDir) || mkdirSync(certDir, { recursive: true })
 
-  const { cert, private: privateKey } = generate(${JSON.stringify(subject)}, {
-    keySize: ${keyLength}, algorithm: 'sha256', days: ${days},
+  const { cert, private: privateKey } = generate(subject, {
+    keySize: keyLength, algorithm: 'sha256', days,
   })
 
-  writeFileSync(privateKeyPath, privateKey.replace(/\\r\\n?/g, '\\n'))
-  writeFileSync(certPath, cert.replace(/\\r\\n?/g, '\\n'))
-} catch (e) {
-  console.error(e)
-  process.exit(-1)
-} finally {
-  process.exit(0)
-}
-`
-  const fileName = 'key-gen.js'
-  writeFileSync(`./${fileName}`, starter)
-  try {
-    execSync(`npx electron ${fileName}`, { stdio: 'inherit' })
-  } finally {
-    rmSync(`./${fileName}`)
-  }
+  writeFileSync(privateKeyPath, privateKey.replace(/\r\n?/g, '\n'))
+  writeFileSync(certPath, cert.replace(/\r\n?/g, '\n'))
 }
 function writeCertToMain(entryPath: string, cert: string) {
   const file = readFileSync(entryPath, 'utf-8')
@@ -71,7 +46,7 @@ function writeCertToMain(entryPath: string, cert: string) {
     replaced = lines.join(EOL)
   }
 
-  writeFileSync(entryPath, replaced)
+  writeFileSync(entryPath, replaced.replace(/\r\n?/g, '\n'))
 }
 
 export function parseKeys({
