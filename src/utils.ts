@@ -26,17 +26,26 @@ export function getProductVersion(name: string) {
     ? readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
     : getEntryVersion()
 }
-
+export class NoSuchNativeModuleError extends Error {
+  constructor(moduleName: string) {
+    super(`no such native module: ${moduleName}`)
+  }
+}
 /**
  * require native package from app.asar
  * @param packageName native package name
+ * @throws error: {@link NoSuchNativeModuleError}
  */
 export function requireNative<T = any>(packageName: string): T {
   const path = app.isPackaged
     ? join(app.getAppPath(), 'node_modules', packageName)
     : packageName
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require(path)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require(path)
+  } catch (error) {
+    throw new NoSuchNativeModuleError(packageName)
+  }
 }
 
 /**
@@ -150,4 +159,17 @@ export function handleUnexpectedErrors(callback: (err: Error) => void) {
   }
   process.on('uncaughtException', listener)
   process.on('unhandledRejection', listener)
+}
+
+export function parseVersion(version: string) {
+  const semver = /^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9\.-]+))?/i
+  const match = semver.exec(version)
+  if (!match) {
+    throw new TypeError(`invalid version: ${version}`)
+  }
+  const [major, minor, patch] = match.slice(1, 4).map(Number)
+  if (isNaN(major) || isNaN(minor) || isNaN(patch)) {
+    throw new TypeError(`invalid version: ${version}`)
+  }
+  return { major, minor, patch, stage: match[4] }
 }

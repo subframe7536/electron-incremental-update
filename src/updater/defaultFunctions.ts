@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer'
 import { net } from 'electron'
-import { waitAppReady } from '../utils'
+import { parseVersion, waitAppReady } from '../utils'
 import type { FunctionCompareVersion, UpdateJSON, Updater } from './types'
 import { isUpdateJSON } from './types'
 
@@ -67,24 +67,6 @@ export async function downloadBufferDefault(url: string, updater: Updater, heade
   })
 }
 export const compareVersionDefault: FunctionCompareVersion = (oldVersion, newVersion) => {
-  if (!oldVersion || !newVersion || typeof oldVersion !== 'string' || typeof newVersion !== 'string') {
-    throw new TypeError('invalid version')
-  }
-
-  const parseVersion = (version: string) => {
-    const [versionNumber, stage] = version.split('-', 2)
-    if (!versionNumber || !versionNumber.includes('.')) {
-      throw new TypeError('invalid version')
-    }
-    const [major, minor, patch] = versionNumber.split('.').map(Number)
-
-    if (isNaN(major) || isNaN(minor) || isNaN(patch)) {
-      throw new TypeError('invalid version')
-    }
-
-    return { major, minor, patch, stage }
-  }
-
   const oldV = parseVersion(oldVersion)
   const newV = parseVersion(newVersion)
 
