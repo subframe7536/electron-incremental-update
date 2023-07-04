@@ -43,10 +43,8 @@
     "updater"
   ],
   "devDependencies": {
-    "@electron/asar": "^3.2.4",
     "@subframe7536/eslint-config": "^0.1.9",
     "@types/node": "^20.3.2",
-    "asar": "^3.2.0",
     "bumpp": "^9.1.1",
     "electron": "^25.2.0",
     "eslint": "^8.43.0",
@@ -56,6 +54,7 @@
     "vitest": "^0.32.2"
   },
   "dependencies": {
+    "@electron/asar": "^3.2.4",
     "ci-info": "^3.8.0",
     "selfsigned": "^2.1.1"
   }

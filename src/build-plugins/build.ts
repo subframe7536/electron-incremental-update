@@ -1,24 +1,10 @@
 import { readFile, rename, writeFile } from 'node:fs/promises'
+import { createPackage } from '@electron/asar'
 import { build } from 'esbuild'
 import { signature } from '../crypto'
 import { zipFile } from '../utils'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 
-async function pack(dir: string, target: string) {
-  let asar: null | { createPackage: any } = null
-  try {
-    asar = await import('asar')
-  } catch (ignore) { }
-  if (!asar) {
-    try {
-      asar = await import('@electron/asar')
-    } catch (ignore) { }
-  }
-  if (!asar) {
-    throw new Error('no asar, please install @electron/asar')
-  }
-  await asar.createPackage(dir, target)
-}
 export async function buildAsar({
   version,
   asarOutputPath,
@@ -28,7 +14,7 @@ export async function buildAsar({
 }: BuildAsarOption) {
   await rename(rendererDistPath, `${electronDistPath}/renderer`)
   await writeFile(`${electronDistPath}/version`, version)
-  await pack(electronDistPath, asarOutputPath)
+  await createPackage(electronDistPath, asarOutputPath)
   await zipFile(asarOutputPath, gzipPath)
 }
 export async function buildVersion({
