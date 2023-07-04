@@ -4,6 +4,7 @@ export type CheckResultType = Omit<UpdateJSON, 'signature'> | undefined | Error
 export type InstallResult = true | Error
 type UpdateEvents = {
   downloading: [progress: number]
+  downloadBuffer: [buffer:Buffer]
   debug: [msg: string | Error]
 }
 
@@ -49,7 +50,7 @@ interface TypedUpdater<
    * - `Error`: fail
    */
   download(data?: string | Buffer, sig?: string): Promise<InstallResult>
-  setDebugMode(debug: boolean): void
+  debugMode: boolean
   productName: string
 }
 export type FunctionVerifySignature = (

@@ -2,7 +2,6 @@ import { EventEmitter } from 'node:events'
 import { Buffer } from 'node:buffer'
 import { existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
-import { app } from 'electron'
 import { verify } from '../crypto'
 import { getEntryVersion, getProductAsarPath, unzipFile } from '../utils'
 import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
@@ -34,22 +33,16 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
 
   let signature: string | undefined
   let version: string | undefined
-  let _debug = debug
 
   const asarPath = getProductAsarPath(productName)
   const gzipPath = `${asarPath}.gz`
   const tmpFilePath = `${asarPath}.tmp`
 
   function log(msg: string | Error) {
-    _debug && updater.emit('debug', msg)
+    debug && updater.emit('debug', msg)
   }
 
   function needUpdate(version: string) {
-    if (!app.isPackaged) {
-      log('in dev mode, no need to update')
-      return false
-    }
-
     const currentVersion = getEntryVersion()
     log(`check update: current version is ${currentVersion}, new version is ${version}`)
 
@@ -125,13 +118,16 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
       log(`download ${format} from ${data}`)
       const ret = await info.fn(data, updater, headers)
       log(`download ${format} success${format === 'buffer' ? `, file size: ${(ret as Buffer).length}` : ''}`)
+      if (format === 'buffer') {
+        updater.emit('downloadBuffer', ret as Buffer)
+      }
       return ret
     } else {
       throw new Error(`invalid type at format '${format}': ${data}`)
     }
   }
   updater.productName = productName
-  updater.setDebugMode = (isDebug: boolean) => _debug = isDebug
+  updater.debugMode = debug
   updater.checkUpdate = async (data?: string | UpdateJSON): Promise<CheckResultType> => {
     try {
       const { signature: _sig, size, version: _ver } = await parseData('json', data)
@@ -158,6 +154,8 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
       if (!_sig) {
         throw new Error('signature are not set, please checkUpdate first or set the second parameter')
       }
+
+      // if typeof data is Buffer, the version will not be used
       const buffer = await parseData('buffer', data, version)
 
       // verify update file
