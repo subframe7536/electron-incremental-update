@@ -1,9 +1,9 @@
 import { Buffer } from 'node:buffer'
 import { net } from 'electron'
 import { parseVersion, waitAppReady } from '../utils'
-import type { FunctionCompareVersion, Updater } from './types'
 import type { UpdateJSON } from '../updateJson'
 import { isUpdateJSON } from '../updateJson'
+import type { FunctionCompareVersion, Updater } from './types'
 
 export async function downloadJSONDefault(url: string, updater: Updater, headers: Record<string, any>) {
   await waitAppReady()

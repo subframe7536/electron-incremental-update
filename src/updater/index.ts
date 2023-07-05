@@ -7,7 +7,7 @@ import { getEntryVersion, getProductAsarPath, getProductVersion, unzipFile } fro
 import type { UpdateJSON } from '../updateJson'
 import { isUpdateJSON } from '../updateJson'
 import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
-import type { CheckResultType, InstallResult, Updater, UpdaterOption } from './types'
+import type { CheckResultType, DownloadResult, Updater, UpdaterOption } from './types'
 
 export class MinimumVersionError extends Error {
   currentVersion: string
@@ -16,6 +16,15 @@ export class MinimumVersionError extends Error {
     super(`current entry version is ${version}, less than the minimumVersion ${minimumVersion}`)
     this.currentVersion = version
     this.minVersion = minimumVersion
+  }
+}
+export class VerifyFailedError extends Error {
+  signature: string
+  cert: string
+  constructor(signature: string, cert: string) {
+    super('verify failed, invalid signature or certificate')
+    this.signature = signature
+    this.cert = cert
   }
 }
 /**
@@ -82,7 +91,7 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
       if ((format === 'json' && isUpdateJSON(data)) || (format === 'buffer' && Buffer.isBuffer(data))) {
         return data
       } else {
-        throw new Error(`invalid type at format '${format}': ${data}`)
+        throw new TypeError(`invalid type at format '${format}': ${data}`)
       }
     } else if (['string', 'undefined'].includes(typeof data)) {
       const ua = userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
@@ -127,7 +136,7 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
       }
       return ret
     } else {
-      throw new Error(`invalid type at format '${format}': ${data}`)
+      throw new TypeError(`invalid type at format '${format}': ${data}`)
     }
   }
   updater.productName = productName
@@ -165,7 +174,7 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
       return error as Error
     }
   }
-  updater.download = async (data?: string | Buffer, sig?: string): Promise<InstallResult> => {
+  updater.download = async (data?: string | Buffer, sig?: string): Promise<DownloadResult> => {
     try {
       const _sig = sig ?? signature
       if (!_sig) {
@@ -180,7 +189,7 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
       const _verify = verifySignaure ?? verify
       const _ver = await _verify(buffer, _sig, SIGNATURE_CERT)
       if (!_ver) {
-        throw new Error('verify failed, invalid signature')
+        throw new VerifyFailedError(_sig, SIGNATURE_CERT)
       }
       log('verify success')
 

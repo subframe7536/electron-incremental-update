@@ -1,11 +1,12 @@
 import type { Buffer } from 'node:buffer'
 import type { UpdateJSON } from '../updateJson'
+import type { MinimumVersionError, VerifyFailedError } from '.'
 
 export type CheckResultType = {
   size: number
   version: string
-} | undefined | Error
-export type InstallResult = true | Error
+} | undefined | Error | MinimumVersionError | TypeError
+export type DownloadResult = true | Error | VerifyFailedError | TypeError
 type UpdateEvents = {
   downloading: [progress: number]
   downloadBuffer: [buffer: Buffer]
@@ -27,7 +28,7 @@ export interface Updater {
    * @returns
    * - `{size: number, version: string}`: available
    * - `false`: unavailable
-   * - `Error`: fail
+   * - `Error`: fail ({@link MinimumVersionError} or other)
    */
   checkUpdate(data?: string | UpdateJSON): Promise<CheckResultType>
   /**
@@ -38,9 +39,9 @@ export interface Updater {
    * @param sig signature
    * @returns
    * - `true`: success
-   * - `Error`: fail
+   * - `Error`: fail ({@link VerifyFailedError} or other)
    */
-  download(data?: string | Buffer, sig?: string): Promise<InstallResult>
+  download(data?: string | Buffer, sig?: string): Promise<DownloadResult>
   debug: boolean
   productName: string
   receiveBeta: boolean
