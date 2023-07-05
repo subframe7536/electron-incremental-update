@@ -1,5 +1,6 @@
 import type { Buffer } from 'node:buffer'
 import { isCI } from 'ci-info'
+import type { UpdateJSON } from '../updateJson'
 import { parseKeys } from './key'
 
 export type DistinguishedName = {
@@ -30,10 +31,12 @@ export type BuildAsarOption = {
 export type BuildVersionOption = {
   gzipPath: string
   version: string
+  minimumVersion: string
   privateKey: string
   cert: string
   versionPath: string
   generateSignature?: FunctionGenerateSignature
+  generateVersionJson?: FunctionGenerateVersionJson
 }
 
 export type BuildEntryOption = {
@@ -51,7 +54,8 @@ export type GetKeysOption = {
   days: number
 }
 
-export type FunctionGenerateSignature = (buffer: Buffer, privateKey: string, cert: string, version: string) => string
+export type FunctionGenerateSignature = (buffer: Buffer, privateKey: string, cert: string, version: string) => string | Promise<string>
+export type FunctionGenerateVersionJson = (existingJson: UpdateJSON, buffer: Buffer, signature: string, version: string, minVersion: string) => UpdateJSON | Promise<UpdateJSON>
 
 export type Options = {
   /**
@@ -70,6 +74,11 @@ export type Options = {
    * you can set as 'version' in `package.json`
    */
   version: string
+  /**
+   * mini version of entry
+   * @default version
+   */
+  minimumVersion?: string
   /**
    * Whether to minify entry file
    */
@@ -94,6 +103,11 @@ export type Options = {
      */
     asarOutputPath?: string
     /**
+     * Path to version info output, content is {@link UpdateJSON}
+     * @default `version.json`
+     */
+    versionPath?: string
+    /**
      * Path to gzipped asar file
      * @default `release/${productName}-${version}.asar.gz`
      */
@@ -108,11 +122,6 @@ export type Options = {
      * @default `dist`
      */
     rendererDistPath?: string
-    /**
-     * Path to version info output
-     * @default `version.json`
-     */
-    versionPath?: string
   }
   /**
    * signature config
@@ -162,6 +171,13 @@ export type Options = {
        * @param cert certificate
        */
       generateSignature?: FunctionGenerateSignature
+      /**
+       * custom signature generate function {@link FunctionGenerateVersionJson}
+       * @param signature generated signature
+       * @param version currentVersion
+       * @param cert certificate
+       */
+      generateVersionJson?: FunctionGenerateVersionJson
     }
   }
 }
@@ -171,6 +187,7 @@ export function parseOptions(options: Options) {
     isBuild,
     productName,
     version,
+    minimumVersion = version,
     minify = false,
     paths: {
       entryPath = 'electron/app.ts',
@@ -189,7 +206,7 @@ export function parseOptions(options: Options) {
       overrideFunctions = {},
     } = {},
   } = options
-  const { generateSignature } = overrideFunctions
+  const { generateSignature, generateVersionJson } = overrideFunctions
   let {
     subject = {
       commonName: productName,
@@ -222,11 +239,13 @@ export function parseOptions(options: Options) {
     })
     buildVersionOption = {
       version,
+      minimumVersion,
       gzipPath,
       privateKey,
       cert,
       versionPath,
       generateSignature,
+      generateVersionJson,
     }
   }
 

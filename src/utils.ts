@@ -27,8 +27,10 @@ export function getProductVersion(name: string) {
     : getEntryVersion()
 }
 export class NoSuchNativeModuleError extends Error {
+  moduleName: string
   constructor(moduleName: string) {
     super(`no such native module: ${moduleName}`)
+    this.moduleName = moduleName
   }
 }
 /**

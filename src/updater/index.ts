@@ -3,11 +3,21 @@ import { Buffer } from 'node:buffer'
 import { existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
 import { verify } from '../crypto'
-import { getEntryVersion, getProductAsarPath, unzipFile } from '../utils'
+import { getEntryVersion, getProductAsarPath, getProductVersion, unzipFile } from '../utils'
+import type { UpdateJSON } from '../updateJson'
+import { isUpdateJSON } from '../updateJson'
 import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
-import type { CheckResultType, InstallResult, UpdateJSON, Updater, UpdaterOption } from './types'
-import { isUpdateJSON } from './types'
+import type { CheckResultType, InstallResult, Updater, UpdaterOption } from './types'
 
+export class MinimumVersionError extends Error {
+  currentVersion: string
+  minVersion: string
+  constructor(version: string, minimumVersion: string) {
+    super(`current entry version is ${version}, less than the minimumVersion ${minimumVersion}`)
+    this.currentVersion = version
+    this.minVersion = minimumVersion
+  }
+}
 /**
  * Creates an updater based on the provided options
  */
@@ -19,6 +29,7 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
     releaseAsarURL: _release,
     updateJsonURL: _update,
     debug = false,
+    receiveBeta = false,
     downloadConfig: { extraHeader, userAgent } = {},
     overrideFunctions: {
       compareVersion,
@@ -42,28 +53,21 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
     debug && updater.emit('debug', msg)
   }
 
-  function needUpdate(version: string) {
-    const currentVersion = getEntryVersion()
-    log(`check update: current version is ${currentVersion}, new version is ${version}`)
+  async function needUpdate(version: string, minVersion: string) {
+    const compare = compareVersion ?? compareVersionDefault
+    const productVersion = getProductVersion(productName)
+    const entryVersion = getEntryVersion()
+    if (await compare(entryVersion, minVersion)) {
+      throw new MinimumVersionError(entryVersion, minVersion)
+    }
+    log(`check update: current version is ${productVersion}, new version is ${version}`)
 
-    const _compare = compareVersion ?? compareVersionDefault
-    return _compare(currentVersion, version)
+    return await compare(productVersion, version)
   }
 
-  async function parseData(
-    format: 'json',
-    data?: string | UpdateJSON,
-  ): Promise<UpdateJSON>
-  async function parseData(
-    format: 'buffer',
-    data?: string | Buffer,
-    version?: string
-  ): Promise<Buffer>
-  async function parseData(
-    format: 'json' | 'buffer',
-    data?: string | Buffer | UpdateJSON,
-    version?: string,
-  ) {
+  async function parseData(format: 'json', data?: string | UpdateJSON): Promise<UpdateJSON>
+  async function parseData(format: 'buffer', data?: string | Buffer, version?: string): Promise<Buffer>
+  async function parseData(format: 'json' | 'buffer', data?: string | Buffer | UpdateJSON, version?: string) {
     // remove tmp file
     if (existsSync(tmpFilePath)) {
       log(`remove tmp file: ${tmpFilePath}`)
@@ -127,14 +131,27 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
     }
   }
   updater.productName = productName
-  updater.debugMode = debug
+  updater.debug = debug
+  updater.receiveBeta = receiveBeta
   updater.checkUpdate = async (data?: string | UpdateJSON): Promise<CheckResultType> => {
     try {
-      const { signature: _sig, size, version: _ver } = await parseData('json', data)
+      let {
+        signature: _sig,
+        size,
+        version: _ver,
+        minimumVersion,
+        beta,
+      } = await parseData('json', data)
+      if (receiveBeta) {
+        _ver = beta.version
+        _sig = beta.signature
+        minimumVersion = beta.minimumVersion
+        size = beta.size
+      }
       log(`checked version: ${_ver}, size: ${size}, signature: ${_sig}`)
 
       // if not need update, return
-      if (!needUpdate(_ver)) {
+      if (!await needUpdate(_ver, minimumVersion)) {
         log(`update unavailable: ${_ver}`)
         return undefined
       } else {
@@ -161,7 +178,7 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
       // verify update file
       log('verify start')
       const _verify = verifySignaure ?? verify
-      const _ver = _verify(buffer, _sig, SIGNATURE_CERT)
+      const _ver = await _verify(buffer, _sig, SIGNATURE_CERT)
       if (!_ver) {
         throw new Error('verify failed, invalid signature')
       }
@@ -185,4 +202,4 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
   return updater
 }
 
-export type { FunctionCompareVersion, FunctionVerifySignature, UpdateJSON, Updater, UpdaterOption } from './types'
+export type { FunctionCompareVersion, FunctionVerifySignature, Updater, UpdaterOption } from './types'

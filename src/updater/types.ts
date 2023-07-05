@@ -1,35 +1,26 @@
 import type { Buffer } from 'node:buffer'
+import type { UpdateJSON } from '../updateJson'
 
-export type CheckResultType = Omit<UpdateJSON, 'signature'> | undefined | Error
+export type CheckResultType = {
+  size: number
+  version: string
+} | undefined | Error
 export type InstallResult = true | Error
 type UpdateEvents = {
   downloading: [progress: number]
-  downloadBuffer: [buffer:Buffer]
+  downloadBuffer: [buffer: Buffer]
   debug: [msg: string | Error]
 }
 
-export type UpdateJSON = {
-  signature: string
-  version: string
-  size: number
-}
-
-export function isUpdateJSON(json: any): json is UpdateJSON {
-  return 'signature' in json && 'version' in json && 'size' in json
-}
-
-type MaybeArray<T> = T extends undefined | null | never ? [] : T extends any[] ? T['length'] extends 1 ? [data: T[0]] : T : [data: T]
-interface TypedUpdater<
-  T extends Record<string | symbol, MaybeArray<any>>,
-  Event extends Exclude<keyof T, number> = Exclude<keyof T, number>,
-> {
-  removeAllListeners<E extends Event>(event?: E): this
-  listeners<E extends Event>(eventName: E): Function[]
-  eventNames(): (Event)[]
-  on<E extends Event>(eventName: E, listener: (...data: MaybeArray<T[E]>) => void): this
-  once<E extends Event>(eventName: E, listener: (...data: MaybeArray<T[E]>) => void): this
-  emit<E extends Event>(eventName: E, ...args: MaybeArray<T[E]>): boolean
-  off<E extends Event>(eventName: E, listener: (...args: MaybeArray<T[E]>) => void): this
+type Evt = Exclude<keyof UpdateEvents, number>
+export interface Updater {
+  removeAllListeners<E extends Evt>(event?: E): this
+  listeners<E extends Evt>(eventName: E): Function[]
+  eventNames(): Evt[]
+  on<E extends Evt>(eventName: E, listener: (...data: UpdateEvents[E]) => void): this
+  once<E extends Evt>(eventName: E, listener: (...data: UpdateEvents[E]) => void): this
+  emit<E extends Evt>(eventName: E, ...args: UpdateEvents[E]): boolean
+  off<E extends Evt>(eventName: E, listener: (...args: UpdateEvents[E]) => void): this
   /**
    * check update info
    * @param data update json url
@@ -50,14 +41,61 @@ interface TypedUpdater<
    * - `Error`: fail
    */
   download(data?: string | Buffer, sig?: string): Promise<InstallResult>
-  debugMode: boolean
+  debug: boolean
   productName: string
+  receiveBeta: boolean
 }
 export type FunctionVerifySignature = (
   buffer: Buffer, signature: string, cert: string
-) => string | false
-export type FunctionCompareVersion = (oldVersion: string, newVersion: string) => boolean
-export type Updater = TypedUpdater<UpdateEvents>
+) => string | false | Promise<string | false>
+export type FunctionCompareVersion = (oldVersion: string, newVersion: string) => boolean | Promise<boolean>
+export type FunctionDownloadBuffer = (url: string, updater: Updater, headers: Record<string, any>) => Promise<Buffer>
+export type FunctionDownloadJSON = (url: string, updater: Updater, headers: Record<string, any>) => Promise<UpdateJSON>
+
+export type UpdaterOverrideFunctions = {
+  /**
+   * custom version compare function {@link FunctionCompareVersion}
+   * @param oldVersion old version string
+   * @param newVersion new version string
+   * @returns whether oldVersion < newVersion
+   */
+  compareVersion?: FunctionCompareVersion
+  /**
+   * custom verify signature function {@link FunctionVerifySignature}
+   * @param buffer file buffer
+   * @param signature signature
+   * @param cert certificate
+   */
+  verifySignaure?: FunctionVerifySignature
+  /**
+   * custom download JSON function
+   * @param url download url
+   * @param updater updater, to trigger events
+   * @param header download header
+   * @returns `UpdateJSON`
+   */
+  downloadJSON?: FunctionDownloadJSON
+  /**
+   * custom download buffer function
+   * @param url download url
+   * @param updater updater, to trigger events
+   * @param header download header
+   * @returns `Buffer`
+   */
+  downloadBuffer?: FunctionDownloadBuffer
+}
+
+export type UpdaterDownloadConfig = {
+  /**
+   * download user agent
+   * @default 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
+   */
+  userAgent?: string
+  /**
+   * extra download header, `accept` and `user-agent` is set by default
+   */
+  extraHeader?: Record<string, string>
+}
 
 export interface UpdaterOption {
   /**
@@ -105,51 +143,10 @@ export interface UpdaterOption {
    * whether to enable debug listener
    */
   debug?: boolean
-  overrideFunctions?: {
-    /**
-     * custom version compare function {@link FunctionCompareVersion}
-     * @param oldVersion old version string
-     * @param newVersion new version string
-     * @returns whether oldVersion < newVersion
-     */
-    compareVersion?: FunctionCompareVersion
-    /**
-     * custom verify signature function {@link FunctionVerifySignature}
-     * @param buffer file buffer
-     * @param signature signature
-     * @param cert certificate
-     */
-    verifySignaure?: FunctionVerifySignature
-    /**
-     * custom download JSON function
-     * @param url download url
-     * @param updater updater, to trigger events
-     * @param header download header
-     * @returns `UpdateJSON`
-     */
-    downloadJSON?: (
-      url: string, updater: Updater, headers: Record<string, any>
-    ) => Promise<UpdateJSON>
-    /**
-     * custom download buffer function
-     * @param url download url
-     * @param updater updater, to trigger events
-     * @param header download header
-     * @returns `Buffer`
-     */
-    downloadBuffer?: (
-      url: string, updater: Updater, headers: Record<string, any>
-    ) => Promise<Buffer>
-  }
-  downloadConfig?: {
-    /**
-     * download user agent
-     * @default 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
-     */
-    userAgent?: string
-    /**
-     * extra download header, `accept` and `user-agent` is set by default
-     */
-    extraHeader?: Record<string, string>
-  }
+  /**
+   * whether to receive beta update
+   */
+  receiveBeta?: boolean
+  overrideFunctions?: UpdaterOverrideFunctions
+  downloadConfig?: UpdaterDownloadConfig
 }
