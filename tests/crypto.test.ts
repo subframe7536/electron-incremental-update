@@ -17,7 +17,7 @@ describe('test aes', async () => {
     expect(decrypt(e, k, iv)).toBe(plain)
   })
 })
-describe('test verify', () => {
+describe('test verify', async () => {
   const buffer = Buffer.from(plain, 'utf-8')
   const dir = join(__dirname.replace(/\\/g, '/'), '/keys')
   const privateKeyPath = join(dir, '/keys/key.pem')
@@ -26,7 +26,7 @@ describe('test verify', () => {
   const privateKey = readFileSync(privateKeyPath, { encoding: 'utf-8' })
   const cert = readFileSync(certPath, { encoding: 'utf-8' })
   const version = '0.0.0-alpha1'
-  const sig = signature(buffer, privateKey, cert, version)
+  const sig = await signature(buffer, privateKey, cert, version)
   test('verify passed', () => {
     expect(verify(buffer, sig, cert)).toBe(version)
   })

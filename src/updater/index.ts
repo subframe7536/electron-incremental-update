@@ -85,11 +85,11 @@ export class IncrementalUpdater implements Updater {
       await rm(this.gzipPath)
     }
 
-    if (['string', 'object', 'undefined'].includes(typeof data)) {
+    if (!['string', 'object', 'undefined'].includes(typeof data)) {
       throw new TypeError(`invalid type at format '${format}': ${data}`)
     }
 
-    if ((format === 'json' && isUpdateJSON(data)) || (format === 'buffer' && Buffer.isBuffer(data))) {
+    if (typeof data === 'object' && ((format === 'json' && isUpdateJSON(data)) || (format === 'buffer' && Buffer.isBuffer(data)))) {
       return data
     }
 
@@ -132,7 +132,9 @@ export class IncrementalUpdater implements Updater {
     }
     // fetch data from remote
     this.logger?.info(`download ${format} from ${data}`)
-    const ret = await config.fn(data, headers, this.info!.size, this.onDownloading)
+    const ret = format === 'json'
+      ? await (config.fn as typeof downloadJSONDefault)(data, headers)
+      : await (config.fn as typeof downloadBufferDefault)(data, headers, this.info!.size, this.onDownloading)
     this.logger?.info(`download ${format} success${format === 'buffer' ? `, file size: ${(ret as Buffer).length}` : ''}`)
     return ret
   }
@@ -150,7 +152,7 @@ export class IncrementalUpdater implements Updater {
 
       // if not need update, return
       if (!await this.needUpdate(version, minimumVersion)) {
-        this.logger?.info(`update unavailable: ${version}`)
+        this.logger?.info(`update unavailable: ${version} is the latest version`)
         return undefined
       } else {
         this.logger?.info(`update available: ${version}`)

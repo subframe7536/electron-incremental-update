@@ -60,11 +60,11 @@ export interface Updater {
 export type UpdaterOverrideFunctions = {
   /**
    * custom version compare function
-   * @param oldVersion old version string
-   * @param newVersion new version string
-   * @returns whether oldVersion < newVersion
+   * @param version1 old version string
+   * @param version2 new version string
+   * @returns whether version1 < version2
    */
-  compareVersion?: (oldVersion: string, newVersion: string) => boolean | Promise<boolean>
+  compareVersion?: (version1: string, version2: string) => boolean | Promise<boolean>
   /**
    * custom verify signature function
    * @param buffer file buffer

@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer'
 import { net } from 'electron'
+import type { Version } from '../utils'
 import { parseVersion, waitAppReady } from '../utils'
 import { isUpdateJSON } from '../updateJson'
 import type { UpdaterOverrideFunctions } from './types'
@@ -72,20 +73,25 @@ export const downloadBufferDefault: Func['downloadBuffer'] = async (url, headers
     request.end()
   })
 }
-export const compareVersionDefault: Func['compareVersion'] = (oldVersion, newVersion) => {
-  const oldV = parseVersion(oldVersion)
-  const newV = parseVersion(newVersion)
+export const compareVersionDefault: Func['compareVersion'] = (version1, version2) => {
+  const oldV = parseVersion(version1)
+  const newV = parseVersion(version2)
 
-  if (
-    oldV.major < newV.major
-    || (oldV.major === newV.major && oldV.minor < newV.minor)
-    || (oldV.major === newV.major && oldV.minor === newV.minor && oldV.patch < newV.patch)
-  ) {
-    return true
+  function compareStrings(str1: string, str2: string): boolean {
+    if (str1 === '') {
+      return str2 !== ''
+    } else if (str2 === '') {
+      return true
+    }
+    return str1 < str2
   }
 
-  if (oldV.stage < newV.stage || (!newV.stage && oldV.stage)) {
-    return true
+  for (let key of Object.keys(oldV) as Extract<keyof Version, string>[]) {
+    if (key === 'stage' && compareStrings(oldV[key], newV[key])) {
+      return true
+    } else if (oldV[key] !== newV[key]) {
+      return oldV[key] < newV[key]
+    }
   }
 
   return false
