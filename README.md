@@ -60,16 +60,17 @@ import { name, repository } from '../package.json'
 
 const SIGNATURE_CERT = '' // auto generate certificate when start app
 
-const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
+const { cdnPrefix: asarPrefix } = getGithubReleaseCdnGroup()[0]
+const { cdnPrefix: jsonPrefix } = getGithubFileCdnGroup()[0]
 initApp({ onStart: console.log })
   // can be updater option or function that return updater
   .setUpdater({
     SIGNATURE_CERT,
     productName: name,
     repository,
-    updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
-    releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
-    debug: true,
+    updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
+    releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${name}.asar.gz`),
+    receiveBeta: true
   })
 ```
 
@@ -94,18 +95,16 @@ const startup: StartupWithUpdater = (updater: Updater) => {
   console.log(`\tasar path: ${getProductAsarPath(name)}`)
   console.log(`\tentry:     ${getEntryVersion()}`)
   console.log(`\tapp:       ${getProductVersion(name)}`)
-  let size = 0
-  updater.on('downloading', (progress) => {
-    console.log(`${(progress / size).toFixed(2)}%`)
-  })
-  updater.on('debug', data => console.log('[updater]:', data))
+  updater.onDownloading = ({ percent }) => {
+    console.log(percent)
+  }
+  updater.logger = console
   updater.checkUpdate().then(async (result) => {
     if (result === undefined) {
       console.log('Update Unavailable')
     } else if (result instanceof Error) {
       console.error(result)
     } else {
-      size = result.size
       console.log('new version: ', result.version)
       const { response } = await dialog.showMessageBox({
         type: 'info',

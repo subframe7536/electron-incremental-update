@@ -44,16 +44,17 @@ type SetUpdater = {
  *
  * const SIGNATURE_CERT = '' // auto generate certificate when start app
  *
- * const { cdnPrefix } = getGithubReleaseCdnGroup()[0]
+ * const { cdnPrefix: asarPrefix } = getGithubReleaseCdnGroup()[0]
+ * const { cdnPrefix: jsonPrefix } = getGithubFileCdnGroup()[0]
  * initApp({ onStart: console.log })
  *   // can be updater option or function that return updater
  *   .setUpdater({
  *     SIGNATURE_CERT,
  *     productName: name,
  *     repository,
- *     updateJsonURL: parseGithubCdnURL(repository, 'fastly.jsdelivr.net/gh', 'version.json'),
- *     releaseAsarURL: parseGithubCdnURL(repository, cdnPrefix, `download/latest/${name}.asar.gz`),
- *     debug: true,
+ *     updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
+ *     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${name}.asar.gz`),
+ *     receiveBeta: true,
  *   })
  * ```
  */
