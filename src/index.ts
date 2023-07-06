@@ -74,6 +74,8 @@ export function initApp(
     try {
       const asarPath = getProductAsarPath(updater.productName)
 
+      // [todo) verify?
+      // apply updated asar
       if (existsSync(`${asarPath}.tmp`)) {
         renameSync(`${asarPath}.tmp`, asarPath)
       }

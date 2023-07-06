@@ -35,8 +35,8 @@ export type BuildVersionOption = {
   privateKey: string
   cert: string
   versionPath: string
-  generateSignature?: FunctionGenerateSignature
-  generateVersionJson?: FunctionGenerateVersionJson
+  generateSignature?: GeneratorOverrideFunctions['generateSignature']
+  generateVersionJson?: GeneratorOverrideFunctions['generateVersionJson']
 }
 
 export type BuildEntryOption = {
@@ -55,7 +55,27 @@ export type GetKeysOption = {
 }
 
 export type FunctionGenerateSignature = (buffer: Buffer, privateKey: string, cert: string, version: string) => string | Promise<string>
-export type FunctionGenerateVersionJson = (existingJson: UpdateJSON, buffer: Buffer, signature: string, version: string, minVersion: string) => UpdateJSON | Promise<UpdateJSON>
+
+export type GeneratorOverrideFunctions = {
+  /**
+   * custom signature generate function
+   * @param buffer file buffer
+   * @param privateKey private key
+   * @param cert certificate string, **EOL must be '\n'**
+   * @param version current version
+   */
+  generateSignature?: (buffer: Buffer, privateKey: string, cert: string, version: string) => string | Promise<string>
+  /**
+   * custom generate version json function
+   * @param existingJson The existing JSON object.
+   * @param buffer file buffer
+   * @param signature generated signature
+   * @param version current version
+   * @param minVersion The minimum version
+   * @returns The updated version json
+   */
+  generateVersionJson?: (existingJson: UpdateJSON, buffer: Buffer, signature: string, version: string, minVersion: string) => UpdateJSON | Promise<UpdateJSON>
+}
 
 export type Options = {
   /**
@@ -163,22 +183,7 @@ export type Options = {
        */
       days?: number
     }
-    overrideFunctions?: {
-      /**
-       * custom signature generate function {@link FunctionGenerateSignature}
-       * @param buffer file buffer
-       * @param privateKey private key
-       * @param cert certificate
-       */
-      generateSignature?: FunctionGenerateSignature
-      /**
-       * custom signature generate function {@link FunctionGenerateVersionJson}
-       * @param signature generated signature
-       * @param version currentVersion
-       * @param cert certificate
-       */
-      generateVersionJson?: FunctionGenerateVersionJson
-    }
+    overrideFunctions?: GeneratorOverrideFunctions
   }
 }
 

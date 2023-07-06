@@ -15,7 +15,7 @@ type UpdateEvents = {
 
 type Evt = Exclude<keyof UpdateEvents, number>
 export interface Updater {
-  removeAllListeners<E extends Evt>(event?: E): this
+  removeAllListeners<E extends Evt>(eventName?: E): this
   listeners<E extends Evt>(eventName: E): Function[]
   eventNames(): Evt[]
   on<E extends Evt>(eventName: E, listener: (...data: UpdateEvents[E]) => void): this
@@ -24,7 +24,7 @@ export interface Updater {
   off<E extends Evt>(eventName: E, listener: (...args: UpdateEvents[E]) => void): this
   /**
    * check update info
-   * @param data update json url
+   * @param data update json url or object
    * @returns
    * - `{size: number, version: string}`: available
    * - `false`: unavailable
@@ -46,28 +46,22 @@ export interface Updater {
   productName: string
   receiveBeta: boolean
 }
-export type FunctionVerifySignature = (
-  buffer: Buffer, signature: string, cert: string
-) => string | false | Promise<string | false>
-export type FunctionCompareVersion = (oldVersion: string, newVersion: string) => boolean | Promise<boolean>
-export type FunctionDownloadBuffer = (url: string, updater: Updater, headers: Record<string, any>) => Promise<Buffer>
-export type FunctionDownloadJSON = (url: string, updater: Updater, headers: Record<string, any>) => Promise<UpdateJSON>
-
 export type UpdaterOverrideFunctions = {
   /**
-   * custom version compare function {@link FunctionCompareVersion}
+   * custom version compare function
    * @param oldVersion old version string
    * @param newVersion new version string
    * @returns whether oldVersion < newVersion
    */
-  compareVersion?: FunctionCompareVersion
+  compareVersion?: (oldVersion: string, newVersion: string) => boolean | Promise<boolean>
   /**
-   * custom verify signature function {@link FunctionVerifySignature}
+   * custom verify signature function
    * @param buffer file buffer
    * @param signature signature
    * @param cert certificate
+   * @returns if signature is valid, returns the version or `true` , otherwise returns `false`
    */
-  verifySignaure?: FunctionVerifySignature
+  verifySignaure?: (buffer: Buffer, signature: string, cert: string) => string | boolean | Promise<string | boolean>
   /**
    * custom download JSON function
    * @param url download url
@@ -75,7 +69,7 @@ export type UpdaterOverrideFunctions = {
    * @param header download header
    * @returns `UpdateJSON`
    */
-  downloadJSON?: FunctionDownloadJSON
+  downloadJSON?: (url: string, updater: Updater, headers: Record<string, any>) => Promise<UpdateJSON>
   /**
    * custom download buffer function
    * @param url download url
@@ -83,7 +77,7 @@ export type UpdaterOverrideFunctions = {
    * @param header download header
    * @returns `Buffer`
    */
-  downloadBuffer?: FunctionDownloadBuffer
+  downloadBuffer?: (url: string, updater: Updater, headers: Record<string, any>) => Promise<Buffer>
 }
 
 export type UpdaterDownloadConfig = {

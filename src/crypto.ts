@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, createPrivateKey, createSign, createVerify } from 'node:crypto'
 import { Buffer } from 'node:buffer'
-import type { FunctionGenerateSignature } from './build-plugins/option'
-import type { FunctionVerifySignature } from './updater'
+import type { GeneratorOverrideFunctions } from './build-plugins/option'
+import type { UpdaterOverrideFunctions } from './updater/types'
 
 export function encrypt(plainText: string, key: Buffer, iv: Buffer): string {
   const cipher = createCipheriv('aes-256-cbc', key, iv)
@@ -22,7 +22,7 @@ export function key(data: string | Buffer, length: number) {
   return Buffer.from(hash).subarray(0, length)
 }
 
-export const signature: FunctionGenerateSignature = (buffer, privateKey, cert, version) => {
+export const signature: Required<GeneratorOverrideFunctions>['generateSignature'] = (buffer, privateKey, cert, version) => {
   const sig = createSign('RSA-SHA256')
     .update(buffer)
     .sign(createPrivateKey(privateKey), 'base64')
@@ -30,7 +30,7 @@ export const signature: FunctionGenerateSignature = (buffer, privateKey, cert, v
   return encrypt(`${sig}%${version}`, key(cert, 32), key(buffer, 16))
 }
 
-export const verify: FunctionVerifySignature = (buffer, signature, cert) => {
+export const verify: Required<UpdaterOverrideFunctions>['verifySignaure'] = (buffer, signature, cert) => {
   try {
     const [sig, version] = decrypt(signature, key(cert, 32), key(buffer, 16)).split('%')
     const result = createVerify('RSA-SHA256')

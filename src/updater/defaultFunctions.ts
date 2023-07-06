@@ -3,9 +3,11 @@ import { net } from 'electron'
 import { parseVersion, waitAppReady } from '../utils'
 import type { UpdateJSON } from '../updateJson'
 import { isUpdateJSON } from '../updateJson'
-import type { FunctionCompareVersion, Updater } from './types'
+import type { UpdaterOverrideFunctions } from './types'
 
-export async function downloadJSONDefault(url: string, updater: Updater, headers: Record<string, any>) {
+type Func = Required<UpdaterOverrideFunctions>
+
+export const downloadJSONDefault: Func['downloadJSON'] = async (url, updater, headers) => {
   await waitAppReady()
   return new Promise<UpdateJSON>((resolve, reject) => {
     const request = net.request({
@@ -39,7 +41,7 @@ export async function downloadJSONDefault(url: string, updater: Updater, headers
   })
 }
 
-export async function downloadBufferDefault(url: string, updater: Updater, headers: Record<string, any>) {
+export const downloadBufferDefault: Func['downloadBuffer'] = async (url, updater, headers) => {
   await waitAppReady()
   let progress = 0
   return new Promise<Buffer>((resolve, reject) => {
@@ -67,7 +69,7 @@ export async function downloadBufferDefault(url: string, updater: Updater, heade
     request.end()
   })
 }
-export const compareVersionDefault: FunctionCompareVersion = (oldVersion, newVersion) => {
+export const compareVersionDefault: Func['compareVersion'] = (oldVersion, newVersion) => {
   const oldV = parseVersion(oldVersion)
   const newV = parseVersion(newVersion)
 

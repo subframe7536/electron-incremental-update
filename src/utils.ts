@@ -19,6 +19,8 @@ export function getEntryVersion() {
 }
 /**
  * get the version of application (name.asar)
+ *
+ * if is dev, return {@link getEntryVersion}
  * @param name - The name of the application
  */
 export function getProductVersion(name: string) {
@@ -51,7 +53,7 @@ export function requireNative<T = any>(packageName: string): T {
 }
 
 /**
- * get github version.json CDN URL for accelerating the speed of downloading version info
+ * parse Github CDN URL for accelerating the speed of downloading
  */
 export function parseGithubCdnURL(repository: string, cdnPrefix: string, relativeFilePath: string) {
   if (!repository.startsWith('https://github.com/')) {
@@ -66,7 +68,7 @@ export function parseGithubCdnURL(repository: string, cdnPrefix: string, relativ
 }
 
 /**
- * get group of github file CDN prefix for accelerating the speed of downloading release
+ * get group of Github file CDN prefix for accelerating the speed of downloading project files
  */
 export function getGithubFileCdnGroup() {
   return [
@@ -98,13 +100,17 @@ export function getGithubReleaseCdnGroup() {
     { cdnPrefix: 'download.nuaa.cf', source: 'LibraryCloud-nuaa' },
   ]
 }
-
+/**
+ * Restarts the Electron app.
+ */
 export function restartApp() {
   app.relaunch()
   app.quit()
 }
-
-export function waitAppReady(duration = 1000) {
+/**
+ * ensure app is ready.
+ */
+export function waitAppReady(duration = 1000): Promise<void> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error('app is not ready'))
@@ -112,12 +118,12 @@ export function waitAppReady(duration = 1000) {
 
     app.whenReady().then(() => {
       clearTimeout(timeout)
-      resolve(null)
+      resolve()
     })
   })
 }
 
-export async function unzipFile(gzipPath: string, targetFilePath: string) {
+export async function unzipFile(gzipPath: string, targetFilePath = gzipPath.slice(0, -3)) {
   if (!existsSync(gzipPath)) {
     throw new Error(`path to zipped file not exist: ${gzipPath}`)
   }

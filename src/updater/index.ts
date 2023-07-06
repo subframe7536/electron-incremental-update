@@ -200,7 +200,7 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
       log(`extract to ${tmpFilePath}`)
       await unzipFile(gzipPath, tmpFilePath)
 
-      log(`download success, version: ${_ver}`)
+      log(`download success${typeof _ver === 'string' ? `, version: ${_ver}` : ''}`)
       signature = ''
       return true
     } catch (error) {
@@ -211,4 +211,4 @@ export function createUpdater(updaterOptions: UpdaterOption): Updater {
   return updater
 }
 
-export type { FunctionCompareVersion, FunctionVerifySignature, Updater, UpdaterOption } from './types'
+export type { Updater, UpdaterOption } from './types'
