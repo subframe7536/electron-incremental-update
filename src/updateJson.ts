@@ -1,4 +1,4 @@
-type UpdateInfo = {
+export type UpdateInfo = {
   signature: string
   minimumVersion: string
   version: string

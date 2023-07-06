@@ -1,15 +1,14 @@
 import { Buffer } from 'node:buffer'
 import { net } from 'electron'
 import { parseVersion, waitAppReady } from '../utils'
-import type { UpdateJSON } from '../updateJson'
 import { isUpdateJSON } from '../updateJson'
 import type { UpdaterOverrideFunctions } from './types'
 
 type Func = Required<UpdaterOverrideFunctions>
 
-export const downloadJSONDefault: Func['downloadJSON'] = async (url, updater, headers) => {
+export const downloadJSONDefault: Func['downloadJSON'] = async (url, headers) => {
   await waitAppReady()
-  return new Promise<UpdateJSON>((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const request = net.request({
       url,
       method: 'GET',
@@ -41,9 +40,9 @@ export const downloadJSONDefault: Func['downloadJSON'] = async (url, updater, he
   })
 }
 
-export const downloadBufferDefault: Func['downloadBuffer'] = async (url, updater, headers) => {
+export const downloadBufferDefault: Func['downloadBuffer'] = async (url, headers, total, onDownloading) => {
   await waitAppReady()
-  let progress = 0
+  let current = 0
   return new Promise<Buffer>((resolve, reject) => {
     const request = net.request({
       url,
@@ -56,8 +55,12 @@ export const downloadBufferDefault: Func['downloadBuffer'] = async (url, updater
     request.on('response', (res) => {
       let data: any[] = []
       res.on('data', (chunk) => {
-        progress += chunk.length
-        updater.emit('downloading', progress)
+        current += chunk.length
+        onDownloading?.({
+          percent: `${+((current / total).toFixed(2)) * 100}%`,
+          total,
+          current,
+        })
         data.push(chunk)
       })
       res.on('end', () => {

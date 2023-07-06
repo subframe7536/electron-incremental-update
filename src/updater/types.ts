@@ -7,21 +7,29 @@ export type CheckResultType = {
   version: string
 } | undefined | Error | MinimumVersionError | TypeError
 export type DownloadResult = true | Error | VerifyFailedError | TypeError
-type UpdateEvents = {
-  downloading: [progress: number]
-  downloadBuffer: [buffer: Buffer]
-  debug: [msg: string | Error]
+export type DownloadingInfo = {
+  /**
+   * downloaded percent, 0% - 100%
+   */
+  percent: string
+  /**
+   * total size
+   */
+  total: number
+  /**
+   * downloaded size
+   */
+  current: number
 }
-
-type Evt = Exclude<keyof UpdateEvents, number>
+export type Logger = {
+  info: (msg: string) => void
+  debug: (msg: string) => void
+  warn: (msg: string) => void
+  error: (msg: string, e?: Error) => void
+}
 export interface Updater {
-  removeAllListeners<E extends Evt>(eventName?: E): this
-  listeners<E extends Evt>(eventName: E): Function[]
-  eventNames(): Evt[]
-  on<E extends Evt>(eventName: E, listener: (...data: UpdateEvents[E]) => void): this
-  once<E extends Evt>(eventName: E, listener: (...data: UpdateEvents[E]) => void): this
-  emit<E extends Evt>(eventName: E, ...args: UpdateEvents[E]): boolean
-  off<E extends Evt>(eventName: E, listener: (...args: UpdateEvents[E]) => void): this
+  productName: string
+  receiveBeta: boolean
   /**
    * check update info
    * @param data update json url or object
@@ -30,7 +38,7 @@ export interface Updater {
    * - `false`: unavailable
    * - `Error`: fail ({@link MinimumVersionError} or other)
    */
-  checkUpdate(data?: string | UpdateJSON): Promise<CheckResultType>
+  checkUpdate: (data?: string | UpdateJSON) => Promise<CheckResultType>
   /**
    * download update
    *
@@ -41,10 +49,13 @@ export interface Updater {
    * - `true`: success
    * - `Error`: fail ({@link VerifyFailedError} or other)
    */
-  download(data?: string | Buffer, sig?: string): Promise<DownloadResult>
-  debug: boolean
-  productName: string
-  receiveBeta: boolean
+  download: (data?: string | Buffer, sig?: string) => Promise<DownloadResult>
+  /**
+   * log function
+   * @param data log info
+   */
+  logger?: Logger
+  onDownloading?: (progress: DownloadingInfo) => void
 }
 export type UpdaterOverrideFunctions = {
   /**
@@ -69,7 +80,7 @@ export type UpdaterOverrideFunctions = {
    * @param header download header
    * @returns `UpdateJSON`
    */
-  downloadJSON?: (url: string, updater: Updater, headers: Record<string, any>) => Promise<UpdateJSON>
+  downloadJSON?: (url: string, headers: Record<string, any>) => Promise<UpdateJSON>
   /**
    * custom download buffer function
    * @param url download url
@@ -77,7 +88,7 @@ export type UpdaterOverrideFunctions = {
    * @param header download header
    * @returns `Buffer`
    */
-  downloadBuffer?: (url: string, updater: Updater, headers: Record<string, any>) => Promise<Buffer>
+  downloadBuffer?: (url: string, headers: Record<string, any>, total: number, onDownloading?: (progress: DownloadingInfo) => void) => Promise<Buffer>
 }
 
 export type UpdaterDownloadConfig = {
@@ -134,10 +145,6 @@ export interface UpdaterOption {
    * @throws if `releaseAsarURL` and `repository` are all not set
    */
   releaseAsarURL?: string
-  /**
-   * whether to enable debug listener
-   */
-  debug?: boolean
   /**
    * whether to receive beta update
    */
