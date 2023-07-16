@@ -28,6 +28,13 @@ export class VerifyFailedError extends Error {
     this.cert = cert
   }
 }
+
+export class DownloadError extends Error {
+  constructor() {
+    super('download update error')
+  }
+}
+
 export class IncrementalUpdater implements Updater {
   private info?: UpdateInfo
   private option: UpdaterOption
@@ -132,11 +139,15 @@ export class IncrementalUpdater implements Updater {
     }
     // fetch data from remote
     this.logger?.info(`download ${format} from ${data}`)
-    const ret = format === 'json'
-      ? await (config.fn as typeof downloadJSONDefault)(data, headers)
-      : await (config.fn as typeof downloadBufferDefault)(data, headers, this.info!.size, this.onDownloading)
-    this.logger?.info(`download ${format} success${format === 'buffer' ? `, file size: ${(ret as Buffer).length}` : ''}`)
-    return ret
+    try {
+      const ret = format === 'json'
+        ? await (config.fn as typeof downloadJSONDefault)(data, headers)
+        : await (config.fn as typeof downloadBufferDefault)(data, headers, this.info!.size, this.onDownloading)
+      this.logger?.info(`download ${format} success${format === 'buffer' ? `, file size: ${(ret as Buffer).length}` : ''}`)
+      return ret
+    } catch (e) {
+      throw new DownloadError()
+    }
   }
 
   public async checkUpdate(data?: string | UpdateJSON): Promise<CheckResultType> {

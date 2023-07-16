@@ -1,12 +1,15 @@
 import type { Buffer } from 'node:buffer'
 import type { UpdateJSON } from '../updateJson'
-import type { MinimumVersionError, VerifyFailedError } from '.'
+import type { DownloadError, MinimumVersionError, VerifyFailedError } from '.'
+
+type CheckResultError = MinimumVersionError | DownloadError | TypeError | Error
+type DownloadResultError = DownloadError | VerifyFailedError | TypeError | Error
 
 export type CheckResultType = {
   size: number
   version: string
-} | undefined | Error | MinimumVersionError | TypeError
-export type DownloadResult = true | Error | VerifyFailedError | TypeError
+} | undefined | CheckResultError
+export type DownloadResult = true | DownloadResultError
 export type DownloadingInfo = {
   /**
    * downloaded percent, 0% - 100%
@@ -35,8 +38,8 @@ export interface Updater {
    * @param data update json url or object
    * @returns
    * - `{size: number, version: string}`: available
-   * - `false`: unavailable
-   * - `Error`: fail ({@link MinimumVersionError} or other)
+   * - `undefined`: unavailable
+   * - `CheckResultError`: fail
    */
   checkUpdate: (data?: string | UpdateJSON) => Promise<CheckResultType>
   /**
@@ -47,7 +50,7 @@ export interface Updater {
    * @param sig signature
    * @returns
    * - `true`: success
-   * - `Error`: fail ({@link VerifyFailedError} or other)
+   * - `DownloadResultError`: fail
    */
   download: (data?: string | Buffer, sig?: string) => Promise<DownloadResult>
   /**
