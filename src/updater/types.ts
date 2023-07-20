@@ -75,7 +75,7 @@ export type UpdaterOverrideFunctions = {
    * @param cert certificate
    * @returns if signature is valid, returns the version or `true` , otherwise returns `false`
    */
-  verifySignaure?: (buffer: Buffer, signature: string, cert: string) => string | boolean | Promise<string | boolean>
+  verifySignaure?: (buffer: Buffer, signature: string, cert: string) => string | false | Promise<string | false>
   /**
    * custom download JSON function
    * @param url download url

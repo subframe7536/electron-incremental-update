@@ -3,6 +3,5 @@ module.exports = {
   rules: {
     'import/default': 'off',
     'unused-imports/no-unused-imports': 'off',
-    'prefer-template': 'off',
   },
 }

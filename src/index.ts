@@ -18,14 +18,20 @@ export type AppOption = {
    * @default 'main/index.js'
    */
   mainPath?: string
-  /**
-   * hooks for start up
-   */
-  onStart?: (productAsarPath: string) => void
-  /**
-   * hooks for start up error
-   */
-  onStartError?: (err: unknown) => void
+  hooks?: {
+    /**
+     * hooks before replace the old asar is replaced by the new asar
+     */
+    beforeDoUpdate?: (updateTempAsarPath: string) => void | Promise<void>
+    /**
+     * hooks on start up
+     */
+    onStart?: (productAsarPath: string) => void
+    /**
+     * hooks on start up error
+     */
+    onStartError?: (err: unknown) => void
+  }
 }
 export type StartupWithUpdater = (updater: Updater) => void
 type SetUpdater = {
@@ -36,14 +42,13 @@ type SetUpdater = {
 }
 
 /**
- * create updater manually
+ * initialize app
  * @example
  * ```ts
  * import { getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
  * import { name, repository } from '../package.json'
  *
  * const SIGNATURE_CERT = '' // auto generate certificate when start app
- *
  * const { cdnPrefix: asarPrefix } = getGithubReleaseCdnGroup()[0]
  * const { cdnPrefix: jsonPrefix } = getGithubFileCdnGroup()[0]
  * initApp({ onStart: console.log })
@@ -64,20 +69,24 @@ export function initApp(
   const {
     electronDevDistPath = 'dist-electron',
     mainPath = 'main/index.js',
+    hooks,
+  } = appOptions || {}
+  const {
+    beforeDoUpdate,
     onStart,
     onStartError,
-  } = appOptions || {}
+  } = hooks || {}
   function handleError(msg: string) {
     onStartError?.(new Error(msg))
     app.quit()
   }
-  function startup(updater: Updater) {
+  async function startup(updater: Updater) {
     try {
       const asarPath = getProductAsarPath(updater.productName)
 
-      // [todo) verify?
       // apply updated asar
       if (existsSync(`${asarPath}.tmp`)) {
+        await beforeDoUpdate?.(asarPath)
         renameSync(`${asarPath}.tmp`, asarPath)
       }
 
@@ -100,9 +109,9 @@ export function initApp(
     async setUpdater(updater: (() => Updater | Promise<Updater>) | UpdaterOption) {
       clearTimeout(timer)
       if (typeof updater === 'object') {
-        startup(createUpdater(updater))
+        await startup(createUpdater(updater))
       } else if (typeof updater === 'function') {
-        startup(await updater())
+        await startup(await updater())
       } else {
         handleError('invalid updater option or updater is not a function')
       }

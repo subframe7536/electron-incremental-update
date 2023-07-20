@@ -30,8 +30,8 @@ export class VerifyFailedError extends Error {
 }
 
 export class DownloadError extends Error {
-  constructor() {
-    super('download update error')
+  constructor(msg: string) {
+    super(`download update error, ${msg}`)
   }
 }
 
@@ -146,7 +146,7 @@ export class IncrementalUpdater implements Updater {
       this.logger?.info(`download ${format} success${format === 'buffer' ? `, file size: ${(ret as Buffer).length}` : ''}`)
       return ret
     } catch (e) {
-      throw new DownloadError()
+      throw new DownloadError((e as object).toString())
     }
   }
 
@@ -207,7 +207,7 @@ export class IncrementalUpdater implements Updater {
       this.logger?.info(`extract to ${this.tmpFilePath}`)
       await unzipFile(this.gzipPath, this.tmpFilePath)
 
-      this.logger?.info(`download success${typeof _ver === 'string' ? `, version: ${_ver}` : ''}`)
+      this.logger?.info(`download success, version: ${_ver}`)
       this.info = undefined
       return true
     } catch (error) {
