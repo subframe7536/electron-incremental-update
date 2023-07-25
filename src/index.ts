@@ -7,6 +7,8 @@ import { getProductAsarPath } from './utils'
 
 export * from './updater'
 
+type Promisable<T> = T | Promise<T>
+
 export type AppOption = {
   /**
    * path of electron output dist when in development
@@ -21,12 +23,15 @@ export type AppOption = {
   hooks?: {
     /**
      * hooks before replace the old asar is replaced by the new asar
+     *
+     * @param oldAsarPath old asar path
+     * @param updateTempAsarPath new asar path, end with .tmp
      */
-    beforeDoUpdate?: (updateTempAsarPath: string) => void | Promise<void>
+    beforeDoUpdate?: (oldAsarPath: string, updateTempAsarPath: string) => Promisable<void>
     /**
-     * hooks on start up
+     * hooks before start up
      */
-    onStart?: (productAsarPath: string) => void
+    beforeStart?: (productAsarPath: string) => Promisable<void>
     /**
      * hooks on start up error
      */
@@ -38,7 +43,7 @@ type SetUpdater = {
   /**
    * set updater option or create function
    */
-  setUpdater: (updater: (() => Updater | Promise<Updater>) | UpdaterOption) => void
+  setUpdater: (updater: (() => Promisable<Updater>) | UpdaterOption) => void
 }
 
 /**
@@ -73,7 +78,7 @@ export function initApp(
   } = appOptions || {}
   const {
     beforeDoUpdate,
-    onStart,
+    beforeStart,
     onStartError,
   } = hooks || {}
   function handleError(msg: string) {
@@ -85,9 +90,10 @@ export function initApp(
       const asarPath = getProductAsarPath(updater.productName)
 
       // apply updated asar
-      if (existsSync(`${asarPath}.tmp`)) {
-        await beforeDoUpdate?.(asarPath)
-        renameSync(`${asarPath}.tmp`, asarPath)
+      const updateAsarPath = `${asarPath}.tmp`
+      if (existsSync(updateAsarPath)) {
+        await beforeDoUpdate?.(asarPath, updateAsarPath)
+        renameSync(updateAsarPath, asarPath)
       }
 
       const mainDir = app.isPackaged
@@ -95,7 +101,7 @@ export function initApp(
         : electronDevDistPath
 
       const entry = resolve(__dirname, mainDir, mainPath)
-      onStart?.(entry)
+      await beforeStart?.(entry)
       // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
       require(entry)(updater)
     } catch (error) {
@@ -106,7 +112,7 @@ export function initApp(
     handleError('start app timeout, please call .setUpdater() to set updater and start')
   }, 3000)
   return {
-    async setUpdater(updater: (() => Updater | Promise<Updater>) | UpdaterOption) {
+    async setUpdater(updater) {
       clearTimeout(timer)
       if (typeof updater === 'object') {
         await startup(createUpdater(updater))
