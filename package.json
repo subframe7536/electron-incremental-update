@@ -1,7 +1,7 @@
 {
   "name": "electron-incremental-update",
   "author": "subframe7536",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "electron incremental update tools, powered by vite",
   "scripts": {
     "build": "tsup && node fix-module.js",
