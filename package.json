@@ -43,15 +43,15 @@
     "updater"
   ],
   "devDependencies": {
-    "@subframe7536/eslint-config": "^0.1.9",
-    "@types/node": "^20.3.2",
+    "@subframe7536/eslint-config": "^0.2.1",
+    "@types/node": "^20.4.8",
     "bumpp": "^9.1.1",
-    "electron": "^25.2.0",
-    "eslint": "^8.43.0",
-    "tsup": "^7.1.0",
-    "typescript": "^5.1.5",
-    "vite": "^4.3.9",
-    "vitest": "^0.32.2"
+    "electron": "^25.4.0",
+    "eslint": "^8.46.0",
+    "tsup": "^7.2.0",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.8",
+    "vitest": "^0.34.1"
   },
   "dependencies": {
     "@electron/asar": "^3.2.4",

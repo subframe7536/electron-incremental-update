@@ -1,4 +1,3 @@
-import type { Buffer } from 'node:buffer'
 import { isCI } from 'ci-info'
 import type { UpdateJSON } from '../updateJson'
 import { parseKeys } from './key'

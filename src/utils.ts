@@ -6,6 +6,7 @@ import { app } from 'electron'
 /**
  * get the application asar absolute path
  * @param name The name of the application
+ * @todo support v8 bytecode
  */
 export function getProductAsarPath(name: string) {
   return app.isPackaged ? join(dirname(app.getAppPath()), `${name}.asar`) : 'dev.asar'
@@ -195,7 +196,7 @@ export function parseVersion(version: string): Version {
     ret.stage = stage
     ret.stageVersion = Number(_v) || -1
   }
-  if (isNaN(major) || isNaN(minor) || isNaN(patch) || isNaN(ret.stageVersion)) {
+  if (Number.isNaN(major) || Number.isNaN(minor) || Number.isNaN(patch) || Number.isNaN(ret.stageVersion)) {
     throw new TypeError(`invalid version: ${version}`)
   }
   return ret

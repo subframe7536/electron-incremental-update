@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import { join } from 'node:path/posix'
 import { readFileSync, rmSync } from 'node:fs'
 import { afterAll, describe, expect, test } from 'vitest'

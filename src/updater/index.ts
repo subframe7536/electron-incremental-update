@@ -1,14 +1,11 @@
 import { existsSync } from 'node:fs'
-import { Buffer } from 'node:buffer'
 import { rm, writeFile } from 'node:fs/promises'
 import { getEntryVersion, getProductAsarPath, getProductVersion, unzipFile } from '../utils'
 import { verify } from '../crypto'
 import type { UpdateInfo, UpdateJSON } from '../updateJson'
 import { isUpdateJSON } from '../updateJson'
-import type { CheckResultType, DownloadResult, DownloadingInfo, Logger } from './types'
+import type { CheckResultType, DownloadResult, DownloadingInfo, Logger, Updater, UpdaterOption } from './types'
 import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
-
-import type { Updater, UpdaterOption } from '.'
 
 export class MinimumVersionError extends Error {
   currentVersion: string

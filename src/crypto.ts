@@ -1,5 +1,4 @@
 import { createCipheriv, createDecipheriv, createHash, createPrivateKey, createSign, createVerify } from 'node:crypto'
-import { Buffer } from 'node:buffer'
 import type { GeneratorOverrideFunctions } from './build-plugins/option'
 import type { UpdaterOverrideFunctions } from './updater/types'
 

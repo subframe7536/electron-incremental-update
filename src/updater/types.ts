@@ -1,4 +1,3 @@
-import type { Buffer } from 'node:buffer'
 import type { UpdateJSON } from '../updateJson'
 import type { DownloadError, MinimumVersionError, VerifyFailedError } from '.'
 

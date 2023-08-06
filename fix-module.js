@@ -26,12 +26,12 @@ function generate(exportMap, ROOT_PATH) {
     })
 
     writeFileSync(
-      join(ROOT_PATH, ...folders, fileName + '.js'),
+      join(ROOT_PATH, ...folders, `${fileName}.js`),
       `module.exports = require('./${target}')`,
     )
 
     writeFileSync(
-      join(ROOT_PATH, ...folders, fileName + '.d.ts'),
+      join(ROOT_PATH, ...folders, `${fileName}.d.ts`),
       `export * from './${target.split('.')[0]}'`,
     )
   }

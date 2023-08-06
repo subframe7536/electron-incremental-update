@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import { net } from 'electron'
 import type { Version } from '../utils'
 import { parseVersion, waitAppReady } from '../utils'
