@@ -1,5 +1,29 @@
 import type { UpdateJSON } from '../updateJson'
-import type { DownloadError, MinimumVersionError, VerifyFailedError } from '.'
+
+export class MinimumVersionError extends Error {
+  currentVersion: string
+  minVersion: string
+  constructor(version: string, minimumVersion: string) {
+    super(`current entry version is ${version}, less than the minimumVersion ${minimumVersion}`)
+    this.currentVersion = version
+    this.minVersion = minimumVersion
+  }
+}
+export class VerifyFailedError extends Error {
+  signature: string
+  cert: string
+  constructor(signature: string, cert: string) {
+    super('verify failed, invalid signature or certificate')
+    this.signature = signature
+    this.cert = cert
+  }
+}
+
+export class DownloadError extends Error {
+  constructor(msg: string) {
+    super(`download update error, ${msg}`)
+  }
+}
 
 type CheckResultError = MinimumVersionError | DownloadError | TypeError | Error
 type DownloadResultError = DownloadError | VerifyFailedError | TypeError | Error
@@ -30,7 +54,13 @@ export type Logger = {
   error: (msg: string, e?: Error) => void
 }
 export interface Updater {
+  /**
+   * the name of the product, also the basename of the asar
+   */
   productName: string
+  /**
+   * whether receive beta version
+   */
   receiveBeta: boolean
   /**
    * check update info
@@ -57,6 +87,11 @@ export interface Updater {
    * @param data log info
    */
   logger?: Logger
+  /**
+   * download progress function
+   * @param progress download progress info
+   * @returns void
+   */
   onDownloading?: (progress: DownloadingInfo) => void
 }
 export type UpdaterOverrideFunctions = {
@@ -78,7 +113,6 @@ export type UpdaterOverrideFunctions = {
   /**
    * custom download JSON function
    * @param url download url
-   * @param updater updater, to trigger events
    * @param header download header
    * @returns `UpdateJSON`
    */
@@ -86,8 +120,9 @@ export type UpdaterOverrideFunctions = {
   /**
    * custom download buffer function
    * @param url download url
-   * @param updater updater, to trigger events
-   * @param header download header
+   * @param headers download header
+   * @param total precaculated file total size
+   * @param onDownloading on downloading callback
    * @returns `Buffer`
    */
   downloadBuffer?: (url: string, headers: Record<string, any>, total: number, onDownloading?: (progress: DownloadingInfo) => void) => Promise<Buffer>

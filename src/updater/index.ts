@@ -5,32 +5,8 @@ import { verify } from '../crypto'
 import type { UpdateInfo, UpdateJSON } from '../updateJson'
 import { isUpdateJSON } from '../updateJson'
 import type { CheckResultType, DownloadResult, DownloadingInfo, Logger, Updater, UpdaterOption } from './types'
+import { DownloadError, MinimumVersionError, VerifyFailedError } from './types'
 import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
-
-export class MinimumVersionError extends Error {
-  currentVersion: string
-  minVersion: string
-  constructor(version: string, minimumVersion: string) {
-    super(`current entry version is ${version}, less than the minimumVersion ${minimumVersion}`)
-    this.currentVersion = version
-    this.minVersion = minimumVersion
-  }
-}
-export class VerifyFailedError extends Error {
-  signature: string
-  cert: string
-  constructor(signature: string, cert: string) {
-    super('verify failed, invalid signature or certificate')
-    this.signature = signature
-    this.cert = cert
-  }
-}
-
-export class DownloadError extends Error {
-  constructor(msg: string) {
-    super(`download update error, ${msg}`)
-  }
-}
 
 export class IncrementalUpdater implements Updater {
   private info?: UpdateInfo
