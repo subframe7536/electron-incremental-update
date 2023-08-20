@@ -20,7 +20,7 @@ export function generateKeyPair(keyLength: number, subject: CertSubject, days: n
 function writeCertToMain(entryPath: string, cert: string) {
   const file = readFileSync(entryPath, 'utf-8')
 
-  const regex = /const SIGNATURE_CERT = ['`][\s\S]*?['`]/
+  const regex = /const SIGNATURE_CERT\s*=\s*['"`][\s\S]*?['"`]/
   const replacement = `const SIGNATURE_CERT = \`${cert}\``
 
   let replaced = file
