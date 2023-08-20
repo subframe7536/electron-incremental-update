@@ -10,6 +10,6 @@ export default defineConfig({
     'src/utils.ts',
     'src/updateJson.ts',
   ],
-  external: ['electron', 'asar', '@electron/asar', 'vite', 'esbuild'],
+  external: ['electron', 'esbuild'],
   outDir: 'dist',
 })

@@ -43,19 +43,19 @@
     "updater"
   ],
   "devDependencies": {
-    "@subframe7536/eslint-config": "^0.2.1",
-    "@types/node": "^20.4.8",
+    "@subframe7536/eslint-config": "^0.2.5",
+    "@types/node": "^20.5.1",
     "bumpp": "^9.1.1",
-    "electron": "^25.4.0",
-    "eslint": "^8.46.0",
+    "electron": "^26.0.0",
+    "eslint": "^8.47.0",
     "tsup": "^7.2.0",
     "typescript": "^5.1.6",
-    "vite": "^4.4.8",
-    "vitest": "^0.34.1"
+    "vitest": "^0.34.2"
   },
   "dependencies": {
     "@electron/asar": "^3.2.4",
     "ci-info": "^3.8.0",
-    "selfsigned": "^2.1.1"
+    "selfsigned": "^2.1.1",
+    "vite": "^4.4.9"
   }
 }

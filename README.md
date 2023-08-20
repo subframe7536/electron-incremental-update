@@ -1,22 +1,20 @@
 ## electron incremental updater
 
-provider a vite plugin and useful functions to generate updater and split entry file and real app
+This project provide a vite plugin, `Updater` class and some useful functions to generate incremental update.
 
-### principle
+There will be two asar in production, `app.asar` and `main.asar` (if "main" is your app's name).
 
-using two asar, `app.asar` and `main.asar` (if "main" is your app's name)
+The `app.asar` is used to load `main.asar` and initialize the `updater`. Also, all the **native modules**, which are set as `dependencies` in `package.json`, will be packaged into `app.asar` by `electron-builder`, [see usage](#use-native-modules).
 
-the `app.asar` is used to load `main.asar` and initialize the updater
-
-using RSA + Signature to sign the new `main.asar` downloaded from remote and replace the old one when verified
+The new `main.asar` downloaded from remote will be verified by presigned RSA + Signature. When pass the check and restart, the old `main.asar` will be replaced by the new one. Hooks like `beforeDoUpdate` are provided.
 
 - inspired by Obsidian's update strategy
 
 ### notice
 
-develop with [vite-plugin-electron](https://github.com/electron-vite/vite-plugin-electron), and may be effect in other electron vite frameworks
-
-**all options are documented in the jsdoc**
+- this plugin is developed with [vite-plugin-electron](https://github.com/electron-vite/vite-plugin-electron), and may be effect in other electron vite frameworks
+- **all options are documented in the jsdoc**
+- entry file's EOL will force to `\n`
 
 ## install
 
@@ -33,7 +31,7 @@ yarn add electron-incremental-update
 pnpm add electron-incremental-update
 ```
 
-## usage
+## setup
 
 base on [electron-vite-vue](https://github.com/electron-vite/electron-vite-vue)
 
@@ -51,7 +49,6 @@ src
 ```
 
 ### setup app
-
 
 ```ts
 // electron/app.ts
@@ -74,9 +71,102 @@ initApp({ onStart: console.log })
   })
 ```
 
-### usage in main process
+### setup vite.config.ts
 
-To utilize the electron `net` module for requesting update information, the `checkUpdate` and `download` functions must be called after the app is ready by default.
+make sure the plugin is set in the **last** build task
+
+- for `vite-plugin-electron`, set it to `preload` (the second object in the plugin option array)
+
+```ts
+// vite.config.ts
+export default defineConfig(({ command }) => {
+
+  const isBuild = command === 'build'
+  // ...
+
+  return {
+    plugins: [
+      electron([
+        // main
+        {
+          // ...
+        },
+        // preload
+        {
+          // ...
+          vite: {
+            plugins: [
+              updater({
+                productName: pkg.name,
+                version: pkg.version,
+                isBuild,
+              }),
+            ],
+            // ...
+          }
+        },
+        // when using vite-plugin-electron-renderer
+        {
+          // ...
+        }
+      ]),
+      //...
+    ],
+    // ...
+  }
+})
+```
+
+### modify package.json
+
+```json
+{
+  // ...
+  "main": "app.js" // <- app entry file
+}
+```
+
+### config electron-builder
+
+```js
+const { name } = require('./package.json')
+
+const target = `${name}.asar`
+/**
+ * @type {import('electron-builder').Configuration}
+ */
+module.exports = {
+  appId: 'YourAppID',
+  productName: name,
+  files: [
+    'app.js', // <- app entry file
+    '!**/{.eslintignore,.eslintrc.cjs,.editorconfig,.prettierignore,.prettierrc.yaml,dev-app-update.yml,LICENSE,.nvmrc,.npmrc}',
+    '!**/{tsconfig.json,tsconfig.node.json,tsconfig.web.json}',
+    '!**/*debug*.*',
+    '!**/*.{md,zip,map}',
+    '!**/*.{c,cpp,h,hpp,cc,hh,cxx,hxx,gypi,gyp,sh}',
+    '!**/.{github,vscode}',
+    '!node_modules/**/better-sqlite3/deps/**',
+  ],
+  asarUnpack: [
+    '**/*.{node,dll}',
+  ],
+  directories: {
+    output: 'release',
+  },
+  extraResources: [
+    { from: `release/${target}`, to: target }, // <- asar file
+  ],
+  publish: null, // <- disable publish
+  // ...
+}
+```
+
+## Usage
+
+### use in main process
+
+To use electron's `net` module for updating, the `checkUpdate` and `download` functions must be called after the app is ready by default.
 
 However, you have the option to customize the download function when creating the updater.
 
@@ -141,91 +231,4 @@ console.log(r)
 // [ { name: 'James', salary: 50000 } ]
 
 db.close()
-```
-
-### setup vite.config.ts
-
-make sure the plugin is set in the **last** build task plugin option
-
-- set it to preload task plugin, as the end of build task
-
-```ts
-// vite.config.ts
-export default defineConfig(({ command }) => {
-
-  const isBuild = command === 'build'
-  // ...
-
-  return {
-    plugins: [
-      electron([
-        // main
-        {
-          // ...
-        },
-        // preload
-        {
-          // ...
-          vite: {
-            plugins: [
-              updater({
-                productName: pkg.name,
-                version: pkg.version,
-                isBuild,
-              }),
-            ],
-            // ...
-          }
-        },
-      ]),
-      // ... other plugins
-    ],
-    // ... other config
-  }
-})
-```
-
-### modify package.json
-
-```json
-{
-  // ...
-  "main": "app.js" // <- app entry file
-}
-```
-
-### electron-builder config
-
-```js
-const { name } = require('./package.json')
-
-const target = `${name}.asar`
-/**
- * @type {import('electron-builder').Configuration}
- */
-module.exports = {
-  appId: 'YourAppID',
-  productName: name,
-  files: [
-    'app.js', // <- app entry file
-    '!**/{.eslintignore,.eslintrc.cjs,.editorconfig,.prettierignore,.prettierrc.yaml,dev-app-update.yml,LICENSE,.nvmrc,.npmrc}',
-    '!**/{tsconfig.json,tsconfig.node.json,tsconfig.web.json}',
-    '!**/*debug*.*',
-    '!**/*.{md,zip,map}',
-    '!**/*.{c,cpp,h,hpp,cc,hh,cxx,hxx,gypi,gyp,sh}',
-    '!**/.{github,vscode}',
-    '!node_modules/**/better-sqlite3/deps/**',
-  ],
-  asarUnpack: [
-    '**/*.{node,dll}',
-  ],
-  directories: {
-    output: 'release',
-  },
-  extraResources: [
-    { from: `release/${target}`, to: target }, // <- asar file
-  ],
-  publish: null,
-  // ...
-}
 ```
