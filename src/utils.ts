@@ -1,7 +1,22 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { gunzip, gzip } from 'node:zlib'
-import { app } from 'electron'
+import Electron from 'electron'
+
+type Info = {
+  dev: boolean
+  platform: 'win' | 'mac' | 'linux'
+  appPath: string
+}
+export const info: Info = {
+  dev: !Electron.app.isPackaged,
+  platform: process.platform === 'win32'
+    ? 'win'
+    : process.platform === 'darwin'
+      ? 'mac'
+      : 'linux',
+  appPath: Electron.app.getAppPath(),
+}
 
 /**
  * get the application asar absolute path
@@ -9,14 +24,14 @@ import { app } from 'electron'
  * @todo support v8 bytecode
  */
 export function getProductAsarPath(name: string) {
-  return app.isPackaged ? join(dirname(app.getAppPath()), `${name}.asar`) : 'dev.asar'
+  return info.dev ? join(dirname(info.appPath), `${name}.asar`) : 'dev.asar'
 }
 
 /**
  * get the version of entry (app.asar)
  */
 export function getEntryVersion() {
-  return app.getVersion()
+  return Electron.app.getVersion()
 }
 /**
  * get the version of application (name.asar)
@@ -25,7 +40,7 @@ export function getEntryVersion() {
  * @param name - The name of the application
  */
 export function getProductVersion(name: string) {
-  return app.isPackaged
+  return info.dev
     ? readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
     : getEntryVersion()
 }
@@ -42,8 +57,8 @@ export class NoSuchNativeModuleError extends Error {
  * @throws error: {@link NoSuchNativeModuleError}
  */
 export function requireNative<T = any>(packageName: string): T {
-  const path = app.isPackaged
-    ? join(app.getAppPath(), 'node_modules', packageName)
+  const path = info.dev
+    ? join(info.appPath, 'node_modules', packageName)
     : packageName
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -105,8 +120,8 @@ export function getGithubReleaseCdnGroup() {
  * Restarts the Electron app.
  */
 export function restartApp() {
-  app.relaunch()
-  app.quit()
+  Electron.app.relaunch()
+  Electron.app.quit()
 }
 /**
  * ensure app is ready.
@@ -117,7 +132,7 @@ export function waitAppReady(duration = 1000): Promise<void> {
       reject(new Error('app is not ready'))
     }, duration)
 
-    app.whenReady().then(() => {
+    Electron.app.whenReady().then(() => {
       clearTimeout(timeout)
       resolve()
     })

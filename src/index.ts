@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { existsSync, renameSync } from 'node:fs'
-import { app } from 'electron'
+import Electron from 'electron'
 import type { Updater, UpdaterOption } from './updater/types'
 import { createUpdater } from './updater'
 import { getProductAsarPath } from './utils'
@@ -83,7 +83,7 @@ export function initApp(
   } = hooks || {}
   function handleError(msg: string) {
     onStartError?.(new Error(msg))
-    app.quit()
+    Electron.app.quit()
   }
   async function startup(updater: Updater) {
     try {
@@ -96,7 +96,7 @@ export function initApp(
         renameSync(updateAsarPath, asarPath)
       }
 
-      const mainDir = app.isPackaged
+      const mainDir = Electron.app.isPackaged
         ? asarPath
         : electronDevDistPath
 

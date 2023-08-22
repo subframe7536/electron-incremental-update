@@ -1,7 +1,9 @@
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { createPackage } from '@electron/asar'
-import { build } from 'esbuild'
+import Asar from '@electron/asar'
+
+// import { build } from 'esbuild'
+import { build } from 'vite'
 import { signature } from '../crypto'
 import { parseVersion, zipFile } from '../utils'
 import { type UpdateJSON, isUpdateJSON } from '../updateJson'
@@ -16,7 +18,7 @@ export async function buildAsar({
 }: BuildAsarOption) {
   await rename(rendererDistPath, `${electronDistPath}/renderer`)
   await writeFile(`${electronDistPath}/version`, version)
-  await createPackage(electronDistPath, asarOutputPath)
+  await Asar.createPackage(electronDistPath, asarOutputPath)
   await zipFile(asarOutputPath, gzipPath)
 }
 
@@ -81,11 +83,19 @@ export async function buildEntry({
   minify,
 }: BuildEntryOption) {
   await build({
-    entryPoints: [entryPath],
-    bundle: true,
-    platform: 'node',
-    outfile,
-    minify,
-    external: ['electron', 'original-fs'],
+    build: {
+      lib: {
+        entry: entryPath,
+        formats: ['cjs'],
+      },
+      minify,
+      rollupOptions: {
+        treeshake: true,
+        external: ['electron', 'original-fs'],
+        output: {
+          file: outfile,
+        },
+      },
+    },
   })
 }
