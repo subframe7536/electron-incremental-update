@@ -24,7 +24,7 @@ export const info: Info = {
  * @todo support v8 bytecode
  */
 export function getProductAsarPath(name: string) {
-  return info.dev ? join(dirname(info.appPath), `${name}.asar`) : 'dev.asar'
+  return info.dev ? 'dev.asar' : join(dirname(info.appPath), `${name}.asar`)
 }
 
 /**
@@ -41,8 +41,8 @@ export function getEntryVersion() {
  */
 export function getProductVersion(name: string) {
   return info.dev
-    ? readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
-    : getEntryVersion()
+    ? getEntryVersion()
+    : readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
 }
 export class NoSuchNativeModuleError extends Error {
   moduleName: string
@@ -58,8 +58,8 @@ export class NoSuchNativeModuleError extends Error {
  */
 export function requireNative<T = any>(packageName: string): T {
   const path = info.dev
-    ? join(info.appPath, 'node_modules', packageName)
-    : packageName
+    ? packageName
+    : join(info.appPath, 'node_modules', packageName)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require(path)
