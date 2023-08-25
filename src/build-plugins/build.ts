@@ -1,9 +1,7 @@
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import Asar from '@electron/asar'
-
-// import { build } from 'esbuild'
-import { build } from 'vite'
+import { build } from 'esbuild'
 import { signature } from '../crypto'
 import { parseVersion, zipFile } from '../utils'
 import { type UpdateJSON, isUpdateJSON } from '../updateJson'
@@ -83,19 +81,11 @@ export async function buildEntry({
   minify,
 }: BuildEntryOption) {
   await build({
-    build: {
-      lib: {
-        entry: entryPath,
-        formats: ['cjs'],
-      },
-      minify,
-      rollupOptions: {
-        treeshake: true,
-        external: ['electron', 'original-fs'],
-        output: {
-          file: outfile,
-        },
-      },
-    },
+    entryPoints: [entryPath],
+    bundle: true,
+    platform: 'node',
+    outfile,
+    minify,
+    external: ['electron', 'original-fs'],
   })
 }
