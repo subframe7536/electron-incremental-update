@@ -9,13 +9,13 @@ type Info = {
   appPath: string
 }
 export const info: Info = {
-  dev: !Electron.app.isPackaged,
+  dev: !Electron.app?.isPackaged,
   platform: process.platform === 'win32'
     ? 'win'
     : process.platform === 'darwin'
       ? 'mac'
       : 'linux',
-  appPath: Electron.app.getAppPath(),
+  appPath: Electron.app?.getAppPath(),
 }
 
 /**
