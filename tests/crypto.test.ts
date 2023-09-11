@@ -38,6 +38,14 @@ describe('test verify', async () => {
   test('different publicKey will fail to verify', () => {
     expect(verify(buffer, sig, `${cert}a`)).toBe(false)
   })
+  // test('cert variable', async () => {
+  //   const filePath = './tests/test-cert.ts'
+  //   if (!existsSync(filePath)) {
+  //     // await rm(filePath)
+  //     await writeFile(filePath, 'import { join } from \'node:path/posix\'')
+  //   }
+  //   writeCertToMain(filePath, cert)
+  // })
   afterAll(() => {
     rmSync(dir, { recursive: true })
   })

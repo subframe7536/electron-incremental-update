@@ -1,6 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
-import { EOL } from 'node:os'
 import { generate } from 'selfsigned'
 import type { CertSubject, DistinguishedName, GetKeysOption } from './option'
 
@@ -17,20 +16,28 @@ export function generateKeyPair(keyLength: number, subject: CertSubject, days: n
   writeFileSync(privateKeyPath, privateKey.replace(/\r\n?/g, '\n'))
   writeFileSync(certPath, cert.replace(/\r\n?/g, '\n'))
 }
-function writeCertToMain(entryPath: string, cert: string) {
+
+export function writeCertToMain(entryPath: string, cert: string) {
   const file = readFileSync(entryPath, 'utf-8')
 
-  const regex = /const SIGNATURE_CERT\s*=\s*['"`][\s\S]*?['"`]/
-  const replacement = `const SIGNATURE_CERT = \`${cert}\``
+  const initRegex = /(?<=const SIGNATURE_CERT\s*=\s*)['"]{2}/m
+  const existRegex = /(?<=const SIGNATURE_CERT\s*=\s*)(['"]-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n['"])/m
+  const eol = file.includes('\r') ? '\r\n' : '\n'
+  const replacement = cert
+    .split('\n')
+    .filter(Boolean)
+    .map(s => `'${s}\\n'`)
+    .join(`${eol}+ `)
 
   let replaced = file
-  const signaturePubExists = regex.test(file)
 
-  if (signaturePubExists) {
-    replaced = file.replace(regex, replacement)
+  if (initRegex.test(file)) {
+    replaced = file.replace(initRegex, replacement)
+  } else if (existRegex.test(file)) {
+    replaced = file.replace(existRegex, replacement)
   } else {
-    const lines = file.split(EOL)
-    const r = `${EOL}${replacement}${EOL}`
+    const lines = file.split(eol)
+    const r = `${eol}const SIGNATURE_CERT = ${replacement}${eol}`
     let isMatched = false
 
     for (let i = 0; i < lines.length; i++) {
@@ -43,10 +50,11 @@ function writeCertToMain(entryPath: string, cert: string) {
     }
 
     !isMatched && lines.push(r)
-    replaced = lines.join(EOL)
+    replaced = lines.join(eol)
   }
+  console.log(JSON.stringify(replaced))
 
-  writeFileSync(entryPath, replaced.replace(/\r\n?/g, '\n'))
+  writeFileSync(entryPath, replaced)
 }
 
 export function parseKeys({

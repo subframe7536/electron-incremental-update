@@ -14,7 +14,6 @@ The new `main.asar` downloaded from remote will be verified by presigned RSA + S
 
 - this plugin is developed with [vite-plugin-electron](https://github.com/electron-vite/vite-plugin-electron), and may be effect in other electron vite frameworks
 - **all options are documented in the jsdoc**
-- entry file's EOL will force to `\n`
 
 ## install
 
