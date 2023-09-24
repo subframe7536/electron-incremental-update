@@ -1,15 +1,14 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
+  entry: {
+    index: './src/index.ts',
+    vite: './src/vite.ts',
+    utils: './src/utils/index.ts',
+  },
   dts: true,
   clean: true,
   format: ['esm', 'cjs'],
-  entry: [
-    'src/vite.ts',
-    'src/index.ts',
-    'src/utils.ts',
-    'src/updateJson.ts',
-  ],
   external: ['electron', 'esbuild'],
   outDir: 'dist',
 })

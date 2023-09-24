@@ -1,6 +1,7 @@
-import Electron from 'electron'
-import type { Version } from '../utils'
-import { parseVersion, waitAppReady } from '../utils'
+import { net } from 'electron'
+import type { Version } from '../utils/version'
+import { waitAppReady } from '../utils'
+import { parseVersion } from '../utils/version'
 import { isUpdateJSON } from '../updateJson'
 import type { UpdaterOverrideFunctions } from './types'
 
@@ -9,7 +10,7 @@ type Func = Required<UpdaterOverrideFunctions>
 export const downloadJSONDefault: Func['downloadJSON'] = async (url, headers) => {
   await waitAppReady()
   return new Promise((resolve, reject) => {
-    const request = Electron.net.request({
+    const request = net.request({
       url,
       method: 'GET',
       redirect: 'follow',
@@ -44,7 +45,7 @@ export const downloadBufferDefault: Func['downloadBuffer'] = async (url, headers
   await waitAppReady()
   let current = 0
   return new Promise<Buffer>((resolve, reject) => {
-    const request = Electron.net.request({
+    const request = net.request({
       url,
       method: 'GET',
       redirect: 'follow',

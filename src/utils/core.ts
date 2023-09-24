@@ -1,7 +1,6 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { gunzip, gzip } from 'node:zlib'
-import Electron from 'electron'
+import { app } from 'electron'
 
 type Info = {
   dev: boolean
@@ -9,13 +8,13 @@ type Info = {
   appPath: string
 }
 export const info: Info = {
-  dev: !Electron.app?.isPackaged,
+  dev: !app?.isPackaged,
   platform: process.platform === 'win32'
     ? 'win'
     : process.platform === 'darwin'
       ? 'mac'
       : 'linux',
-  appPath: Electron.app?.getAppPath(),
+  appPath: app?.getAppPath(),
 }
 
 /**
@@ -31,7 +30,7 @@ export function getProductAsarPath(name: string) {
  * get the version of entry (app.asar)
  */
 export function getEntryVersion() {
-  return Electron.app.getVersion()
+  return app.getVersion()
 }
 /**
  * get the version of application (name.asar)
@@ -120,8 +119,8 @@ export function getGithubReleaseCdnGroup() {
  * Restarts the Electron app.
  */
 export function restartApp() {
-  Electron.app.relaunch()
-  Electron.app.quit()
+  app.relaunch()
+  app.quit()
 }
 /**
  * ensure app is ready.
@@ -132,44 +131,9 @@ export function waitAppReady(duration = 1000): Promise<void> {
       reject(new Error('app is not ready'))
     }, duration)
 
-    Electron.app.whenReady().then(() => {
+    app.whenReady().then(() => {
       clearTimeout(timeout)
       resolve()
-    })
-  })
-}
-
-export async function unzipFile(gzipPath: string, targetFilePath = gzipPath.slice(0, -3)) {
-  if (!existsSync(gzipPath)) {
-    throw new Error(`path to zipped file not exist: ${gzipPath}`)
-  }
-
-  const compressedBuffer = readFileSync(gzipPath)
-
-  return new Promise((resolve, reject) => {
-    gunzip(compressedBuffer, (err, buffer) => {
-      rmSync(gzipPath)
-      if (err) {
-        reject(err)
-      }
-      writeFileSync(targetFilePath, buffer)
-      resolve(null)
-    })
-  })
-}
-
-export async function zipFile(filePath: string, targetFilePath = `${filePath}.gz`) {
-  if (!existsSync(filePath)) {
-    throw new Error(`path to be zipped not exist: ${filePath}`)
-  }
-  const buffer = readFileSync(filePath)
-  return new Promise((resolve, reject) => {
-    gzip(buffer, (err, buffer) => {
-      if (err) {
-        reject(err)
-      }
-      writeFileSync(targetFilePath, buffer)
-      resolve(null)
     })
   })
 }
@@ -183,36 +147,4 @@ export function handleUnexpectedErrors(callback: (err: Error) => void) {
   }
   process.on('uncaughtException', listener)
   process.on('unhandledRejection', listener)
-}
-
-export interface Version {
-  major: number
-  minor: number
-  patch: number
-  stage: string
-  stageVersion: number
-}
-export function parseVersion(version: string): Version {
-  const semver = /^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9\.-]+))?/i
-  const match = semver.exec(version)
-  if (!match) {
-    throw new TypeError(`invalid version: ${version}`)
-  }
-  const [major, minor, patch] = match.slice(1, 4).map(Number)
-  const ret = {
-    major,
-    minor,
-    patch,
-    stage: '',
-    stageVersion: -1,
-  }
-  if (match[4]) {
-    let [stage, _v] = match[4].split('.')
-    ret.stage = stage
-    ret.stageVersion = Number(_v) || -1
-  }
-  if (Number.isNaN(major) || Number.isNaN(minor) || Number.isNaN(patch) || Number.isNaN(ret.stageVersion)) {
-    throw new TypeError(`invalid version: ${version}`)
-  }
-  return ret
 }
