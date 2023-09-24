@@ -121,7 +121,7 @@ export default defineConfig(({ command }) => {
 ```json
 {
   // ...
-  "main": "app.js" // <- app entry file
+  "main": "app.js" // <- app entry file path
 }
 ```
 
@@ -174,7 +174,7 @@ However, you have the option to customize the download function when creating th
 ```ts
 // electron/main/index.ts
 import type { StartupWithUpdater, Updater } from 'electron-incremental-update'
-import { getEntryVersion, getProductAsarPath, getProductVersion } from 'electron-incremental-update'
+import { getAppVersion, getElectronVersion, getProductAsarPath } from 'electron-incremental-update/utils'
 import { app } from 'electron'
 import { name } from '../../package.json'
 
@@ -182,8 +182,8 @@ const startup: StartupWithUpdater = (updater: Updater) => {
   await app.whenReady()
   console.log('\ncurrent:')
   console.log(`\tasar path: ${getProductAsarPath(name)}`)
-  console.log(`\tentry:     ${getEntryVersion()}`)
-  console.log(`\tapp:       ${getProductVersion(name)}`)
+  console.log(`\tapp:       ${getAppVersion(name)}`)
+  console.log(`\telectron:  ${getElectronVersion()}`)
   updater.onDownloading = ({ percent }) => {
     console.log(percent)
   }
@@ -209,11 +209,18 @@ export default startup
 
 ### use native modules
 
+the native modules is packed in `app.asar`, so you cannot directly access it when in production
+
+to use it, you can prebundle native modules, or use `requireNative` to load.
+
 ```ts
 // db.ts
-import { requireNative } from 'electron-incremental-update'
+import { isNoSuchNativeModuleError, requireNative } from 'electron-incremental-update/utils'
 
 const Database = requireNative<typeof import('better-sqlite3')>('better-sqlite3')
+if (isNoSuchNativeModuleError(Database)) {
+  // ...
+}
 const db = new Database(':memory:')
 db.exec(
   'DROP TABLE IF EXISTS employees; '
