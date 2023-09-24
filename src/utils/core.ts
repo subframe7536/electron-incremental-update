@@ -1,46 +1,49 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { release } from 'node:os'
 import { app } from 'electron'
 
 type Info = {
   dev: boolean
-  platform: 'win' | 'mac' | 'linux'
-  appPath: string
+  win: boolean
+  mac: boolean
+  linux: boolean
+  electronVersion: string
+  system: string
 }
 export const info: Info = {
-  dev: !app?.isPackaged,
-  platform: process.platform === 'win32'
-    ? 'win'
-    : process.platform === 'darwin'
-      ? 'mac'
-      : 'linux',
-  appPath: app?.getAppPath(),
+  dev: !app.isPackaged,
+  win: process.platform === 'win32',
+  mac: process.platform === 'darwin',
+  linux: process.platform === 'linux',
+  electronVersion: getElectronVersion(),
+  system: release(),
 }
 
 /**
- * get the application asar absolute path
+ * get the application asar absolute path (not `app.asar`),
+ * if is in dev, return `'DEV.asar'`
  * @param name The name of the application
- * @todo support v8 bytecode
  */
 export function getProductAsarPath(name: string) {
-  return info.dev ? 'dev.asar' : join(dirname(info.appPath), `${name}.asar`)
+  return info.dev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${name}.asar`)
 }
 
 /**
- * get the version of entry (app.asar)
+ * get the version of Electron runtime
  */
-export function getEntryVersion() {
+export function getElectronVersion() {
   return app.getVersion()
 }
 /**
  * get the version of application (name.asar)
  *
- * if is dev, return {@link getEntryVersion}
+ * if is dev, return {@link getElectronVersion}
  * @param name - The name of the application
  */
-export function getProductVersion(name: string) {
+export function getAppVersion(name: string) {
   return info.dev
-    ? getEntryVersion()
+    ? getElectronVersion()
     : readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
 }
 export class NoSuchNativeModuleError extends Error {
@@ -50,20 +53,22 @@ export class NoSuchNativeModuleError extends Error {
     this.moduleName = moduleName
   }
 }
+export function isNoSuchNativeModuleError(e: unknown): e is NoSuchNativeModuleError {
+  return e instanceof NoSuchNativeModuleError
+}
 /**
- * require native package from app.asar
+ * require native package, if not found, return {@link NoSuchNativeModuleError}
  * @param packageName native package name
- * @throws error: {@link NoSuchNativeModuleError}
  */
-export function requireNative<T = any>(packageName: string): T {
+export function requireNative<T = any>(packageName: string): T | NoSuchNativeModuleError {
   const path = info.dev
     ? packageName
-    : join(info.appPath, 'node_modules', packageName)
+    : join(app.getAppPath(), 'node_modules', packageName)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require(path)
   } catch (error) {
-    throw new NoSuchNativeModuleError(packageName)
+    return new NoSuchNativeModuleError(packageName)
   }
 }
 

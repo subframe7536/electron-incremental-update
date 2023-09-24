@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
-import { getEntryVersion, getProductAsarPath, getProductVersion, unzipFile } from '../utils'
+import { getAppVersion, getElectronVersion, getProductAsarPath, unzipFile } from '../utils'
 import { verify } from '../crypto'
 import type { UpdateInfo, UpdateJSON } from '../updateJson'
 import { isUpdateJSON } from '../updateJson'
@@ -42,8 +42,8 @@ export class IncrementalUpdater implements Updater {
 
   private async needUpdate(version: string, minVersion: string) {
     const compare = this.option.overrideFunctions?.compareVersion ?? compareVersionDefault
-    const productVersion = getProductVersion(this.option.productName)
-    const entryVersion = getEntryVersion()
+    const productVersion = getAppVersion(this.option.productName)
+    const entryVersion = getElectronVersion()
     if (await compare(entryVersion, minVersion)) {
       throw new MinimumVersionError(entryVersion, minVersion)
     }
