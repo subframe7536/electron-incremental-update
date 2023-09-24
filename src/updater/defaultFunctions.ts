@@ -1,7 +1,6 @@
 import { net } from 'electron'
-import type { Version } from '../utils/version'
-import { waitAppReady } from '../utils'
-import { parseVersion } from '../utils/version'
+import type { Version } from '../utils'
+import { parseVersion, waitAppReady } from '../utils'
 import { isUpdateJSON } from '../updateJson'
 import type { UpdaterOverrideFunctions } from './types'
 

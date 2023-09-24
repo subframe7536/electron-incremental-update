@@ -9,15 +9,29 @@ type Info = {
   mac: boolean
   linux: boolean
   electronVersion: string
+  /**
+   * `os.release()`
+   */
   system: string
+  /**
+   * system locale, `undefined` when `!app.isReady()`
+   */
+  locale: string | undefined
 }
-export const info: Info = {
-  dev: !app.isPackaged,
-  win: process.platform === 'win32',
-  mac: process.platform === 'darwin',
-  linux: process.platform === 'linux',
-  electronVersion: getElectronVersion(),
-  system: release(),
+
+/**
+ * get app info
+ */
+export function getAppInfo(): Info {
+  return {
+    dev: !app.isPackaged,
+    win: process.platform === 'win32',
+    mac: process.platform === 'darwin',
+    linux: process.platform === 'linux',
+    electronVersion: getElectronVersion(),
+    system: release(),
+    locale: app.isReady() ? app.getLocale() : undefined,
+  }
 }
 
 /**
@@ -26,7 +40,7 @@ export const info: Info = {
  * @param name The name of the application
  */
 export function getProductAsarPath(name: string) {
-  return info.dev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${name}.asar`)
+  return !app.isPackaged ? 'DEV.asar' : join(dirname(app.getAppPath()), `${name}.asar`)
 }
 
 /**
@@ -42,9 +56,9 @@ export function getElectronVersion() {
  * @param name - The name of the application
  */
 export function getAppVersion(name: string) {
-  return info.dev
-    ? getElectronVersion()
-    : readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
+  return app.isPackaged
+    ? readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
+    : getElectronVersion()
 }
 export class NoSuchNativeModuleError extends Error {
   moduleName: string
@@ -61,9 +75,9 @@ export function isNoSuchNativeModuleError(e: unknown): e is NoSuchNativeModuleEr
  * @param packageName native package name
  */
 export function requireNative<T = any>(packageName: string): T | NoSuchNativeModuleError {
-  const path = info.dev
-    ? packageName
-    : join(app.getAppPath(), 'node_modules', packageName)
+  const path = app.isPackaged
+    ? join(app.getAppPath(), 'node_modules', packageName)
+    : packageName
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require(path)
@@ -143,13 +157,7 @@ export function waitAppReady(duration = 1000): Promise<void> {
   })
 }
 
-export function handleUnexpectedErrors(callback: (err: Error) => void) {
-  const listener = (err: unknown) => {
-    const e = err instanceof Error
-      ? err
-      : new Error(typeof err === 'string' ? err : JSON.stringify(err))
-    callback(e)
-  }
-  process.on('uncaughtException', listener)
-  process.on('unhandledRejection', listener)
+export function handleUnexpectedErrors(callback: (err: unknown) => void) {
+  process.on('uncaughtException', callback)
+  process.on('unhandledRejection', callback)
 }
