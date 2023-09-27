@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
-import { getAppVersion, getElectronVersion, getProductAsarPath, unzipFile } from '../utils'
+import { DEFAULT_APP_NAME, getAppVersion, getElectronVersion, getProductAsarPath, unzipFile } from '../utils'
 import { verify } from '../crypto'
 import type { UpdateInfo, UpdateJSON } from '../updateJson'
 import { isUpdateJSON } from '../updateJson'
@@ -18,11 +18,7 @@ export class IncrementalUpdater implements Updater {
 
   public onDownloading?: (progress: DownloadingInfo) => void
   get productName() {
-    return this.option.productName
-  }
-
-  set productName(name: string) {
-    this.option.productName = name
+    return this.option.productName! // set default in constructor
   }
 
   get receiveBeta() {
@@ -35,6 +31,9 @@ export class IncrementalUpdater implements Updater {
 
   constructor(option: UpdaterOption) {
     this.option = option
+    if (!option.productName) {
+      this.option.productName = DEFAULT_APP_NAME
+    }
     this.asarPath = getProductAsarPath(this.productName)
     this.gzipPath = `${this.asarPath}.gz`
     this.tmpFilePath = `${this.asarPath}.tmp`

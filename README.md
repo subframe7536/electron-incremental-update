@@ -51,24 +51,24 @@ src
 
 ```ts
 // electron/app.ts
-import { getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
+import { initApp, parseGithubCdnURL } from 'electron-incremental-update'
 import { name, repository } from '../package.json'
 
 const SIGNATURE_CERT = '' // auto generate certificate when start app
 
-const { cdnPrefix: asarPrefix } = getGithubReleaseCdnGroup()[0]
-const { cdnPrefix: jsonPrefix } = getGithubFileCdnGroup()[0]
 initApp({ onStart: console.log })
   // can be updater option or function that return updater
   .setUpdater({
     SIGNATURE_CERT,
     productName: name,
     repository,
-    updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
-    releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${name}.asar.gz`),
+    updateJsonURL: parseGithubCdnURL(repository, '...', 'version.json'),
+    releaseAsarURL: parseGithubCdnURL(repository, '...', `download/latest/${name}.asar.gz`),
     receiveBeta: true
   })
 ```
+
+- [some cdn resources](https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34):
 
 ### setup vite.config.ts
 
@@ -174,7 +174,7 @@ However, you have the option to customize the download function when creating th
 ```ts
 // electron/main/index.ts
 import type { StartupWithUpdater, Updater } from 'electron-incremental-update'
-import { getAppVersion, getElectronVersion, getProductAsarPath } from 'electron-incremental-update/utils'
+import { appInfo, getProductAsarPath } from 'electron-incremental-update/utils'
 import { app } from 'electron'
 import { name } from '../../package.json'
 
@@ -182,8 +182,8 @@ const startup: StartupWithUpdater = (updater: Updater) => {
   await app.whenReady()
   console.log('\ncurrent:')
   console.log(`\tasar path: ${getProductAsarPath(name)}`)
-  console.log(`\tapp:       ${getAppVersion(name)}`)
-  console.log(`\telectron:  ${getElectronVersion()}`)
+  console.log(`\tapp:       ${appInfo.appVersion(name)}`)
+  console.log(`\telectron:  ${appInfo.electronVersion}`)
   updater.onDownloading = ({ percent }) => {
     console.log(percent)
   }

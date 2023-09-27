@@ -3,35 +3,36 @@ import { dirname, join } from 'node:path'
 import { release } from 'node:os'
 import { app } from 'electron'
 
+export const DEFAULT_APP_NAME = 'product'
+
 type Info = {
   dev: boolean
   win: boolean
   mac: boolean
   linux: boolean
   electronVersion: string
+  appVersion: (name?: string) => string
   /**
    * `os.release()`
    */
-  system: string
-  /**
-   * system locale, `undefined` when `!app.isReady()`
-   */
-  locale: string | undefined
+  systemVersion: string
 }
 
 /**
  * get app info
  */
-export function getAppInfo(): Info {
-  return {
-    dev: !app.isPackaged,
-    win: process.platform === 'win32',
-    mac: process.platform === 'darwin',
-    linux: process.platform === 'linux',
-    electronVersion: getElectronVersion(),
-    system: release(),
-    locale: app.isReady() ? app.getLocale() : undefined,
-  }
+export const appInfo: Info = {
+  dev: !app.isPackaged,
+  win: process.platform === 'win32',
+  mac: process.platform === 'darwin',
+  linux: process.platform === 'linux',
+  electronVersion: getElectronVersion(),
+  appVersion: getAppVersion,
+  systemVersion: release(),
+}
+
+export function getLocale() {
+  return app.isReady() ? app.getLocale() : undefined
 }
 
 /**
@@ -39,7 +40,7 @@ export function getAppInfo(): Info {
  * if is in dev, return `'DEV.asar'`
  * @param name The name of the application
  */
-export function getProductAsarPath(name: string) {
+export function getProductAsarPath(name = DEFAULT_APP_NAME) {
   return !app.isPackaged ? 'DEV.asar' : join(dirname(app.getAppPath()), `${name}.asar`)
 }
 
@@ -55,7 +56,7 @@ export function getElectronVersion() {
  * if is dev, return {@link getElectronVersion}
  * @param name - The name of the application
  */
-export function getAppVersion(name: string) {
+export function getAppVersion(name = DEFAULT_APP_NAME) {
   return app.isPackaged
     ? readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
     : getElectronVersion()
@@ -88,52 +89,21 @@ export function requireNative<T = any>(packageName: string): T | NoSuchNativeMod
 
 /**
  * parse Github CDN URL for accelerating the speed of downloading
+ *
+ * {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34 some public CDN links}
  */
-export function parseGithubCdnURL(repository: string, cdnPrefix: string, relativeFilePath: string) {
-  if (!repository.startsWith('https://github.com/')) {
-    throw new Error('url must start with https://github.com/')
+export function parseGithubCdnURL(originRepoURL: string, cdnPrefix: string, relativeFilePath: string) {
+  if (!originRepoURL.startsWith('https://github.com/')) {
+    throw new Error('origin url must start with https://github.com/')
   }
 
-  repository = repository.trim().replace(/\/?$/, '/').trim()
+  originRepoURL = originRepoURL.trim().replace(/\/?$/, '/').trim()
   relativeFilePath = relativeFilePath.trim().replace(/^\/|\/?$/g, '').trim()
   cdnPrefix = cdnPrefix.trim().replace(/^\/?|\/?$/g, '').trim()
 
-  return repository.replace('github.com', cdnPrefix) + relativeFilePath
+  return originRepoURL.replace('github.com', cdnPrefix) + relativeFilePath
 }
 
-/**
- * get group of Github file CDN prefix for accelerating the speed of downloading project files
- */
-export function getGithubFileCdnGroup() {
-  return [
-    { cdnPrefix: 'cdn.jsdelivr.net/gh', source: 'jsdelivr' },
-    { cdnPrefix: 'fastly.jsdelivr.net/gh', source: 'jsdelivr-fastly' },
-    { cdnPrefix: 'cdn.statically.io/gh', source: 'statically' },
-    { cdnPrefix: 'rawcdn.githack.com/gh', source: 'githack' },
-    { cdnPrefix: 'raw.githack.com/gh', source: 'githack-dev' },
-  ]
-}
-/**
- * get group of github release CDN prefix for accelerating the speed of downloading release
- */
-export function getGithubReleaseCdnGroup() {
-  return [
-    { cdnPrefix: 'gh.gh2233.ml', source: '@X.I.U/XIU2' },
-    { cdnPrefix: 'ghproxy.com', source: 'gh-proxy' },
-    { cdnPrefix: 'gh.ddlc.top', source: '@mtr-static-official' },
-    { cdnPrefix: 'ghdl.feizhuqwq.cf', source: 'feizhuqwq.com' },
-    { cdnPrefix: 'slink.ltd', source: '知了小站' },
-    { cdnPrefix: 'git.xfj0.cn', source: 'anonymous1' },
-    { cdnPrefix: 'gh.con.sh', source: 'anonymous2' },
-    { cdnPrefix: 'ghps.cc', source: 'anonymous3' },
-    { cdnPrefix: 'cors.isteed.cc/github.com', source: 'Lufs\'s' },
-    { cdnPrefix: 'hub.gitmirror.com', source: 'GitMirror' },
-    { cdnPrefix: 'js.xxooo.ml', source: '饭太硬' },
-    { cdnPrefix: 'download.njuu.cf', source: 'LibraryCloud-njuu' },
-    { cdnPrefix: 'download.yzuu.cf', source: 'LibraryCloud-yzuu' },
-    { cdnPrefix: 'download.nuaa.cf', source: 'LibraryCloud-nuaa' },
-  ]
-}
 /**
  * Restarts the Electron app.
  */
@@ -145,6 +115,9 @@ export function restartApp() {
  * ensure app is ready.
  */
 export function waitAppReady(duration = 1000): Promise<void> {
+  if (app.isReady()) {
+    return Promise.resolve()
+  }
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error('app is not ready'))
