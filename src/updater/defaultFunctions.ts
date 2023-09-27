@@ -1,7 +1,8 @@
 import { net } from 'electron'
-import type { Version } from '../utils'
-import { parseVersion, waitAppReady } from '../utils'
+import type { Version } from '../utils/version'
+import { parseVersion } from '../utils/version'
 import { isUpdateJSON } from '../updateJson'
+import { waitAppReady } from '../utils/utils'
 import type { UpdaterOverrideFunctions } from './types'
 
 type Func = Required<UpdaterOverrideFunctions>
