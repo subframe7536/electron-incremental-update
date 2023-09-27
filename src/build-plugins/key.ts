@@ -52,7 +52,6 @@ export function writeCertToMain(entryPath: string, cert: string) {
     !isMatched && lines.push(r)
     replaced = lines.join(eol)
   }
-  console.log(JSON.stringify(replaced))
 
   writeFileSync(entryPath, replaced)
 }
