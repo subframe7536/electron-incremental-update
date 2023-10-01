@@ -75,6 +75,8 @@ initApp({ onStart: console.log })
 make sure the plugin is set in the **last** build task
 
 - for `vite-plugin-electron`, set it to `preload` (the second object in the plugin option array)
+- cert is read from `process.env.UPDATER_CERT` first, then read config
+- privatekey is read from `process.env.UPDATER_PK` first, then read config
 
 ```ts
 // vite.config.ts

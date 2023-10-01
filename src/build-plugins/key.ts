@@ -70,8 +70,9 @@ export function parseKeys({
   if (!existsSync(privateKeyPath) || !existsSync(certPath)) {
     generateKeyPair(keyLength, parseSubjects(subject), days, privateKeyPath, certPath)
   }
-  const privateKey = readFileSync(privateKeyPath, 'utf-8')
-  const cert = readFileSync(certPath, 'utf-8')
+
+  const privateKey = process.env.UPDATER_PK || readFileSync(privateKeyPath, 'utf-8')
+  const cert = process.env.UPDATER_CERT || readFileSync(certPath, 'utf-8')
   writeCertToMain(entryPath, cert)
   return {
     privateKey,

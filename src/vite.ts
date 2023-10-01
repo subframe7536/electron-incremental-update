@@ -17,18 +17,20 @@ export function ElectronUpdater(options: Options): VitePlugin {
     name: `vite-plugin-${id}`,
     enforce: 'post',
     async closeBundle() {
-      log.info('build entry start')
+      log.info('build entry start', { timestamp: true })
       await buildEntry(buildEntryOption)
-      log.info(`build entry end, ${entryPath} -> ${entryOutputPath}`)
+
+      log.info(`build entry end, ${entryPath} -> ${entryOutputPath}`, { timestamp: true })
 
       if (!isBuild) {
         return
       }
 
-      log.info('build asar start')
+      log.info('build asar start', { timestamp: true })
       await buildAsar(buildAsarOption)
-      buildVersionOption && await buildVersion(buildVersionOption)
-      log.info(`build asar end, output to ${asarOutputPath}`)
+
+      await buildVersion(buildVersionOption)
+      log.info(`build asar end, output to ${asarOutputPath}`, { timestamp: true })
     },
   }
 }

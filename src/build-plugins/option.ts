@@ -1,4 +1,4 @@
-import { isCI } from 'ci-info'
+// import { isCI } from 'ci-info'
 import type { UpdateJSON } from '../updateJson'
 import { parseKeys } from './key'
 
@@ -230,27 +230,24 @@ export function parseOptions(options: Options) {
     entryOutputPath,
     minify,
   }
-  let buildVersionOption: BuildVersionOption | undefined
-  if (!isCI) {
-    // generate keys or get from file
-    const { privateKey, cert } = parseKeys({
-      keyLength,
-      privateKeyPath,
-      certPath,
-      entryPath,
-      subject,
-      days,
-    })
-    buildVersionOption = {
-      version,
-      minimumVersion,
-      gzipPath,
-      privateKey,
-      cert,
-      versionPath,
-      generateSignature,
-      generateVersionJson,
-    }
+  // generate keys or get from file
+  const { privateKey, cert } = parseKeys({
+    keyLength,
+    privateKeyPath,
+    certPath,
+    entryPath,
+    subject,
+    days,
+  })
+  const buildVersionOption: BuildVersionOption = {
+    version,
+    minimumVersion,
+    gzipPath,
+    privateKey,
+    cert,
+    versionPath,
+    generateSignature,
+    generateVersionJson,
   }
 
   return { isBuild, buildAsarOption, buildEntryOption, buildVersionOption }
