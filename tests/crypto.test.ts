@@ -1,6 +1,6 @@
 import { join } from 'node:path/posix'
 import { readFileSync, rmSync } from 'node:fs'
-import { afterAll, describe, expect, test } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
 import { decrypt, encrypt, key, signature, verify } from '../src/crypto'
 import { generateKeyPair } from '../src/build-plugins/key'
 
@@ -11,7 +11,7 @@ for (let i = 0; i < 1_000; i++) {
 describe('test aes', async () => {
   const k = key(Buffer.from(plain, 'utf-8'), 32)
   const iv = key(Buffer.from(plain, 'utf-8'), 16)
-  test('test', async () => {
+  it('test', async () => {
     const e = encrypt(plain, k, iv)
     expect(decrypt(e, k, iv)).toBe(plain)
   })
@@ -26,16 +26,16 @@ describe('test verify', async () => {
   const cert = readFileSync(certPath, { encoding: 'utf-8' })
   const version = '0.0.0-alpha1'
   const sig = await signature(buffer, privateKey, cert, version)
-  test('verify passed', () => {
+  it('verify passed', () => {
     expect(verify(buffer, sig, cert)).toBe(version)
   })
-  test('different buffer will fail to verify', () => {
+  it('different buffer will fail to verify', () => {
     expect(verify(buffer.subarray(1), sig, cert)).toBe(false)
   })
-  test('different signature will fail to verify', () => {
+  it('different signature will fail to verify', () => {
     expect(verify(buffer, `${sig}a`, cert)).toBe(false)
   })
-  test('different publicKey will fail to verify', () => {
+  it('different publicKey will fail to verify', () => {
     expect(verify(buffer, sig, `${cert}a`)).toBe(false)
   })
   // test('cert variable', async () => {

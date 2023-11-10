@@ -10,7 +10,9 @@ export function generateKeyPair(keyLength: number, subject: CertSubject, days: n
   existsSync(certDir) || mkdirSync(certDir, { recursive: true })
 
   const { cert, private: privateKey } = generate(subject, {
-    keySize: keyLength, algorithm: 'sha256', days,
+    keySize: keyLength,
+    algorithm: 'sha256',
+    days,
   })
 
   writeFileSync(privateKeyPath, privateKey.replace(/\r\n?/g, '\n'))

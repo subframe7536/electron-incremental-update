@@ -80,7 +80,7 @@ export function requireNative<T = any>(packageName: string): T | NoSuchNativeMod
     ? join(app.getAppPath(), 'node_modules', packageName)
     : packageName
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // eslint-disable-next-line ts/no-require-imports
     return require(path)
   } catch (error) {
     return new NoSuchNativeModuleError(packageName)

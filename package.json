@@ -1,29 +1,15 @@
 {
   "name": "electron-incremental-update",
-  "author": "subframe7536",
   "version": "0.8.8",
   "description": "electron incremental update tools, powered by vite",
-  "scripts": {
-    "build": "tsup && node fix-module.js",
-    "release": "pnpm test && pnpm run build && bumpp --all && npm publish",
-    "test": "vitest --run",
-    "lint": "eslint . --fix"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
-  },
-  "repository": "https://github.com/subframe7536/electron-incremental-update",
+  "author": "subframe7536",
   "license": "MIT",
-  "files": [
-    "dist",
-    "vite.js",
-    "vite.d.ts",
-    "utils.js",
-    "utils.d.ts"
+  "repository": "https://github.com/subframe7536/electron-incremental-update",
+  "keywords": [
+    "electron",
+    "incremental update",
+    "updater"
   ],
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -38,25 +24,39 @@
       "require": "./dist/utils.js"
     }
   },
-  "keywords": [
-    "electron",
-    "incremental update",
-    "updater"
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "files": [
+    "dist",
+    "utils.d.ts",
+    "utils.js",
+    "vite.d.ts",
+    "vite.js"
   ],
-  "devDependencies": {
-    "@subframe7536/eslint-config": "^0.2.9",
-    "@types/node": "^20.6.0",
-    "bumpp": "^9.2.0",
-    "electron": "^26.2.0",
-    "eslint": "^8.49.0",
-    "tsup": "^7.2.0",
-    "typescript": "^5.2.2",
-    "vitest": "^0.34.4"
+  "scripts": {
+    "build": "tsup && node fix-module.js",
+    "release": "pnpm test && pnpm run build && bumpp --all && npm publish",
+    "test": "vitest --run",
+    "lint": "eslint . --fix"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@electron/asar": "^3.2.4",
-    "ci-info": "^3.8.0",
-    "selfsigned": "^2.1.1",
-    "vite": "^4.4.9"
+    "@electron/asar": "^3.2.8",
+    "ci-info": "^4.0.0",
+    "selfsigned": "^2.4.1",
+    "vite": "^4.5.0"
+  },
+  "devDependencies": {
+    "@subframe7536/eslint-config": "^0.4.1",
+    "@types/node": "^20.9.0",
+    "bumpp": "^9.2.0",
+    "electron": "^27.0.4",
+    "eslint": "^8.53.0",
+    "tsup": "^7.2.0",
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6"
   }
 }

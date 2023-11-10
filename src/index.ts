@@ -102,7 +102,7 @@ export function initApp(
 
       const entry = resolve(__dirname, mainDir, mainPath)
       await beforeStart?.(entry)
-      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+      // eslint-disable-next-line ts/no-require-imports, ts/no-var-requires
       require(entry)(updater)
     } catch (error) {
       handleError(`failed to start app, ${error}`)

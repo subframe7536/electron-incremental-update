@@ -85,7 +85,7 @@ export type Options = {
    * the name of you application
    *
    * you can set as 'name' in `package.json`
-  */
+   */
   productName: string
   /**
    * the version of you application

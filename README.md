@@ -81,7 +81,6 @@ make sure the plugin is set in the **last** build task
 ```ts
 // vite.config.ts
 export default defineConfig(({ command }) => {
-
   const isBuild = command === 'build'
   // ...
 
