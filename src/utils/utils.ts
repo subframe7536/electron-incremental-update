@@ -5,7 +5,6 @@ import { app } from 'electron'
  *
  * {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34 some public CDN links}
  */
-
 export function parseGithubCdnURL(originRepoURL: string, cdnPrefix: string, relativeFilePath: string) {
   if (!originRepoURL.startsWith('https://github.com/')) {
     throw new Error('origin url must start with https://github.com/')
@@ -17,33 +16,38 @@ export function parseGithubCdnURL(originRepoURL: string, cdnPrefix: string, rela
 
   return originRepoURL.replace('github.com', cdnPrefix) + relativeFilePath
 }
+
 /**
  * Restarts the Electron app.
  */
-
 export function restartApp() {
   app.relaunch()
   app.quit()
 }
+
 /**
  * ensure app is ready.
+ * @param timeout wait timeout, @default 1000
  */
-export function waitAppReady(duration = 1000): Promise<void> {
-  if (app.isReady()) {
-    return Promise.resolve()
-  }
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error('app is not ready'))
-    }, duration)
+export function waitAppReady(timeout = 1000): Promise<void> {
+  return app.isReady()
+    ? Promise.resolve()
+    : new Promise((resolve, reject) => {
+      const _ = setTimeout(() => {
+        reject(new Error('app is not ready'))
+      }, timeout)
 
-    app.whenReady().then(() => {
-      clearTimeout(timeout)
-      resolve()
+      app.whenReady().then(() => {
+        clearTimeout(_)
+        resolve()
+      })
     })
-  })
 }
 
+/**
+ * handle all unhandled error
+ * @param callback callback function
+ */
 export function handleUnexpectedErrors(callback: (err: unknown) => void) {
   process.on('uncaughtException', callback)
   process.on('unhandledRejection', callback)

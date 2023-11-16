@@ -10,8 +10,6 @@ type Info = {
   win: boolean
   mac: boolean
   linux: boolean
-  electronVersion: string
-  appVersion: (name?: string) => string
   /**
    * `os.release()`
    */
@@ -26,8 +24,6 @@ export const appInfo: Info = {
   win: process.platform === 'win32',
   mac: process.platform === 'darwin',
   linux: process.platform === 'linux',
-  electronVersion: getElectronVersion(),
-  appVersion: getAppVersion,
   systemVersion: release(),
 }
 
@@ -41,7 +37,7 @@ export function getLocale() {
  * @param name The name of the application
  */
 export function getProductAsarPath(name = DEFAULT_APP_NAME) {
-  return !app.isPackaged ? 'DEV.asar' : join(dirname(app.getAppPath()), `${name}.asar`)
+  return !app.isPackaged ? join(dirname(app.getAppPath()), `${name}.asar`) : 'DEV.asar'
 }
 
 /**
@@ -50,6 +46,7 @@ export function getProductAsarPath(name = DEFAULT_APP_NAME) {
 export function getElectronVersion() {
   return app.getVersion()
 }
+
 /**
  * get the version of application (name.asar)
  *
@@ -61,6 +58,7 @@ export function getAppVersion(name = DEFAULT_APP_NAME) {
     ? readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
     : getElectronVersion()
 }
+
 export class NoSuchNativeModuleError extends Error {
   moduleName: string
   constructor(moduleName: string) {
@@ -68,9 +66,11 @@ export class NoSuchNativeModuleError extends Error {
     this.moduleName = moduleName
   }
 }
+
 export function isNoSuchNativeModuleError(e: unknown): e is NoSuchNativeModuleError {
   return e instanceof NoSuchNativeModuleError
 }
+
 /**
  * require native package, if not found, return {@link NoSuchNativeModuleError}
  * @param packageName native package name
