@@ -1,6 +1,6 @@
 {
   "name": "electron-incremental-update",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "electron incremental update tools, powered by vite",
   "author": "subframe7536",
   "license": "MIT",
