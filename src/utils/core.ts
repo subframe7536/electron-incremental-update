@@ -1,30 +1,24 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { release } from 'node:os'
 import { app } from 'electron'
 
 export const DEFAULT_APP_NAME = 'product'
 
-type Info = {
+type Is = {
   dev: boolean
   win: boolean
   mac: boolean
   linux: boolean
-  /**
-   * `os.release()`
-   */
-  systemVersion: string
 }
 
 /**
  * get app info
  */
-export const appInfo: Info = {
+export const is: Is = {
   dev: !app.isPackaged,
   win: process.platform === 'win32',
   mac: process.platform === 'darwin',
   linux: process.platform === 'linux',
-  systemVersion: release(),
 }
 
 export function getLocale() {
