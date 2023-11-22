@@ -175,7 +175,7 @@ However, you have the option to customize the download function when creating th
 ```ts
 // electron/main/index.ts
 import type { StartupWithUpdater, Updater } from 'electron-incremental-update'
-import { appInfo, getProductAsarPath } from 'electron-incremental-update/utils'
+import { appInfo, getAppVersion, getElectronVersion, getProductAsarPath } from 'electron-incremental-update/utils'
 import { app } from 'electron'
 import { name } from '../../package.json'
 
@@ -183,8 +183,8 @@ const startup: StartupWithUpdater = (updater: Updater) => {
   await app.whenReady()
   console.log('\ncurrent:')
   console.log(`\tasar path: ${getProductAsarPath(name)}`)
-  console.log(`\tapp:       ${appInfo.appVersion(name)}`)
-  console.log(`\telectron:  ${appInfo.electronVersion}`)
+  console.log(`\tapp:       ${getAppVersion(name)}`)
+  console.log(`\telectron:  ${getElectronVersion()}`)
   updater.onDownloading = ({ percent }) => {
     console.log(percent)
   }

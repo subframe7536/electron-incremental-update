@@ -6,9 +6,8 @@ export default defineConfig({
     vite: './src/vite.ts',
     utils: './src/utils/index.ts',
   },
+  format: ['esm', 'cjs'],
   dts: true,
   clean: true,
-  format: ['esm', 'cjs'],
-  external: ['electron', 'esbuild'],
-  outDir: 'dist',
+  external: ['electron', 'esbuild', 'vite'],
 })
