@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { release } from 'node:os'
 import { app } from 'electron'
 
 export const DEFAULT_APP_NAME = 'product'
@@ -79,4 +80,76 @@ export function requireNative<T = any>(packageName: string): T | NoSuchNativeMod
   } catch (error) {
     return new NoSuchNativeModuleError(packageName)
   }
+}
+
+/**
+ * Restarts the Electron app.
+ */
+export function restartApp() {
+  app.relaunch()
+  app.quit()
+}
+
+/**
+ * fix app use model id, only for Windows
+ * @param id app id
+ */
+export function setAppUserModelId(id: string): void {
+  is.win && app.setAppUserModelId(is.dev ? process.execPath : id)
+}
+
+/**
+ * disable hardware acceleration for Windows 7
+ */
+export function disableHWAccForWin7() {
+  if (release().startsWith('6.1')) {
+    app.disableHardwareAcceleration()
+  }
+}
+
+/**
+ * keep single electron instance
+ */
+export function singleInstance() {
+  if (!app.requestSingleInstanceLock()) {
+    app.quit()
+    process.exit(0)
+  }
+}
+
+/**
+ * set AppData dir for portable Windows app
+ */
+export function setPortableAppDataPath(dirName = 'data', create?: boolean) {
+  if (!is.win) {
+    return
+  }
+  const portablePath = join(dirname(app.getPath('exe')), dirName)
+  let exists = existsSync(portablePath)
+  if (create && !exists) {
+    mkdirSync(portablePath)
+    exists = true
+  }
+  if (exists) {
+    app.setPath('appData', portablePath)
+  }
+}
+
+/**
+ * ensure app is ready.
+ * @param timeout wait timeout, @default 1000
+ */
+export function waitAppReady(timeout = 1000): Promise<void> {
+  return app.isReady()
+    ? Promise.resolve()
+    : new Promise((resolve, reject) => {
+      const _ = setTimeout(() => {
+        reject(new Error('app is not ready'))
+      }, timeout)
+
+      app.whenReady().then(() => {
+        clearTimeout(_)
+        resolve()
+      })
+    })
 }

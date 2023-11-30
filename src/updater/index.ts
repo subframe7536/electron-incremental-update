@@ -6,7 +6,8 @@ import type { UpdateInfo, UpdateJSON } from '../updateJson'
 import { isUpdateJSON } from '../updateJson'
 import type { CheckResultType, DownloadResult, DownloadingInfo, Logger, Updater, UpdaterOption } from './types'
 import { DownloadError, MinimumVersionError, VerifyFailedError } from './types'
-import { compareVersionDefault, downloadBufferDefault, downloadJSONDefault } from './defaultFunctions'
+import { downloadBufferDefault, downloadJSONDefault } from './defaultFunctions/download'
+import { compareVersionDefault } from './defaultFunctions/compareVersion'
 
 export class IncrementalUpdater implements Updater {
   private info?: UpdateInfo
