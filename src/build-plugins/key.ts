@@ -5,9 +5,14 @@ import type { CertSubject, DistinguishedName, GetKeysOption } from './option'
 
 export function generateKeyPair(keyLength: number, subject: CertSubject, days: number, privateKeyPath: string, certPath: string) {
   const privateKeyDir = dirname(privateKeyPath)
-  existsSync(privateKeyDir) || mkdirSync(privateKeyDir, { recursive: true })
+  if (!existsSync(privateKeyDir)) {
+    mkdirSync(privateKeyDir, { recursive: true })
+  }
+
   const certDir = dirname(certPath)
-  existsSync(certDir) || mkdirSync(certDir, { recursive: true })
+  if (!existsSync(certDir)) {
+    mkdirSync(certDir, { recursive: true })
+  }
 
   const { cert, private: privateKey } = generate(subject, {
     keySize: keyLength,
@@ -29,7 +34,7 @@ export function writeCertToMain(entryPath: string, cert: string) {
     .split('\n')
     .filter(Boolean)
     .map(s => `'${s}\\n'`)
-    .join(`${eol}+ `)
+    .join(`${eol}  + `)
 
   let replaced = file
 
@@ -65,7 +70,7 @@ export function parseKeys({
   entryPath,
   subject,
   days,
-}: GetKeysOption): { privateKey: string ; cert: string } {
+}: GetKeysOption): { privateKey: string, cert: string } {
   const keysDir = dirname(privateKeyPath)
   !existsSync(keysDir) && mkdirSync(keysDir)
 

@@ -34,6 +34,7 @@
     "vite.js"
   ],
   "scripts": {
+    "dev": "tsup --watch",
     "build": "tsup && node fix-module.js",
     "release": "pnpm test && pnpm run build && bumpp --all && npm publish",
     "test": "vitest --run",
@@ -43,20 +44,23 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
+  "peerDependencies": {
+    "esbuild": "*"
+  },
   "dependencies": {
     "@electron/asar": "^3.2.8",
     "ci-info": "^4.0.0",
     "selfsigned": "^2.4.1"
   },
   "devDependencies": {
-    "@subframe7536/eslint-config": "^0.5.0",
-    "@types/node": "^20.9.4",
+    "@subframe7536/eslint-config": "^0.5.2",
+    "@types/node": "^20.10.1",
     "bumpp": "^9.2.0",
-    "electron": "^27.1.0",
+    "electron": "^27.1.2",
     "eslint": "^8.54.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.2",
-    "vite": "^5.0.2",
+    "vite": "^5.0.4",
     "vitest": "^0.34.6"
   }
 }
