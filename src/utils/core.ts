@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { release } from 'node:os'
 import { app } from 'electron'
 
-export const DEFAULT_APP_NAME = 'product'
+export const DEFAULT_APP_NAME = 'ElectronApp'
 
 type Is = {
   dev: boolean
