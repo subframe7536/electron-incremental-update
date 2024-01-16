@@ -1,13 +1,20 @@
 import { resolve } from 'node:path'
 import { existsSync, renameSync } from 'node:fs'
 import { app } from 'electron'
-import type { Updater, UpdaterOption } from './updater/types'
+import type { Logger, Updater, UpdaterOption } from './updater/types'
 import { createUpdater } from './updater'
 import { getProductAsarPath } from './utils'
 
 export * from './updater'
 
 type Promisable<T> = T | Promise<T>
+
+type OnInstallFunction = (
+  install: VoidFunction,
+  tempAsarPath: string,
+  productAsarPath: string,
+  logger?: Logger
+) => Promisable<void>
 
 export type AppOption = {
   /**
@@ -20,30 +27,45 @@ export type AppOption = {
    * @default 'main/index.js'
    */
   mainPath?: string
+  /**
+   * update hooks
+   */
   hooks?: {
     /**
-     * hooks before replace the old asar is replaced by the new asar
-     *
-     * @param oldAsarPath old asar path
-     * @param updateTempAsarPath new asar path, end with .tmp
+     * hooks on rename temp asar path to product asar path
+     * @param install `() => renameSync(tempAsarPath, productAsarPath)`
+     * @param tempAsarPath temp(updated) asar path
+     * @param productAsarPath product asar path
+     * @param logger logger
+     * @default install(); logger?.info(`update success!`)
      */
-    beforeDoUpdate?: (oldAsarPath: string, updateTempAsarPath: string) => Promisable<void>
+    onInstall?: OnInstallFunction
     /**
-     * hooks before start up
+     * hooks before start
+     * @param productAsarPath path of product asar
+     * @param logger logger
      */
-    beforeStart?: (productAsarPath: string) => Promisable<void>
+    beforeStart?: (productAsarPath: string, logger?: Logger) => Promisable<void>
     /**
      * hooks on start up error
+     * @param err installing or startup error
+     * @param logger logger
      */
-    onStartError?: (err: unknown) => void
+    onStartError?: (err: unknown, logger?: Logger) => void
   }
 }
 export type StartupWithUpdater = (updater: Updater) => void
+
 type SetUpdater = {
   /**
    * set updater option or create function
    */
   setUpdater: (updater: (() => Promisable<Updater>) | UpdaterOption) => void
+}
+
+const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
+  install()
+  logger?.info(`update success!`)
 }
 
 /**
@@ -77,35 +99,36 @@ export function initApp(
     hooks,
   } = appOptions || {}
   const {
-    beforeDoUpdate,
+    onInstall = defaultOnInstall,
     beforeStart,
     onStartError,
   } = hooks || {}
-  function handleError(msg: string) {
-    onStartError?.(new Error(msg))
+  function handleError(err: unknown, logger?: Logger) {
+    onStartError?.(err, logger)
     app.quit()
   }
   async function startup(updater: Updater) {
+    const logger = updater.logger
     try {
-      const asarPath = getProductAsarPath(updater.productName)
+      const productAsarPath = getProductAsarPath(updater.productName)
 
       // apply updated asar
-      const updateAsarPath = `${asarPath}.tmp`
-      if (existsSync(updateAsarPath)) {
-        await beforeDoUpdate?.(asarPath, updateAsarPath)
-        renameSync(updateAsarPath, asarPath)
+      const tempAsarPath = `${productAsarPath}.tmp`
+      if (existsSync(tempAsarPath)) {
+        logger?.info(`installing new asar: ${tempAsarPath}`)
+        await onInstall(() => renameSync(tempAsarPath, productAsarPath), tempAsarPath, productAsarPath, logger)
       }
 
       const mainDir = app.isPackaged
-        ? asarPath
+        ? productAsarPath
         : electronDevDistPath
 
       const entry = resolve(__dirname, mainDir, mainPath)
-      await beforeStart?.(entry)
+      await beforeStart?.(entry, logger)
       // eslint-disable-next-line ts/no-require-imports, ts/no-var-requires
       require(entry)(updater)
     } catch (error) {
-      handleError(`failed to start app, ${error}`)
+      handleError(error, logger)
     }
   }
   let timer = setTimeout(() => {

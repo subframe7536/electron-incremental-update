@@ -10,6 +10,6 @@ export type UpdateJSON = UpdateInfo & {
 }
 
 export function isUpdateJSON(json: any): json is UpdateJSON {
-  const is = (j: any) => 'signature' in j && 'version' in j && 'size' in j && 'minimumVersion' in j
-  return is(json) && 'beta' in json && is(json.beta)
+  const is = (j: any) => !!(j && j.minimumVersion && j.signature && j.size && j.version)
+  return is(json) && is(json?.beta)
 }
