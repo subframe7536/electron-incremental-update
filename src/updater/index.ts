@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
-import { DEFAULT_APP_NAME, getAppVersion, getElectronVersion, getProductAsarPath, unzipFile } from '../utils'
+import { DEFAULT_APP_NAME, getAppVersion, getElectronVersion, getProductAsarPath, restartApp, unzipFile } from '../utils'
 import { verify } from '../crypto'
 import type { UpdateInfo, UpdateJSON } from '../updateJson'
 import { isUpdateJSON } from '../updateJson'
@@ -16,7 +16,6 @@ export class IncrementalUpdater implements Updater {
   private gzipPath: string
   private tmpFilePath: string
   public logger?: Logger
-
   public onDownloading?: (progress: DownloadingInfo) => void
   get productName() {
     return this.option.productName! // set default in constructor
@@ -30,6 +29,10 @@ export class IncrementalUpdater implements Updater {
     this.option.receiveBeta = receiveBeta
   }
 
+  /**
+   * initialize incremental updater
+   * @param option UpdaterOption
+   */
   constructor(option: UpdaterOption) {
     this.option = option
     if (!option.productName) {
@@ -187,6 +190,11 @@ export class IncrementalUpdater implements Updater {
       this.logger?.error('download asar failed', error as Error)
       return error as Error
     }
+  }
+
+  public quitAndInstall() {
+    this.logger?.info('quit and install')
+    restartApp()
   }
 }
 /**
