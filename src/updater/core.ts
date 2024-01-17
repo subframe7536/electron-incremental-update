@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
-import { DEFAULT_APP_NAME, getAppAsarPath, getAppVersion, getElectronVersion, isUpdateJSON, restartApp, unzipFile } from '../utils'
+import { app } from 'electron'
+import { getAppAsarPath, getAppVersion, getElectronVersion, isUpdateJSON, restartApp, unzipFile } from '../utils'
 import { verify } from '../crypto'
 import type { UpdateInfo, UpdateJSON } from '../utils'
 import type { CheckResult, DownloadResult, DownloadingInfo, Logger, UpdaterOption } from './types'
@@ -27,12 +28,6 @@ export class Updater {
    * }
    */
   public onDownloading?: (progress: DownloadingInfo) => void
-  /**
-   * the name of the APP, also the basename of the asar
-   */
-  get APP_NAME() {
-    return this.option.APP_NAME! // set default in constructor
-  }
 
   /**
    * whether receive beta version
@@ -51,17 +46,14 @@ export class Updater {
    */
   constructor(option: UpdaterOption) {
     this.option = option
-    if (!option.APP_NAME) {
-      this.option.APP_NAME = DEFAULT_APP_NAME
-    }
-    this.asarPath = getAppAsarPath(this.APP_NAME)
+    this.asarPath = getAppAsarPath()
     this.gzipPath = `${this.asarPath}.gz`
     this.tmpFilePath = `${this.asarPath}.tmp`
   }
 
   private async needUpdate(version: string, minVersion: string) {
     const compare = this.option.overrideFunctions?.compareVersion ?? compareVersionDefault
-    const appVersion = getAppVersion(this.option.APP_NAME)
+    const appVersion = getAppVersion()
     const entryVersion = getElectronVersion()
     if (await compare(entryVersion, minVersion)) {
       throw new MinimumVersionError(entryVersion, minVersion)
@@ -127,7 +119,7 @@ export class Updater {
       : {
           name: 'releaseAsarURL',
           url: this.option.releaseAsarURL,
-          repoFallback: `${this.option.repository}/releases/download/v${this.info?.version}/${this.APP_NAME}-${this.info?.version}.asar.gz`,
+          repoFallback: `${this.option.repository}/releases/download/v${this.info?.version}/${app.name}-${this.info?.version}.asar.gz`,
           fn: this.option.overrideFunctions?.downloadBuffer ?? downloadBufferDefault,
         }
     data ??= config.url

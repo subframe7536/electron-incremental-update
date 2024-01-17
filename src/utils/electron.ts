@@ -3,8 +3,6 @@ import { dirname, join } from 'node:path'
 import { release } from 'node:os'
 import { app } from 'electron'
 
-export const DEFAULT_APP_NAME = 'ElectronApp'
-
 type Is = {
   dev: boolean
   win: boolean
@@ -27,12 +25,11 @@ export function getLocale() {
 }
 
 /**
- * get the absolute path of `APP_NAME.asar` (not `app.asar`),
+ * get the absolute path of `${app.name}.asar` (not `app.asar`),
  * if is in dev, return `'DEV.asar'`
- * @param name The name of the application
  */
-export function getAppAsarPath(name = DEFAULT_APP_NAME) {
-  return !app.isPackaged ? join(dirname(app.getAppPath()), `${name}.asar`) : 'DEV.asar'
+export function getAppAsarPath() {
+  return !app.isPackaged ? join(dirname(app.getAppPath()), `${app.name}.asar`) : 'DEV.asar'
 }
 
 /**
@@ -43,14 +40,13 @@ export function getElectronVersion() {
 }
 
 /**
- * get the version of application (name.asar)
+ * get the version of application `${app.name}.asar`
  *
  * if is dev, return {@link getElectronVersion}
- * @param name - The name of the application
  */
-export function getAppVersion(name = DEFAULT_APP_NAME) {
+export function getAppVersion() {
   return app.isPackaged
-    ? readFileSync(join(getAppAsarPath(name), 'version'), 'utf-8')
+    ? readFileSync(join(getAppAsarPath(), 'version'), 'utf-8')
     : getElectronVersion()
 }
 

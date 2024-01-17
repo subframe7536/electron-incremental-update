@@ -116,12 +116,6 @@ export interface UpdaterOption {
    */
   SIGNATURE_CERT: string
   /**
-   * name of your application, you can use the `name` in `package.json`
-   *
-   * @default DEFAULT_APP_NAME
-   */
-  APP_NAME?: string
-  /**
    * repository url, e.g. `https://github.com/electron/electron`
    *
    * you can use the `repository` in `package.json`

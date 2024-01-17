@@ -75,26 +75,25 @@ export type GeneratorOverrideFunctions = {
   generateVersionJson?: (existingJson: UpdateJSON, buffer: Buffer, signature: string, version: string, minVersion: string) => UpdateJSON | Promise<UpdateJSON>
 }
 
-export type Options = {
+export type ElectronUpdaterOptions = {
   /**
    * whether is in build mode
    */
   isBuild: boolean
   /**
-   * the name of you application
+   * name and version
    *
-   * you can set as 'name' in `package.json`
+   * same as `package.json`
    */
-  APP_NAME: string
-  /**
-   * the version of you application
-   *
-   * you can set as 'version' in `package.json`
-   */
-  version: string
+  pkg: {
+    name: string
+    version: string
+    main: string
+  }
+  logParsedOptions?: boolean
   /**
    * mini version of entry
-   * @default version
+   * @default '0.0.0'
    */
   minimumVersion?: string
   /**
@@ -185,18 +184,18 @@ export type Options = {
   }
 }
 
-export function parseOptions(options: Options) {
+export function parseOptions(options: ElectronUpdaterOptions) {
   const {
     isBuild,
-    APP_NAME,
-    version,
-    minimumVersion = version,
+    pkg,
+    minimumVersion = '0.0.0',
     minify = false,
+    logParsedOptions,
     paths: {
       entryPath = 'electron/app.ts',
       entryOutputPath = 'app.js',
-      asarOutputPath = `release/${APP_NAME}.asar`,
-      gzipPath = `release/${APP_NAME}-${version}.asar.gz`,
+      asarOutputPath = `release/${pkg.name}.asar`,
+      gzipPath = `release/${pkg.name}-${pkg.version}.asar.gz`,
       electronDistPath = 'dist-electron',
       rendererDistPath = 'dist',
       versionPath = 'version.json',
@@ -212,13 +211,13 @@ export function parseOptions(options: Options) {
   const { generateSignature, generateVersionJson } = overrideFunctions
   let {
     subject = {
-      commonName: APP_NAME,
-      organizationName: `org.${APP_NAME}`,
+      commonName: pkg.name,
+      organizationName: `org.${pkg.name}`,
     },
     days = 365,
   } = certInfo
   const buildAsarOption: BuildAsarOption = {
-    version,
+    version: pkg.version,
     asarOutputPath,
     gzipPath,
     electronDistPath,
@@ -239,7 +238,7 @@ export function parseOptions(options: Options) {
     days,
   })
   const buildVersionOption: BuildVersionOption = {
-    version,
+    version: pkg.version,
     minimumVersion,
     gzipPath,
     privateKey,
@@ -249,5 +248,5 @@ export function parseOptions(options: Options) {
     generateVersionJson,
   }
 
-  return { isBuild, buildAsarOption, buildEntryOption, buildVersionOption }
+  return { isBuild, buildAsarOption, buildEntryOption, buildVersionOption, logParsedOptions }
 }

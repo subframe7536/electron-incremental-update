@@ -3,7 +3,7 @@ import { existsSync, renameSync } from 'node:fs'
 import { app } from 'electron'
 import type { Logger, Updater, UpdaterOption } from './updater'
 import { createUpdater } from './updater'
-import { getAppAsarPath } from './utils'
+import { getAppAsarPath, is } from './utils'
 
 export * from './updater'
 
@@ -54,7 +54,19 @@ export type AppOption = {
     onStartError?: (err: unknown, logger?: Logger) => void
   }
 }
-export type StartupWithUpdater = (updater: Updater) => void
+
+/**
+ * utils for startuping with updater
+ * @param fn startup function
+ * @example
+ * // in electron/main/index.ts
+ * export default startupWithUpdater((updater) => {
+ *   updater.checkUpdate()
+ * })
+ */
+export function startupWithUpdater(fn: (updater: Updater) => Promisable<void>) {
+  return fn
+}
 
 type SetUpdater = {
   /**
@@ -73,7 +85,7 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  * @example
  * ```ts
  * import { getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
- * import { name, repository } from '../package.json'
+ * import { repository } from '../package.json'
  *
  * const SIGNATURE_CERT = '' // auto generate certificate when start app
  * const { cdnPrefix: asarPrefix } = getGithubReleaseCdnGroup()[0]
@@ -82,7 +94,6 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  *   // can be updater option or function that return updater
  *   .setUpdater({
  *     SIGNATURE_CERT,
- *     APP_NAME: name,
  *     repository,
  *     updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
  *     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${name}.asar.gz`),
@@ -104,13 +115,14 @@ export function initApp(
     onStartError,
   } = hooks || {}
   function handleError(err: unknown, logger?: Logger) {
+    console.error(err)
     onStartError?.(err, logger)
     app.quit()
   }
   async function startup(updater: Updater) {
     const logger = updater.logger
     try {
-      const appAsarPath = getAppAsarPath(updater.APP_NAME)
+      const appAsarPath = getAppAsarPath()
 
       // apply updated asar
       const tempAsarPath = `${appAsarPath}.tmp`
@@ -119,9 +131,7 @@ export function initApp(
         await onInstall(() => renameSync(tempAsarPath, appAsarPath), tempAsarPath, appAsarPath, logger)
       }
 
-      const mainDir = app.isPackaged
-        ? appAsarPath
-        : electronDevDistPath
+      const mainDir = is.dev ? electronDevDistPath : appAsarPath
 
       const entry = resolve(__dirname, mainDir, mainPath)
       await beforeStart?.(entry, logger)
