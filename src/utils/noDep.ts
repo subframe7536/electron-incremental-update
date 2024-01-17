@@ -1,3 +1,5 @@
+import { join } from 'node:path/posix'
+
 /**
  * parse Github CDN URL for accelerating the speed of downloading
  *

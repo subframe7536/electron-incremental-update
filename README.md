@@ -225,7 +225,7 @@ if (isNoSuchNativeModuleError(Database)) {
 const db = new Database(':memory:')
 db.exec(
   'DROP TABLE IF EXISTS employees; '
-    + 'CREATE TABLE IF NOT EXISTS employees (name TEXT, salary INTEGER)',
+  + 'CREATE TABLE IF NOT EXISTS employees (name TEXT, salary INTEGER)',
 )
 
 db.prepare('INSERT INTO employees VALUES (:n, :s)').run({

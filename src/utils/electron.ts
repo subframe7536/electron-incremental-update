@@ -118,21 +118,19 @@ export function singleInstance() {
 }
 
 /**
- * set AppData dir for portable Windows app
+ * set `AppData` dir to the dir of .exe file
+ *
+ * useful for portable Windows app
+ * @param dirName dir name, default to `data`
  */
-export function setPortableAppDataPath(dirName = 'data', create?: boolean) {
-  if (!is.win) {
-    return
-  }
+export function setPortableAppDataPath(dirName = 'data') {
   const portablePath = join(dirname(app.getPath('exe')), dirName)
-  let exists = existsSync(portablePath)
-  if (create && !exists) {
+
+  if (!existsSync(portablePath)) {
     mkdirSync(portablePath)
-    exists = true
   }
-  if (exists) {
-    app.setPath('appData', portablePath)
-  }
+
+  app.setPath('appData', portablePath)
 }
 
 /**
