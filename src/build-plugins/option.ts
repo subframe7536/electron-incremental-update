@@ -1,5 +1,4 @@
-// import { isCI } from 'ci-info'
-import type { UpdateJSON } from '../updateJson'
+import type { UpdateJSON } from '../utils/noDep'
 import { parseKeys } from './key'
 
 export type DistinguishedName = {
@@ -86,7 +85,7 @@ export type Options = {
    *
    * you can set as 'name' in `package.json`
    */
-  productName: string
+  APP_NAME: string
   /**
    * the version of you application
    *
@@ -118,7 +117,7 @@ export type Options = {
     entryOutputPath?: string
     /**
      * Path to asar file
-     * @default `release/${productName}.asar`
+     * @default `release/${APP_NAME}.asar`
      */
     asarOutputPath?: string
     /**
@@ -128,7 +127,7 @@ export type Options = {
     versionPath?: string
     /**
      * Path to gzipped asar file
-     * @default `release/${productName}-${version}.asar.gz`
+     * @default `release/${APP_NAME}-${version}.asar.gz`
      */
     gzipPath?: string
     /**
@@ -172,7 +171,7 @@ export type Options = {
       /**
        * the subject of the certificate
        *
-       * @default { commonName: productName, organizationName: `org.${productName}` }
+       * @default { commonName: APP_NAME, organizationName: `org.${APP_NAME}` }
        */
       subject?: DistinguishedName
       /**
@@ -189,15 +188,15 @@ export type Options = {
 export function parseOptions(options: Options) {
   const {
     isBuild,
-    productName,
+    APP_NAME,
     version,
     minimumVersion = version,
     minify = false,
     paths: {
       entryPath = 'electron/app.ts',
       entryOutputPath = 'app.js',
-      asarOutputPath = `release/${productName}.asar`,
-      gzipPath = `release/${productName}-${version}.asar.gz`,
+      asarOutputPath = `release/${APP_NAME}.asar`,
+      gzipPath = `release/${APP_NAME}-${version}.asar.gz`,
       electronDistPath = 'dist-electron',
       rendererDistPath = 'dist',
       versionPath = 'version.json',
@@ -213,8 +212,8 @@ export function parseOptions(options: Options) {
   const { generateSignature, generateVersionJson } = overrideFunctions
   let {
     subject = {
-      commonName: productName,
-      organizationName: `org.${productName}`,
+      commonName: APP_NAME,
+      organizationName: `org.${APP_NAME}`,
     },
     days = 365,
   } = certInfo

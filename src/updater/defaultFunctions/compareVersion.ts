@@ -1,5 +1,5 @@
-import type { Version } from '../../utils/version'
-import { parseVersion } from '../../utils/version'
+import type { Version } from '../../utils/noDep'
+import { parseVersion } from '../../utils/noDep'
 import type { Func } from './download'
 
 export const compareVersionDefault: Func['compareVersion'] = (version1, version2) => {

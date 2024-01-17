@@ -1,4 +1,4 @@
-import type { UpdateJSON } from '../updateJson'
+import type { UpdateInfo, UpdateJSON } from '../utils'
 
 export class MinimumVersionError extends Error {
   currentVersion: string
@@ -26,14 +26,10 @@ export class DownloadError extends Error {
   }
 }
 
-type CheckResultError = MinimumVersionError | DownloadError | TypeError | Error
-type DownloadResultError = DownloadError | VerifyFailedError | TypeError | Error
+export type CheckResultError = MinimumVersionError | DownloadError | TypeError | Error
+export type DownloadResultError = DownloadError | VerifyFailedError | TypeError | Error
 
-export type CheckResultType = {
-  size: number
-  version: string
-} | undefined | CheckResultError
-
+export type CheckResult = UpdateInfo | undefined | CheckResultError
 export type DownloadResult = true | DownloadResultError
 
 export type DownloadingInfo = {
@@ -56,55 +52,6 @@ export type Logger = {
   debug: (msg: string) => void
   warn: (msg: string) => void
   error: (msg: string, e?: Error) => void
-}
-
-export interface Updater {
-  /**
-   * the name of the product, also the basename of the asar
-   */
-  productName: string
-  /**
-   * whether receive beta version
-   */
-  receiveBeta: boolean
-  /**
-   * updater logger
-   */
-  logger?: Logger
-  /**
-   * downloading progress hook
-   * @param progress download progress
-   * @example
-   * updater.onDownloading = ({ percent, total, current }) => {
-   *   console.log(`download progress: ${percent}, total: ${total}, current: ${current}`)
-   * }
-   */
-  onDownloading?: (progress: DownloadingInfo) => void
-  /**
-   * check update info
-   * @param data `updatejson` url or object
-   * @returns
-   * - Available:`{size: number, version: string}`
-   * - Unavailable: `undefined`
-   * - Fail: `CheckResultError`
-   */
-  checkUpdate: (data?: string | UpdateJSON) => Promise<CheckResultType>
-  /**
-   * download update
-   *
-   * if you want to update **offline**, you can set both `src` and `sig` to verify and install
-   * @param data asar download url or buffer
-   * @param sig signature
-   * @returns
-   * - `true`: success
-   * - `DownloadResultError`: fail
-   */
-  download: (data?: string | Buffer, sig?: string) => Promise<DownloadResult>
-  /**
-   * quit and install
-   * @returns void
-   */
-  quitAndInstall: () => void
 }
 
 export type UpdaterOverrideFunctions = {
@@ -173,7 +120,7 @@ export interface UpdaterOption {
    *
    * @default DEFAULT_APP_NAME
    */
-  productName?: string
+  APP_NAME?: string
   /**
    * repository url, e.g. `https://github.com/electron/electron`
    *
@@ -191,7 +138,7 @@ export interface UpdaterOption {
   updateJsonURL?: string
   /**
    * URL of release asar.gz
-   * @default `${repository}/releases/download/v${version}/${productName}-${version}.asar.gz`
+   * @default `${repository}/releases/download/v${version}/${APP_NAME}-${version}.asar.gz`
    * @throws if `releaseAsarURL` and `repository` are all not set
    */
   releaseAsarURL?: string

@@ -1,9 +1,9 @@
 import { resolve } from 'node:path'
 import { existsSync, renameSync } from 'node:fs'
 import { app } from 'electron'
-import type { Logger, Updater, UpdaterOption } from './updater/types'
+import type { Logger, Updater, UpdaterOption } from './updater'
 import { createUpdater } from './updater'
-import { getProductAsarPath } from './utils'
+import { getAppAsarPath } from './utils'
 
 export * from './updater'
 
@@ -12,7 +12,7 @@ type Promisable<T> = T | Promise<T>
 type OnInstallFunction = (
   install: VoidFunction,
   tempAsarPath: string,
-  productAsarPath: string,
+  appAsarPath: string,
   logger?: Logger
 ) => Promisable<void>
 
@@ -32,20 +32,20 @@ export type AppOption = {
    */
   hooks?: {
     /**
-     * hooks on rename temp asar path to product asar path
-     * @param install `() => renameSync(tempAsarPath, productAsarPath)`
+     * hooks on rename temp asar path to `APP_NAME.asar`
+     * @param install `() => renameSync(tempAsarPath, appAsarPath)`
      * @param tempAsarPath temp(updated) asar path
-     * @param productAsarPath product asar path
+     * @param appAsarPath `APP_NAME.asar` path
      * @param logger logger
      * @default install(); logger?.info(`update success!`)
      */
     onInstall?: OnInstallFunction
     /**
      * hooks before start
-     * @param productAsarPath path of product asar
+     * @param appAsarPath path of `APP_NAME.asar`
      * @param logger logger
      */
-    beforeStart?: (productAsarPath: string, logger?: Logger) => Promisable<void>
+    beforeStart?: (appAsarPath: string, logger?: Logger) => Promisable<void>
     /**
      * hooks on start up error
      * @param err installing or startup error
@@ -82,7 +82,7 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  *   // can be updater option or function that return updater
  *   .setUpdater({
  *     SIGNATURE_CERT,
- *     productName: name,
+ *     APP_NAME: name,
  *     repository,
  *     updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
  *     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${name}.asar.gz`),
@@ -110,17 +110,17 @@ export function initApp(
   async function startup(updater: Updater) {
     const logger = updater.logger
     try {
-      const productAsarPath = getProductAsarPath(updater.productName)
+      const appAsarPath = getAppAsarPath(updater.APP_NAME)
 
       // apply updated asar
-      const tempAsarPath = `${productAsarPath}.tmp`
+      const tempAsarPath = `${appAsarPath}.tmp`
       if (existsSync(tempAsarPath)) {
         logger?.info(`installing new asar: ${tempAsarPath}`)
-        await onInstall(() => renameSync(tempAsarPath, productAsarPath), tempAsarPath, productAsarPath, logger)
+        await onInstall(() => renameSync(tempAsarPath, appAsarPath), tempAsarPath, appAsarPath, logger)
       }
 
       const mainDir = app.isPackaged
-        ? productAsarPath
+        ? appAsarPath
         : electronDevDistPath
 
       const entry = resolve(__dirname, mainDir, mainPath)

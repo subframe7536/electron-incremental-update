@@ -1,6 +1,5 @@
 import { net } from 'electron'
-import { isUpdateJSON } from '../../updateJson'
-import { waitAppReady } from '../../utils/core'
+import { isUpdateJSON, waitAppReady } from '../../utils'
 import type { UpdaterOverrideFunctions } from '../types'
 
 export type Func = Required<UpdaterOverrideFunctions>

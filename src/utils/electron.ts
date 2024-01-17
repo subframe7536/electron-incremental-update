@@ -27,11 +27,11 @@ export function getLocale() {
 }
 
 /**
- * get the application asar absolute path (not `app.asar`),
+ * get the absolute path of `APP_NAME.asar` (not `app.asar`),
  * if is in dev, return `'DEV.asar'`
  * @param name The name of the application
  */
-export function getProductAsarPath(name = DEFAULT_APP_NAME) {
+export function getAppAsarPath(name = DEFAULT_APP_NAME) {
   return !app.isPackaged ? join(dirname(app.getAppPath()), `${name}.asar`) : 'DEV.asar'
 }
 
@@ -50,7 +50,7 @@ export function getElectronVersion() {
  */
 export function getAppVersion(name = DEFAULT_APP_NAME) {
   return app.isPackaged
-    ? readFileSync(join(getProductAsarPath(name), 'version'), 'utf-8')
+    ? readFileSync(join(getAppAsarPath(name), 'version'), 'utf-8')
     : getElectronVersion()
 }
 

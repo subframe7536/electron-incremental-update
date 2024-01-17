@@ -3,9 +3,8 @@ import { existsSync } from 'node:fs'
 import Asar from '@electron/asar'
 import { build } from 'esbuild'
 import { signature } from '../crypto'
-import { zipFile } from '../utils/zip'
-import { parseVersion } from '../utils/version'
-import { type UpdateJSON, isUpdateJSON } from '../updateJson'
+import { isUpdateJSON, parseVersion, zipFile } from '../utils'
+import type { UpdateJSON } from '../utils'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 
 export async function buildAsar({
@@ -61,10 +60,12 @@ export async function buildVersion({
       throw new Error('invalid version info')
     }
   } else {
-    _json.beta.version = version
-    _json.beta.minimumVersion = minimumVersion
-    _json.beta.signature = sig
-    _json.beta.size = buffer.length
+    _json.beta = {
+      version,
+      minimumVersion,
+      signature: sig,
+      size: buffer.length,
+    }
     if (!parseVersion(version).stage) {
       _json.version = version
       _json.minimumVersion = minimumVersion

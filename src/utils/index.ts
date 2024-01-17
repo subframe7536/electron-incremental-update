@@ -1,4 +1,3 @@
-export * from './core'
-export * from './version'
+export * from './electron'
 export * from './zip'
-export * from './utils'
+export * from './noDep'
