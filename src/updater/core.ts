@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
 import { app } from 'electron'
-import { getAppAsarPath, getAppVersion, getElectronVersion, isUpdateJSON, restartApp, unzipFile } from '../utils'
+import { getAppAsarPath, getVersions, isUpdateJSON, restartApp, unzipFile } from '../utils'
 import { verify } from '../crypto'
 import type { UpdateInfo, UpdateJSON } from '../utils'
 import type { CheckResult, DownloadResult, DownloadingInfo, Logger, UpdaterOption } from './types'
@@ -53,8 +53,7 @@ export class Updater {
 
   private async needUpdate(version: string, minVersion: string) {
     const compare = this.option.overrideFunctions?.compareVersion ?? compareVersionDefault
-    const appVersion = getAppVersion()
-    const entryVersion = getElectronVersion()
+    const { app: appVersion, installer: entryVersion } = getVersions()
     if (await compare(entryVersion, minVersion)) {
       throw new MinimumVersionError(entryVersion, minVersion)
     }

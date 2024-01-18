@@ -20,34 +20,37 @@ export const is: Is = {
   linux: process.platform === 'linux',
 }
 
-export function getLocale() {
-  return app.isReady() ? app.getLocale() : undefined
-}
-
 /**
  * get the absolute path of `${app.name}.asar` (not `app.asar`),
  * if is in dev, return `'DEV.asar'`
  */
 export function getAppAsarPath() {
-  return !app.isPackaged ? join(dirname(app.getAppPath()), `${app.name}.asar`) : 'DEV.asar'
+  return is.dev ? join(dirname(app.getAppPath()), `${app.name}.asar`) : 'DEV.asar'
 }
 
 /**
- * get the version of Electron runtime
- */
-export function getElectronVersion() {
-  return app.getVersion()
-}
-
-/**
- * get the version of application `${app.name}.asar`
+ * get versions of App, Installer, Electron, Node and System version
  *
- * if is dev, return {@link getElectronVersion}
+ * App version is read from `version` file in `${app.name}.asar`
+ *
+ * Installer version is read from `package.json`
  */
-export function getAppVersion() {
-  return app.isPackaged
-    ? readFileSync(join(getAppAsarPath(), 'version'), 'utf-8')
-    : getElectronVersion()
+export function getVersions() {
+  const platform = is.win
+    ? 'Windows'
+    : is.mac
+      ? 'Mac'
+      : process.platform.toLocaleUpperCase()
+
+  return {
+    app: is.dev
+      ? app.getVersion()
+      : readFileSync(join(getAppAsarPath(), 'version'), 'utf-8'),
+    installer: app.getVersion(),
+    electron: process.versions.electron,
+    node: process.versions.node,
+    system: `${platform} ${release()}`,
+  }
 }
 
 export class NoSuchNativeModuleError extends Error {
@@ -67,9 +70,9 @@ export function isNoSuchNativeModuleError(e: unknown): e is NoSuchNativeModuleEr
  * @param packageName native package name
  */
 export function requireNative<T = any>(packageName: string): T | NoSuchNativeModuleError {
-  const path = app.isPackaged
-    ? join(app.getAppPath(), 'node_modules', packageName)
-    : packageName
+  const path = is.dev
+    ? packageName
+    : join(app.getAppPath(), 'node_modules', packageName)
   try {
     // eslint-disable-next-line ts/no-require-imports
     return require(path)
