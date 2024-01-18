@@ -68,11 +68,12 @@ export function startupWithUpdater(fn: (updater: Updater) => Promisable<void>) {
   return fn
 }
 
-type SetUpdater = {
+type StartupWithUpdater = {
   /**
-   * set updater option or create function
+   * starup app
+   * @param updater updater option or create function
    */
-  setUpdater: (updater: (() => Promisable<Updater>) | UpdaterOption) => void
+  startupWithUpdater: (updater: (() => Promisable<Updater>) | UpdaterOption) => void
 }
 
 const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
@@ -92,7 +93,7 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  * const { cdnPrefix: jsonPrefix } = getGithubFileCdnGroup()[0]
  * initApp({ onStart: console.log })
  *   // can be updater option or function that return updater
- *   .setUpdater({
+ *   .startupWithUpdater({
  *     SIGNATURE_CERT,
  *     repository,
  *     updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
@@ -103,7 +104,7 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  */
 export function initApp(
   appOptions?: AppOption,
-): SetUpdater {
+): StartupWithUpdater {
   const {
     electronDevDistPath = 'dist-electron',
     mainPath = 'main/index.js',
@@ -142,10 +143,10 @@ export function initApp(
     }
   }
   let timer = setTimeout(() => {
-    handleError('start app timeout, please call .setUpdater() to set updater and start')
+    handleError('start app timeout, please start app with `initApp(options).startupWithUpdater(options)`')
   }, 3000)
   return {
-    async setUpdater(updater) {
+    async startupWithUpdater(updater) {
       clearTimeout(timer)
       if (typeof updater === 'object') {
         await startup(createUpdater(updater))
