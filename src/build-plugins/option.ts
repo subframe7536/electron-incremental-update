@@ -90,6 +90,9 @@ export type ElectronUpdaterOptions = {
     version: string
     main: string
   }
+  /**
+   * Whether to log parsed options
+   */
   logParsedOptions?: boolean
   /**
    * mini version of entry
@@ -98,8 +101,9 @@ export type ElectronUpdaterOptions = {
   minimumVersion?: string
   /**
    * Whether to minify entry file
+   * @default isBuild
    */
-  minify?: boolean
+  minifyEntry?: boolean
   /**
    * paths config
    */
@@ -116,7 +120,7 @@ export type ElectronUpdaterOptions = {
     entryOutputPath?: string
     /**
      * Path to asar file
-     * @default `release/${APP_NAME}.asar`
+     * @default `release/${Electron.app.name}.asar`
      */
     asarOutputPath?: string
     /**
@@ -126,7 +130,7 @@ export type ElectronUpdaterOptions = {
     versionPath?: string
     /**
      * Path to gzipped asar file
-     * @default `release/${APP_NAME}-${version}.asar.gz`
+     * @default `release/${Electron.app.name}-${version}.asar.gz`
      */
     gzipPath?: string
     /**
@@ -170,17 +174,17 @@ export type ElectronUpdaterOptions = {
       /**
        * the subject of the certificate
        *
-       * @default { commonName: APP_NAME, organizationName: `org.${APP_NAME}` }
+       * @default { commonName: `${Electron.app.name}`, organizationName: `org.${Electron.app.name}` }
        */
       subject?: DistinguishedName
       /**
        * expire days of the certificate
        *
-       * @default 365
+       * @default 3650
        */
       days?: number
     }
-    overrideFunctions?: GeneratorOverrideFunctions
+    overrideGenerator?: GeneratorOverrideFunctions
   }
 }
 
@@ -189,7 +193,7 @@ export function parseOptions(options: ElectronUpdaterOptions) {
     isBuild,
     pkg,
     minimumVersion = '0.0.0',
-    minify = false,
+    minifyEntry = isBuild,
     logParsedOptions,
     paths: {
       entryPath = 'electron/app.ts',
@@ -205,16 +209,16 @@ export function parseOptions(options: ElectronUpdaterOptions) {
       certPath = 'keys/cert.pem',
       keyLength = 2048,
       certInfo = {},
-      overrideFunctions = {},
+      overrideGenerator = {},
     } = {},
   } = options
-  const { generateSignature, generateVersionJson } = overrideFunctions
+  const { generateSignature, generateVersionJson } = overrideGenerator
   let {
     subject = {
       commonName: pkg.name,
       organizationName: `org.${pkg.name}`,
     },
-    days = 365,
+    days = 3650,
   } = certInfo
   const buildAsarOption: BuildAsarOption = {
     version: pkg.version,
@@ -226,7 +230,7 @@ export function parseOptions(options: ElectronUpdaterOptions) {
   const buildEntryOption: BuildEntryOption = {
     entryPath,
     entryOutputPath,
-    minify,
+    minify: minifyEntry,
   }
   // generate keys or get from file
   const { privateKey, cert } = parseKeys({

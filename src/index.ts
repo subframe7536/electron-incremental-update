@@ -32,17 +32,17 @@ export type AppOption = {
    */
   hooks?: {
     /**
-     * hooks on rename temp asar path to `APP_NAME.asar`
+     * hooks on rename temp asar path to `${Electron.app.name}.asar`
      * @param install `() => renameSync(tempAsarPath, appAsarPath)`
      * @param tempAsarPath temp(updated) asar path
-     * @param appAsarPath `APP_NAME.asar` path
+     * @param appAsarPath `${Electron.app.name}.asar` path
      * @param logger logger
      * @default install(); logger?.info(`update success!`)
      */
     onInstall?: OnInstallFunction
     /**
      * hooks before start
-     * @param appAsarPath path of `APP_NAME.asar`
+     * @param appAsarPath path of `${Electron.app.name}.asar`
      * @param logger logger
      */
     beforeStart?: (appAsarPath: string, logger?: Logger) => Promisable<void>
@@ -96,7 +96,7 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  *     SIGNATURE_CERT,
  *     repository,
  *     updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
- *     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${name}.asar.gz`),
+ *     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${Electron.app.name}.asar.gz`),
  *     receiveBeta: true,
  *   })
  * ```

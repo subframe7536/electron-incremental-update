@@ -132,7 +132,7 @@ export interface UpdaterOption {
   updateJsonURL?: string
   /**
    * URL of release asar.gz
-   * @default `${repository}/releases/download/v${version}/${APP_NAME}-${version}.asar.gz`
+   * @default `${repository}/releases/download/v${version}/${Electron.app.name}-${version}.asar.gz`
    * @throws if `releaseAsarURL` and `repository` are all not set
    */
   releaseAsarURL?: string
