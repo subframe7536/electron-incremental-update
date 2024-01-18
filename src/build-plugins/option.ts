@@ -1,6 +1,12 @@
 import type { UpdateJSON } from '../utils/noDep'
 import { parseKeys } from './key'
 
+export type PKG = {
+  name: string
+  version: string
+  main: string
+}
+
 export type DistinguishedName = {
   countryName?: string
   stateOrProvinceName?: string
@@ -76,24 +82,6 @@ export type GeneratorOverrideFunctions = {
 }
 
 export type ElectronUpdaterOptions = {
-  /**
-   * whether is in build mode
-   */
-  isBuild: boolean
-  /**
-   * name and version
-   *
-   * same as `package.json`
-   */
-  pkg: {
-    name: string
-    version: string
-    main: string
-  }
-  /**
-   * Whether to log parsed options
-   */
-  logParsedOptions?: boolean
   /**
    * mini version of entry
    * @default '0.0.0'
@@ -188,13 +176,10 @@ export type ElectronUpdaterOptions = {
   }
 }
 
-export function parseOptions(options: ElectronUpdaterOptions) {
+export function parseOptions(options: ElectronUpdaterOptions, isBuild: boolean, pkg: PKG) {
   const {
-    isBuild,
-    pkg,
     minimumVersion = '0.0.0',
     minifyEntry = isBuild,
-    logParsedOptions,
     paths: {
       entryPath = 'electron/app.ts',
       entryOutputPath = 'app.js',
@@ -252,5 +237,5 @@ export function parseOptions(options: ElectronUpdaterOptions) {
     generateVersionJson,
   }
 
-  return { isBuild, buildAsarOption, buildEntryOption, buildVersionOption, logParsedOptions }
+  return { buildAsarOption, buildEntryOption, buildVersionOption }
 }

@@ -1,58 +1,12 @@
 import { resolve } from 'node:path'
 import { rmSync } from 'node:fs'
-import type { InlineConfig, Plugin as VitePlugin } from 'vite'
-import { createLogger, mergeConfig, normalizePath } from 'vite'
+import { type InlineConfig, createLogger, mergeConfig, normalizePath } from 'vite'
 import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
 import type { Prettify } from '@subframe7536/type-utils'
 import { notBundle } from 'vite-plugin-electron/plugin'
 import { buildAsar, buildEntry, buildVersion } from './build-plugins/build'
-import type { ElectronUpdaterOptions } from './build-plugins/option'
+import type { ElectronUpdaterOptions, PKG } from './build-plugins/option'
 import { parseOptions } from './build-plugins/option'
-
-export type { ElectronUpdaterOptions }
-
-function pluginUsingParsedOptions(options: ReturnType<typeof parseOptions>, pkg: any): VitePlugin {
-  const { isBuild, buildAsarOption, buildEntryOption, buildVersionOption, logParsedOptions } = options
-  const { entryPath, entryOutputPath } = buildEntryOption
-  const { asarOutputPath } = buildAsarOption
-
-  if (resolve(normalizePath(pkg.main)) !== resolve(normalizePath(entryOutputPath))) {
-    throw new Error(`wrong entry path: \nin package.json: "${pkg.main}"\nin vite config: "${entryOutputPath}"`)
-  }
-
-  const id = 'electron-incremental-updater'
-  const log = createLogger('info', { prefix: `[${id}]` })
-  logParsedOptions && log.info(
-    JSON.stringify(options, (key, value) => ((key === 'privateKey' || key === 'cert') ? '***' : value), 2),
-    { timestamp: true },
-  )
-
-  return {
-    name: `vite-plugin-${id}`,
-    enforce: 'post',
-    async closeBundle() {
-      await buildEntry(buildEntryOption)
-
-      log.info(`build entry from '${entryPath}' to '${entryOutputPath}'`, { timestamp: true })
-
-      if (!isBuild) {
-        return
-      }
-
-      await buildAsar(buildAsarOption)
-
-      await buildVersion(buildVersionOption)
-      log.info(`build asar to '${asarOutputPath}'`, { timestamp: true })
-    },
-  }
-}
-
-/**
- * create updater plugin
- */
-export function ElectronUpdater(options: ElectronUpdaterOptions): VitePlugin {
-  return pluginUsingParsedOptions(parseOptions(options), options.pkg)
-}
 
 type MakeRequired<T, K extends keyof T> = Exclude<T, undefined> & { [P in K]-?: T[P] }
 type ReplaceKey<
@@ -67,26 +21,42 @@ type MakeRequiredAndReplaceKey<
   NewKey extends string,
 > = MakeRequired<ReplaceKey<T, K, NewKey>, NewKey>
 
-export type CombinedOptions = {
+export type BuildElectronPluginOptions = {
+  /**
+   * whether is in build mode
+   * ```ts
+   * export default defineConfig(({ command }) => {
+   *   const isBuild = command === 'build'
+   * })
+   * ```
+   */
   isBuild: boolean
-  pkg: ElectronUpdaterOptions['pkg']
+  /**
+   * name, version and main in `package.json`
+   * ```ts
+   * import pkg from './package.json'
+   * ```
+   */
+  pkg: PKG
+  /**
+   * main options
+   */
   main: Prettify<
     MakeRequiredAndReplaceKey<ElectronSimpleOptions['main'], 'entry', 'files'>
   >
+  /**
+   * preload options
+   */
   preload: Prettify<
     MakeRequiredAndReplaceKey<Exclude<ElectronSimpleOptions['preload'], undefined>, 'input', 'files'>
   >
   /**
-   * use debug helper in main
+   * updater options
+   */
+  updater?: ElectronUpdaterOptions
+  /**
+   * use debug helper in main, for `.vscode/.debug.script.mjs`, call after custom `onstart`
    * @default true
-   * ```ts
-   * onstart({ startup }) {
-   *   process.env.VSCODE_DEBUG
-   *     // For `.vscode/.debug.script.mjs`
-   *     ? console.log('[startup] Electron App')
-   *     : startup()
-   *}
-   * ```
    */
   useDebugOnStart?: boolean
   /**
@@ -94,14 +64,13 @@ export type CombinedOptions = {
    * @default true
    */
   useNotBundle?: boolean
-  updater?: Prettify<Omit<ElectronUpdaterOptions, 'isBuild' | 'pkg'>>
+  /**
+   * Whether to log parsed options
+   */
+  logParsedOptions?: boolean
 }
 
-function _mergeConfig(baseConfig: InlineConfig, customConfig?: InlineConfig) {
-  return customConfig
-    ? mergeConfig<InlineConfig, InlineConfig>(baseConfig, customConfig)
-    : baseConfig
-}
+const id = 'electron-incremental-updater'
 
 /**
  * build options for `vite-plugin-electron/simple`
@@ -113,65 +82,142 @@ function _mergeConfig(baseConfig: InlineConfig, customConfig?: InlineConfig) {
  * - no `vite-plugin-electron-renderer` config
  *
  * you can override all the configs
+ *
+ * @example
+ * import { defineConfig } from 'vite'
+ * import electronSimple from 'vite-plugin-electron/simple'
+ * import { buildElectronPluginOptions } from 'electron-incremental-update/vite'
+ * import pkg from './package.json'
+ *
+ * export default defineConfig(({ command }) => {
+ *   const electronOptions = buildElectronPluginOptions({
+ *     isBuild: command === 'build',
+ *     pkg,
+ *     main: {
+ *       files: ['./electron/main/index.ts', './electron/main/worker.ts'],
+ *     },
+ *     preload: {
+ *       files: './electron/preload/index.ts',
+ *     },
+ *   })
+ *   return {
+ *     plugins: [electronSimple(electronOptions)],
+ *   }
+ * })
  */
-export function buildElectronPluginOptions(options: CombinedOptions): ElectronSimpleOptions {
-  const updaterOptions = (options.updater ?? {}) as ElectronUpdaterOptions
-  updaterOptions.isBuild = options.isBuild
-  updaterOptions.pkg = options.pkg
+export function buildElectronPluginOptions(options: BuildElectronPluginOptions): ElectronSimpleOptions {
+  const log = createLogger('info', { prefix: `[${id}]` })
+  const {
+    isBuild,
+    pkg,
+    main: _main,
+    preload: _preload,
+    updater = {},
+    useDebugOnStart = true,
+    useNotBundle = true,
+    logParsedOptions = false,
+  } = options
+  const _options = parseOptions(updater, isBuild, pkg)
 
-  const _options = parseOptions(updaterOptions)
   rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
-  console.log(`remove old electron files in '${_options.buildAsarOption.electronDistPath}'`)
+  log.info(`remove old electron files in '${_options.buildAsarOption.electronDistPath}'`)
 
-  const sourcemap = _options.isBuild || !!process.env.VSCODE_DEBUG
-  const pkg = options.pkg
+  const { buildAsarOption, buildEntryOption, buildVersionOption } = _options
+  const { entryPath, entryOutputPath } = buildEntryOption
 
-  return {
+  const sourcemap = isBuild || !!process.env.VSCODE_DEBUG
+
+  if (resolve(normalizePath(pkg.main)) !== resolve(normalizePath(entryOutputPath))) {
+    throw new Error(`wrong entry path: \nin package.json: "${pkg.main}"\nin vite config: "${entryOutputPath}"`)
+  }
+
+  // todo: reload when `entryPath` changes
+  let isInit = false
+  const _buildEntry = async () => {
+    if (isInit) {
+      return
+    }
+
+    isInit = true
+    await buildEntry(buildEntryOption)
+    log.info(`build entry from '${entryPath}' to '${entryOutputPath}'`, { timestamp: true })
+  }
+
+  const result: ElectronSimpleOptions = {
     main: {
-      entry: options.main.files,
-      ...((options.useDebugOnStart ?? true)
-        ? {
-            onstart({ startup }) {
-              process.env.VSCODE_DEBUG
-                // For `.vscode/.debug.script.mjs`
-                ? console.log('[startup] Electron App')
-                : startup()
-            },
-          }
-        : options.main.onstart
-      ),
-      vite: _mergeConfig(
+      entry: _main.files,
+      onstart: async (args) => {
+        _buildEntry()
+        _main.onstart?.(args)
+
+        if (useDebugOnStart) {
+          process.env.VSCODE_DEBUG
+            // For `.vscode/.debug.script.mjs`
+            ? console.log('[startup] Electron App')
+            : args.startup()
+        }
+      },
+      vite: mergeConfig<InlineConfig, InlineConfig>(
         {
-          plugins: (options.useNotBundle ?? true) ? [notBundle()] : undefined,
+          plugins: useNotBundle
+            ? [notBundle()]
+            : [],
           build: {
             sourcemap,
-            minify: _options.isBuild,
-            outDir: `${_options.buildAsarOption.electronDistPath}/main`,
+            minify: isBuild,
+            outDir: `${buildAsarOption.electronDistPath}/main`,
             rollupOptions: {
               external: Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}),
             },
           },
         },
-        options.main.vite,
+        _main.vite ?? {},
       ),
     },
     preload: {
-      input: options.preload.files,
-      onstart: options.preload.onstart,
-      vite: _mergeConfig(
+      input: _preload.files,
+      onstart: _preload.onstart,
+      vite: mergeConfig<InlineConfig, InlineConfig>(
         {
-          plugins: [pluginUsingParsedOptions(_options, pkg)],
+          plugins: [{
+            name: `${id}-build`,
+            enforce: 'post',
+            apply() {
+              return isBuild
+            },
+            async closeBundle() {
+              await buildAsar(buildAsarOption)
+              log.info(`build asar to '${buildAsarOption.asarOutputPath}'`, { timestamp: true })
+
+              await buildVersion(buildVersionOption)
+              log.info(`build version info to '${buildVersionOption.versionPath}'`, { timestamp: true })
+            },
+          }],
           build: {
             sourcemap: sourcemap ? 'inline' : undefined,
-            minify: _options.isBuild,
-            outDir: `${_options.buildAsarOption.electronDistPath}/preload`,
+            minify: isBuild,
+            outDir: `${buildAsarOption.electronDistPath}/preload`,
             rollupOptions: {
               external: Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}),
             },
           },
         },
-        options.preload.vite,
+        _preload.vite ?? {},
       ),
     },
   }
+
+  logParsedOptions && log.info(
+    JSON.stringify(
+      {
+        ...result,
+        updater: { buildAsarOption, buildEntryOption, buildVersionOption },
+      },
+      (key, value) => ((key === 'privateKey' || key === 'cert') ? '***' : value),
+      2,
+    ),
+    { timestamp: true },
+  )
+
+  return result
 }
