@@ -163,9 +163,7 @@ export function buildElectronPluginOptions(options: BuildElectronPluginOptions):
       },
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
-          plugins: useNotBundle
-            ? [notBundle()]
-            : [],
+          plugins: !isBuild && useNotBundle ? [notBundle()] : [],
           build: {
             sourcemap,
             minify: isBuild,

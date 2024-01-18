@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { release } from 'node:os'
+import type { BrowserWindow } from 'electron'
 import { app } from 'electron'
 
 type Is = {
@@ -25,7 +26,7 @@ export const is: Is = {
  * if is in dev, return `'DEV.asar'`
  */
 export function getAppAsarPath() {
-  return is.dev ? join(dirname(app.getAppPath()), `${app.name}.asar`) : 'DEV.asar'
+  return is.dev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${app.name}.asar`)
 }
 
 /**
@@ -66,10 +67,10 @@ export function isNoSuchNativeModuleError(e: unknown): e is NoSuchNativeModuleEr
 }
 
 /**
- * require native package, if not found, return {@link NoSuchNativeModuleError}
+ * require native package, if not found, throw {@link NoSuchNativeModuleError}
  * @param packageName native package name
  */
-export function requireNative<T = any>(packageName: string): T | NoSuchNativeModuleError {
+export function requireNative<T = any>(packageName: string): T {
   const path = is.dev
     ? packageName
     : join(app.getAppPath(), 'node_modules', packageName)
@@ -77,7 +78,7 @@ export function requireNative<T = any>(packageName: string): T | NoSuchNativeMod
     // eslint-disable-next-line ts/no-require-imports
     return require(path)
   } catch (error) {
-    return new NoSuchNativeModuleError(packageName)
+    throw new NoSuchNativeModuleError(packageName)
   }
 }
 
@@ -93,7 +94,7 @@ export function restartApp() {
  * fix app use model id, only for Windows
  * @param id app id
  */
-export function setAppUserModelId(id: string): void {
+export function setAppUserModelId(id: string) {
   is.win && app.setAppUserModelId(is.dev ? process.execPath : id)
 }
 
@@ -107,13 +108,25 @@ export function disableHWAccForWin7() {
 }
 
 /**
- * keep single electron instance
+ * keep single electron instance and hook `second-instance` event
+ * @param window brwoser window to show
+ * @returns `false` if the app is running
  */
-export function singleInstance() {
-  if (!app.requestSingleInstanceLock()) {
-    app.quit()
-    process.exit(0)
-  }
+export function singleInstance(window?: BrowserWindow) {
+  const result = app.requestSingleInstanceLock()
+  result
+    ? app.on('second-instance', () => {
+      if (window) {
+        window.show()
+        if (window.isMinimized()) {
+          window.restore()
+        }
+        window.focus()
+      }
+    })
+    : app.quit()
+
+  return result
 }
 
 /**
@@ -149,4 +162,39 @@ export function waitAppReady(timeout = 1000): Promise<void> {
         resolve()
       })
     })
+}
+
+/**
+ * get paths
+ *
+ * only for main process
+ */
+export function getPaths() {
+  const root = join(__dirname, '..')
+  const mainDirPath = join(root, 'main')
+  const preloadDirPath = join(root, 'preload')
+  const rendererDirPath = join(root, 'renderer')
+  const devServerURL = process.env.VITE_DEV_SERVER_URL
+  const indexHTMLPath = join(rendererDirPath, 'index.html')
+  const publicDirPath = devServerURL ? join(root, '../public') : rendererDirPath
+  return {
+    mainDirPath,
+    preloadDirPath,
+    rendererDirPath,
+    publicDirPath,
+    devServerURL,
+    indexHTMLPath,
+    getPathFromPreload(...path: string[]) {
+      return join(preloadDirPath, ...path)
+    },
+    getPathFromPublic(...path: string[]) {
+      return join(publicDirPath, ...path)
+    },
+    /**
+     * load app from dev server when dev, and load from index.html when prod
+     */
+    loadApp(window: BrowserWindow) {
+      devServerURL ? window.loadURL(devServerURL) : window.loadFile(indexHTMLPath)
+    },
+  }
 }
