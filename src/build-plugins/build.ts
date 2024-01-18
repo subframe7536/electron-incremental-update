@@ -45,12 +45,15 @@ export async function buildVersion({
   }
   if (existsSync(versionPath)) {
     try {
-      _json = JSON.parse(await readFile(versionPath, 'utf-8'))
+      const oldVersionJson = JSON.parse(await readFile(versionPath, 'utf-8'))
+      if (isUpdateJSON(oldVersionJson)) {
+        _json = oldVersionJson
+      } else {
+        console.warn('old version json is invalid, ignore it')
+      }
     } catch (error) {}
   }
-  if (!isUpdateJSON(_json)) {
-    throw new Error('invalid version file')
-  }
+
   const buffer = await readFile(gzipPath)
 
   const sig = await (generateSignature ?? signature)(buffer, privateKey, cert, version)

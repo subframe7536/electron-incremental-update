@@ -74,7 +74,7 @@ const id = 'electron-incremental-updater'
 
 /**
  * build options for `vite-plugin-electron/simple`
- * - integrate with {@link ElectronUpdater}
+ * - integrate with updater
  * - only contains `main` and `preload` configs
  * - remove old electron files
  * - externalize dependencies
@@ -82,6 +82,8 @@ const id = 'electron-incremental-updater'
  * - no `vite-plugin-electron-renderer` config
  *
  * you can override all the configs
+ *
+ * Limitation: entry file change cannot trigger auto restart
  *
  * @example
  * import { defineConfig } from 'vite'
@@ -102,6 +104,10 @@ const id = 'electron-incremental-updater'
  *   })
  *   return {
  *     plugins: [electronSimple(electronOptions)],
+ *     server: process.env.VSCODE_DEBUG && (() => {
+ *       const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL)
+ *       return { host: url.hostname, port: +url.port }
+ *     })()
  *   }
  * })
  */
@@ -134,13 +140,11 @@ export function buildElectronPluginOptions(options: BuildElectronPluginOptions):
   // todo: reload when `entryPath` changes
   let isInit = false
   const _buildEntry = async () => {
-    if (isInit) {
-      return
+    if (!isInit) {
+      isInit = true
+      await buildEntry(buildEntryOption)
+      log.info(`build entry from '${entryPath}' to '${entryOutputPath}'`, { timestamp: true })
     }
-
-    isInit = true
-    await buildEntry(buildEntryOption)
-    log.info(`build entry from '${entryPath}' to '${entryOutputPath}'`, { timestamp: true })
   }
 
   const result: ElectronSimpleOptions = {

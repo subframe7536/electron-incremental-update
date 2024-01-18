@@ -76,6 +76,7 @@ export function parseKeys({
 
   if (!existsSync(privateKeyPath) || !existsSync(certPath)) {
     generateKeyPair(keyLength, parseSubjects(subject), days, privateKeyPath, certPath)
+    console.log('no key pair found, generate new key pair')
   }
 
   const privateKey = process.env.UPDATER_PK || readFileSync(privateKeyPath, 'utf-8')
@@ -86,6 +87,7 @@ export function parseKeys({
     cert,
   }
 }
+
 function parseSubjects(subject: DistinguishedName): CertSubject {
   const ret = [] as CertSubject
   Object.keys(subject).forEach((name: string) => {
