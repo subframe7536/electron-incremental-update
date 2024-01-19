@@ -92,10 +92,10 @@ export function restartApp() {
 
 /**
  * fix app use model id, only for Windows
- * @param id app id
+ * @param id app id @default `org.${app.name}`
  */
-export function setAppUserModelId(id: string) {
-  is.win && app.setAppUserModelId(is.dev ? process.execPath : id)
+export function setAppUserModelId(id?: string) {
+  app.setAppUserModelId(is.dev ? process.execPath : id ?? `org.${app.name}`)
 }
 
 /**
@@ -108,7 +108,7 @@ export function disableHWAccForWin7() {
 }
 
 /**
- * keep single electron instance and hook `second-instance` event
+ * keep single electron instance and auto restore window on `second-instance` event
  * @param window brwoser window to show
  * @returns `false` if the app is running
  */
@@ -189,12 +189,6 @@ export function getPaths() {
     },
     getPathFromPublic(...path: string[]) {
       return join(publicDirPath, ...path)
-    },
-    /**
-     * load app from dev server when dev, and load from index.html when prod
-     */
-    loadApp(window: BrowserWindow) {
-      devServerURL ? window.loadURL(devServerURL) : window.loadFile(indexHTMLPath)
     },
   }
 }
