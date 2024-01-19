@@ -78,12 +78,12 @@ const id = 'electron-incremental-updater'
  * - only contains `main` and `preload` configs
  * - remove old electron files
  * - externalize dependencies
- * - other configs of {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template}
+ * - other configs in {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template}
  * - no `vite-plugin-electron-renderer` config
  *
  * you can override all the configs
  *
- * Limitation: entry file change cannot trigger auto restart
+ * **Limitation**: entry file change cannot trigger auto restart
  *
  * @example
  * import { defineConfig } from 'vite'

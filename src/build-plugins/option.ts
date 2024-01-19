@@ -44,6 +44,7 @@ export type BuildVersionOption = {
 }
 
 export type BuildEntryOption = {
+  sourcemap: boolean
   entryPath: string
   entryOutputPath: string
   minify: boolean
@@ -92,6 +93,11 @@ export type ElectronUpdaterOptions = {
    * @default isBuild
    */
   minifyEntry?: boolean
+  /**
+   * Whether to generate sourcemap
+   * @default !isBuild
+   */
+  sourcemap?: boolean
   /**
    * paths config
    */
@@ -180,6 +186,7 @@ export function parseOptions(options: ElectronUpdaterOptions, isBuild: boolean, 
   const {
     minimumVersion = '0.0.0',
     minifyEntry = isBuild,
+    sourcemap = !isBuild,
     paths: {
       entryPath = 'electron/app.ts',
       entryOutputPath = 'app.js',
@@ -213,6 +220,7 @@ export function parseOptions(options: ElectronUpdaterOptions, isBuild: boolean, 
     rendererDistPath,
   }
   const buildEntryOption: BuildEntryOption = {
+    sourcemap,
     entryPath,
     entryOutputPath,
     minify: minifyEntry,

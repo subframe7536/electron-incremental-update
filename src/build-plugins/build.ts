@@ -1,5 +1,6 @@
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import Asar from '@electron/asar'
 import { build } from 'esbuild'
 import { signature } from '../crypto'
@@ -15,8 +16,8 @@ export async function buildAsar({
   electronDistPath,
   rendererDistPath,
 }: BuildAsarOption) {
-  await rename(rendererDistPath, `${electronDistPath}/renderer`)
-  await writeFile(`${electronDistPath}/version`, version)
+  await rename(rendererDistPath, join(electronDistPath, 'renderer'))
+  await writeFile(join(electronDistPath, 'version'), version)
   await Asar.createPackage(electronDistPath, asarOutputPath)
   await zipFile(asarOutputPath, gzipPath)
 }
@@ -82,6 +83,7 @@ export async function buildVersion({
 }
 
 export async function buildEntry({
+  sourcemap,
   entryPath,
   entryOutputPath: outfile,
   minify,
@@ -92,6 +94,7 @@ export async function buildEntry({
     platform: 'node',
     outfile,
     minify,
+    sourcemap,
     external: ['electron', 'original-fs'],
   })
 }
