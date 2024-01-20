@@ -1,3 +1,5 @@
+import type { Prettify, Promisable } from '@subframe7536/type-utils'
+import type { BuildOptions } from 'esbuild'
 import type { UpdateJSON } from '../utils/noDep'
 import { parseKeys } from './key'
 
@@ -30,6 +32,7 @@ export type BuildAsarOption = {
   gzipPath: string
   electronDistPath: string
   rendererDistPath: string
+  extraFiles?: string | string[]
 }
 
 export type BuildVersionOption = {
@@ -44,10 +47,72 @@ export type BuildVersionOption = {
 }
 
 export type BuildEntryOption = {
-  sourcemap: boolean
-  entryPath: string
-  entryOutputPath: string
+  /**
+   * whether to minify
+   * @default isBuild
+   */
   minify: boolean
+  /**
+   * Whether to generate sourcemap
+   * @default isBuild
+   */
+  sourcemap: boolean
+  /**
+   * path to app entry output file
+   * @default 'dist-entry'
+   */
+  entryOutputDirPath: string
+  /**
+   * path to app entry file
+   * @default 'electron/entry.ts'
+   */
+  appEntryPath: string
+  /**
+   * esbuild path map of modules in entry directory
+   *
+   * **All Native Modules** should be in `moduleMap`
+   * @default {}
+   * @example
+   * { db: './electron/native/db.ts' }
+   */
+  moduleEntryMap?: Record<string, string>
+  /**
+   * custom options for esbuild
+   * ```ts
+   * // default options
+   * const options = {
+   *   entryPoints: {
+   *     entry: appEntryPath,
+   *     ...moduleEntryMap,
+   *   },
+   *   bundle: true,
+   *   platform: 'node',
+   *   outdir: entryOutputDirPath,
+   *   minify,
+   *   sourcemap,
+   *   entryNames: '[dir]/[name]',
+   *   assetNames: '[dir]/[name]',
+   *   external: ['electron', 'original-fs'],
+   *   loader: {
+   *     '.node': 'empty',
+   *   },
+   * }
+   * ```
+   */
+  overrideEsbuildOptions?: BuildOptions
+  /**
+   * resolve extra files, such as `.node`
+   */
+  postBuild?: (args: {
+    /**
+     * get path from `entryOutputDirPath`
+     */
+    getPathFromEntryOutputDir: (...paths: string[]) => string
+    /**
+     * copy file to `entryOutputDirPath`, if second param absent, set to `basename(from)`
+     */
+    existsAndCopyToEntryOutputDir: (from: string, to?: string) => void
+  }) => Promisable<void>
 }
 
 export type GetKeysOption = {
@@ -89,32 +154,16 @@ export type ElectronUpdaterOptions = {
    */
   minimumVersion?: string
   /**
-   * Whether to minify entry file
-   * @default isBuild
+   * config for entry (app.asar)
    */
-  minifyEntry?: boolean
-  /**
-   * Whether to generate sourcemap
-   * @default !isBuild
-   */
-  sourcemap?: boolean
+  entry?: Partial<BuildEntryOption>
   /**
    * paths config
    */
   paths?: {
     /**
-     * Path to app entry file
-     * @default 'electron/app.ts'
-     */
-    entryPath?: string
-    /**
-     * Path to app entry output file
-     * @default 'app.js'
-     */
-    entryOutputPath?: string
-    /**
      * Path to asar file
-     * @default `release/${Electron.app.name}.asar`
+     * @default `release/${app.name}.asar`
      */
     asarOutputPath?: string
     /**
@@ -124,7 +173,7 @@ export type ElectronUpdaterOptions = {
     versionPath?: string
     /**
      * Path to gzipped asar file
-     * @default `release/${Electron.app.name}-${version}.asar.gz`
+     * @default `release/${app.name}-${version}.asar.gz`
      */
     gzipPath?: string
     /**
@@ -168,7 +217,7 @@ export type ElectronUpdaterOptions = {
       /**
        * the subject of the certificate
        *
-       * @default { commonName: `${Electron.app.name}`, organizationName: `org.${Electron.app.name}` }
+       * @default { commonName: `${app.name}`, organizationName: `org.${app.name}` }
        */
       subject?: DistinguishedName
       /**
@@ -185,11 +234,15 @@ export type ElectronUpdaterOptions = {
 export function parseOptions(options: ElectronUpdaterOptions, isBuild: boolean, pkg: PKG) {
   const {
     minimumVersion = '0.0.0',
-    minifyEntry = isBuild,
-    sourcemap = !isBuild,
+    entry: {
+      minify = isBuild,
+      sourcemap = isBuild,
+      entryOutputDirPath = 'dist-entry',
+      appEntryPath = 'electron/entry.ts',
+      moduleEntryMap = {},
+      postBuild: resolveFiles,
+    } = {},
     paths: {
-      entryPath = 'electron/app.ts',
-      entryOutputPath = 'app.js',
       asarOutputPath = `release/${pkg.name}.asar`,
       gzipPath = `release/${pkg.name}-${pkg.version}.asar.gz`,
       electronDistPath = 'dist-electron',
@@ -220,17 +273,19 @@ export function parseOptions(options: ElectronUpdaterOptions, isBuild: boolean, 
     rendererDistPath,
   }
   const buildEntryOption: BuildEntryOption = {
+    minify,
     sourcemap,
-    entryPath,
-    entryOutputPath,
-    minify: minifyEntry,
+    entryOutputDirPath,
+    appEntryPath,
+    moduleEntryMap,
+    postBuild: resolveFiles,
   }
   // generate keys or get from file
   const { privateKey, cert } = parseKeys({
     keyLength,
     privateKeyPath,
     certPath,
-    entryPath,
+    entryPath: appEntryPath,
     subject,
     days,
   })

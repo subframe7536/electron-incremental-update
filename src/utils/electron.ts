@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { release } from 'node:os'
 import type { BrowserWindow } from 'electron'
 import { app } from 'electron'
@@ -24,17 +24,18 @@ export const is: Is = {
 /**
  * get the absolute path of `${app.name}.asar` (not `app.asar`),
  * if is in dev, return `'DEV.asar'`
+ * @todo change a better function name
  */
-export function getAppAsarPath() {
-  return is.dev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${app.name}.asar`)
+export function getPathFromAppNameAsar(...path: string[]) {
+  return is.dev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${app.name}.asar`, ...path)
 }
 
 /**
- * get versions of App, Installer, Electron, Node and System version
+ * get versions of App, Entry, Electron, Node and System
  *
  * App version is read from `version` file in `${app.name}.asar`
  *
- * Installer version is read from `package.json`
+ * Entry version is read from `package.json`
  */
 export function getVersions() {
   const platform = is.win
@@ -46,39 +47,31 @@ export function getVersions() {
   return {
     app: is.dev
       ? app.getVersion()
-      : readFileSync(join(getAppAsarPath(), 'version'), 'utf-8'),
-    installer: app.getVersion(),
+      : readFileSync(getPathFromAppNameAsar('version'), 'utf-8'),
+    entry: app.getVersion(),
     electron: process.versions.electron,
     node: process.versions.node,
     system: `${platform} ${release()}`,
   }
 }
 
-export class NoSuchNativeModuleError extends Error {
-  moduleName: string
-  constructor(moduleName: string) {
-    super(`no such native module: ${moduleName}`)
-    this.moduleName = moduleName
-  }
-}
-
-export function isNoSuchNativeModuleError(e: unknown): e is NoSuchNativeModuleError {
-  return e instanceof NoSuchNativeModuleError
-}
-
 /**
- * require native package, if not found, throw {@link NoSuchNativeModuleError}
- * @param packageName native package name
+ * load module from entry
+ * @param devEntryDirPath entry directory path when dev, default `../../dist-entry`
+ * @param entryDirPath entry directory path when not dev, default `join(app.getAppPath(), basename(devEntryDirPath))`
  */
-export function requireNative<T = any>(packageName: string): T {
-  const path = is.dev
-    ? packageName
-    : join(app.getAppPath(), 'node_modules', packageName)
-  try {
-    // eslint-disable-next-line ts/no-require-imports
-    return require(path)
-  } catch (error) {
-    throw new NoSuchNativeModuleError(packageName)
+export function loadModuleFromEntry(
+  devEntryDirPath = '../../dist-entry',
+  entryDirPath = join(app.getAppPath(), basename(devEntryDirPath)),
+): <T = any>(moduleName: string) => T {
+  const path = is.dev ? devEntryDirPath : entryDirPath
+  return (moduleName) => {
+    try {
+      // eslint-disable-next-line ts/no-require-imports
+      return require(join(path, moduleName))
+    } catch (error) {
+      console.error('fail to load module', error)
+    }
   }
 }
 
@@ -166,10 +159,9 @@ export function waitAppReady(timeout = 1000): Promise<void> {
 
 /**
  * get paths
- *
- * only for main process
+ * @param entryDirName entry dir name, default to `dist-entry`
  */
-export function getPaths() {
+export function getPaths(entryDirName = 'dist-entry') {
   const root = join(__dirname, '..')
   const mainDirPath = join(root, 'main')
   const preloadDirPath = join(root, 'preload')
@@ -177,13 +169,28 @@ export function getPaths() {
   const devServerURL = process.env.VITE_DEV_SERVER_URL
   const indexHTMLPath = join(rendererDirPath, 'index.html')
   const publicDirPath = devServerURL ? join(root, '../public') : rendererDirPath
+
   return {
-    mainDirPath,
-    preloadDirPath,
-    rendererDirPath,
-    publicDirPath,
+    /**
+     * @example
+     * ```ts
+     * devServerURL && win.loadURL(devServerURL)
+     * ```
+     */
     devServerURL,
+    /**
+     * @example
+     * ```ts
+     * win.loadFile(indexHTMLPath)
+     * ```
+     */
     indexHTMLPath,
+    getPathFromEntryAsar(...path: string[]) {
+      return join(app.getAppPath(), entryDirName, ...path)
+    },
+    getPathFromMain(...path: string[]) {
+      return join(mainDirPath, ...path)
+    },
     getPathFromPreload(...path: string[]) {
       return join(preloadDirPath, ...path)
     },

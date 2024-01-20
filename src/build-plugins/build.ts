@@ -1,6 +1,6 @@
 import { readFile, rename, writeFile } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { cpSync, existsSync } from 'node:fs'
+import { basename, join } from 'node:path'
 import Asar from '@electron/asar'
 import { build } from 'esbuild'
 import { signature } from '../crypto'
@@ -84,17 +84,39 @@ export async function buildVersion({
 
 export async function buildEntry({
   sourcemap,
-  entryPath,
-  entryOutputPath: outfile,
   minify,
+  appEntryPath,
+  entryOutputDirPath,
+  moduleEntryMap,
+  overrideEsbuildOptions,
+  postBuild,
 }: BuildEntryOption) {
   await build({
-    entryPoints: [entryPath],
+    entryPoints: {
+      entry: appEntryPath,
+      ...moduleEntryMap,
+    },
     bundle: true,
     platform: 'node',
-    outfile,
+    outdir: entryOutputDirPath,
     minify,
     sourcemap,
+    entryNames: '[dir]/[name]',
+    assetNames: '[dir]/[name]',
     external: ['electron', 'original-fs'],
+    loader: {
+      '.node': 'empty',
+    },
+    ...overrideEsbuildOptions,
+  })
+  await postBuild?.({
+    getPathFromEntryOutputDir(...paths) {
+      return join(entryOutputDirPath, ...paths)
+    },
+    existsAndCopyToEntryOutputDir(from, to) {
+      if (existsSync(from)) {
+        cpSync(from, join(entryOutputDirPath, to ?? basename(from)))
+      }
+    },
   })
 }

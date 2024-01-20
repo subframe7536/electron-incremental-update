@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { rm, writeFile } from 'node:fs/promises'
 import { app } from 'electron'
-import { getAppAsarPath, getVersions, isUpdateJSON, restartApp, unzipFile } from '../utils'
+import { getPathFromAppNameAsar, getVersions, isUpdateJSON, restartApp, unzipFile } from '../utils'
 import { verify } from '../crypto'
 import type { UpdateInfo, UpdateJSON } from '../utils'
 import type { CheckResult, DownloadResult, DownloadingInfo, Logger, UpdaterOption } from './types'
@@ -46,14 +46,14 @@ export class Updater {
    */
   constructor(option: UpdaterOption) {
     this.option = option
-    this.asarPath = getAppAsarPath()
+    this.asarPath = getPathFromAppNameAsar()
     this.gzipPath = `${this.asarPath}.gz`
     this.tmpFilePath = `${this.asarPath}.tmp`
   }
 
   private async needUpdate(version: string, minVersion: string) {
     const compare = this.option.overrideFunctions?.compareVersion ?? compareVersionDefault
-    const { app: appVersion, installer: entryVersion } = getVersions()
+    const { app: appVersion, entry: entryVersion } = getVersions()
     if (await compare(entryVersion, minVersion)) {
       throw new MinimumVersionError(entryVersion, minVersion)
     }
@@ -121,6 +121,7 @@ export class Updater {
           repoFallback: `${this.option.repository}/releases/download/v${this.info?.version}/${app.name}-${this.info?.version}.asar.gz`,
           fn: this.option.overrideFunctions?.downloadBuffer ?? downloadBufferDefault,
         }
+
     data ??= config.url
     if (!data) {
       this.logger?.debug(`no ${config.name}, fallback to use repository`)
@@ -132,6 +133,7 @@ export class Updater {
       }
       data = config.repoFallback
     }
+
     // fetch data from remote
     this.logger?.info(`download ${format} from ${data}`)
     try {

@@ -26,11 +26,11 @@ export class DownloadError extends Error {
   }
 }
 
-export type CheckResultError = MinimumVersionError | DownloadError | TypeError | Error
-export type DownloadResultError = DownloadError | VerifyFailedError | TypeError | Error
-
 export type CheckResult = UpdateInfo | undefined | CheckResultError
+export type CheckResultError = MinimumVersionError | DownloadError | TypeError | Error
+
 export type DownloadResult = true | DownloadResultError
+export type DownloadResultError = DownloadError | VerifyFailedError | TypeError | Error
 
 export type DownloadingInfo = {
   /**
@@ -132,7 +132,7 @@ export interface UpdaterOption {
   updateJsonURL?: string
   /**
    * URL of release asar.gz
-   * @default `${repository}/releases/download/v${version}/${Electron.app.name}-${version}.asar.gz`
+   * @default `${repository}/releases/download/v${version}/${app.name}-${version}.asar.gz`
    * @throws if `releaseAsarURL` and `repository` are all not set
    */
   releaseAsarURL?: string

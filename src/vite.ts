@@ -1,4 +1,4 @@
-import { resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 import { rmSync } from 'node:fs'
 import { type InlineConfig, createLogger, mergeConfig, normalizePath } from 'vite'
 import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
@@ -20,6 +20,28 @@ type MakeRequiredAndReplaceKey<
   K extends keyof T,
   NewKey extends string,
 > = MakeRequired<ReplaceKey<T, K, NewKey>, NewKey>
+
+/**
+ * startup function for debug (see {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template})
+ * @example
+ * import { debugStartup, buildElectronPluginOptions } from 'electron-incremental-update/vite'
+ * const options = buildElectronPluginOptions({
+ *   // ...
+ *   main: {
+ *     // ...
+ *     startup: debugStartup
+ *   },
+ * })
+ */
+export function debugStartup(args: {
+  startup: (argv?: string[]) => Promise<void>
+  reload: () => void
+}) {
+  process.env.VSCODE_DEBUG
+    // For `.vscode/.debug.script.mjs`
+    ? console.log('[startup] Electron App')
+    : args.startup()
+}
 
 export type BuildElectronPluginOptions = {
   /**
@@ -54,11 +76,6 @@ export type BuildElectronPluginOptions = {
    * updater options
    */
   updater?: ElectronUpdaterOptions
-  /**
-   * use debug helper in main, for `.vscode/.debug.script.mjs`, call after custom `onstart`
-   * @default true
-   */
-  useDebugOnStart?: boolean
   /**
    * use NotBundle() plugin in main
    * @default true
@@ -119,51 +136,46 @@ export function buildElectronPluginOptions(options: BuildElectronPluginOptions):
     main: _main,
     preload: _preload,
     updater = {},
-    useDebugOnStart = true,
     useNotBundle = true,
-    logParsedOptions = false,
+    logParsedOptions,
   } = options
   const _options = parseOptions(updater, isBuild, pkg)
 
   rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
-  log.info(`remove old electron files in '${_options.buildAsarOption.electronDistPath}'`)
+  log.info(`remove old files in '${_options.buildAsarOption.electronDistPath}'`)
+  rmSync(_options.buildEntryOption.entryOutputDirPath, { recursive: true, force: true })
+  log.info(`remove old files in '${_options.buildEntryOption.entryOutputDirPath}'`)
 
   const { buildAsarOption, buildEntryOption, buildVersionOption } = _options
-  const { entryPath, entryOutputPath } = buildEntryOption
+  const { entryOutputDirPath } = buildEntryOption
 
   const sourcemap = isBuild || !!process.env.VSCODE_DEBUG
 
-  if (resolve(normalizePath(pkg.main)) !== resolve(normalizePath(entryOutputPath))) {
-    throw new Error(`wrong entry path: \nin package.json: "${pkg.main}"\nin vite config: "${entryOutputPath}"`)
+  const _appPath = join(entryOutputDirPath, 'entry.js')
+  if (resolve(normalizePath(pkg.main)) !== resolve(normalizePath(_appPath))) {
+    throw new Error(`wrong "main" field in package.json: "${pkg.main}", it should be "${_appPath.replace(/\\/g, '/')}"`)
   }
 
   // todo: reload when `entryPath` changes
   let isInit = false
   const _buildEntry = async () => {
-    if (!isInit) {
-      isInit = true
-      await buildEntry(buildEntryOption)
-      log.info(`build entry from '${entryPath}' to '${entryOutputPath}'`, { timestamp: true })
-    }
+    await buildEntry(buildEntryOption)
+    log.info(`build entry to '${entryOutputDirPath}'`, { timestamp: true })
   }
 
   const result: ElectronSimpleOptions = {
     main: {
       entry: _main.files,
       onstart: async (args) => {
-        _buildEntry()
-        _main.onstart?.(args)
-
-        if (useDebugOnStart) {
-          process.env.VSCODE_DEBUG
-            // For `.vscode/.debug.script.mjs`
-            ? console.log('[startup] Electron App')
-            : args.startup()
+        if (!isInit) {
+          isInit = true
+          await _buildEntry()
         }
+        _main.onstart?.(args) ?? args.startup()
       },
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
-          plugins: !isBuild && useNotBundle ? [notBundle()] : [],
+          plugins: !isBuild && useNotBundle ? [notBundle()] : undefined,
           build: {
             sourcemap,
             minify: isBuild,
@@ -181,20 +193,24 @@ export function buildElectronPluginOptions(options: BuildElectronPluginOptions):
       onstart: _preload.onstart,
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
-          plugins: [{
-            name: `${id}-build`,
-            enforce: 'post',
-            apply() {
-              return isBuild
-            },
-            async closeBundle() {
-              await buildAsar(buildAsarOption)
-              log.info(`build asar to '${buildAsarOption.asarOutputPath}'`, { timestamp: true })
+          plugins: [
+            {
+              name: `${id}-build`,
+              enforce: 'post',
+              apply() {
+                return isBuild
+              },
+              async closeBundle() {
+                await _buildEntry()
 
-              await buildVersion(buildVersionOption)
-              log.info(`build version info to '${buildVersionOption.versionPath}'`, { timestamp: true })
+                await buildAsar(buildAsarOption)
+                log.info(`build asar to '${buildAsarOption.asarOutputPath}'`, { timestamp: true })
+
+                await buildVersion(buildVersionOption)
+                log.info(`build version info to '${buildVersionOption.versionPath}'`, { timestamp: true })
+              },
             },
-          }],
+          ],
           build: {
             sourcemap: sourcemap ? 'inline' : undefined,
             minify: isBuild,

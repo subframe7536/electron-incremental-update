@@ -3,7 +3,7 @@ import { existsSync, renameSync } from 'node:fs'
 import { app } from 'electron'
 import type { Logger, Updater, UpdaterOption } from './updater'
 import { createUpdater } from './updater'
-import { getAppAsarPath, is } from './utils'
+import { getPathFromAppNameAsar, is } from './utils'
 
 export * from './updater'
 
@@ -12,14 +12,14 @@ type Promisable<T> = T | Promise<T>
 type OnInstallFunction = (
   install: VoidFunction,
   tempAsarPath: string,
-  appAsarPath: string,
+  appNameAsarPath: string,
   logger?: Logger
 ) => Promisable<void>
 
 export type AppOption = {
   /**
    * path of electron output dist when in development
-   * @default 'dist-electron'
+   * @default '../dist-electron'
    */
   electronDevDistPath?: string
   /**
@@ -32,20 +32,20 @@ export type AppOption = {
    */
   hooks?: {
     /**
-     * hooks on rename temp asar path to `${Electron.app.name}.asar`
-     * @param install `() => renameSync(tempAsarPath, appAsarPath)`
+     * hooks on rename temp asar path to `${app.name}.asar`
+     * @param install `() => renameSync(tempAsarPath, appNameAsarPath)`
      * @param tempAsarPath temp(updated) asar path
-     * @param appAsarPath `${Electron.app.name}.asar` path
+     * @param appNameAsarPath `${app.name}.asar` path
      * @param logger logger
      * @default install(); logger?.info(`update success!`)
      */
     onInstall?: OnInstallFunction
     /**
      * hooks before start
-     * @param appAsarPath path of `${Electron.app.name}.asar`
+     * @param appNameAsarPath path of `${app.name}.asar`
      * @param logger logger
      */
-    beforeStart?: (appAsarPath: string, logger?: Logger) => Promisable<void>
+    beforeStart?: (appNameAsarPath: string, logger?: Logger) => Promisable<void>
     /**
      * hooks on start up error
      * @param err installing or startup error
@@ -97,7 +97,7 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  *     SIGNATURE_CERT,
  *     repository,
  *     updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
- *     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${Electron.app.name}.asar.gz`),
+ *     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${app.name}.asar.gz`),
  *     receiveBeta: true,
  *   })
  * ```
@@ -106,7 +106,7 @@ export function initApp(
   appOptions?: AppOption,
 ): StartupWithUpdater {
   const {
-    electronDevDistPath = 'dist-electron',
+    electronDevDistPath = '../dist-electron',
     mainPath = 'main/index.js',
     hooks,
   } = appOptions || {}
@@ -123,16 +123,16 @@ export function initApp(
   async function startup(updater: Updater) {
     const logger = updater.logger
     try {
-      const appAsarPath = getAppAsarPath()
+      const appNameAsarPath = getPathFromAppNameAsar()
 
       // apply updated asar
-      const tempAsarPath = `${appAsarPath}.tmp`
+      const tempAsarPath = `${appNameAsarPath}.tmp`
       if (existsSync(tempAsarPath)) {
         logger?.info(`installing new asar: ${tempAsarPath}`)
-        await onInstall(() => renameSync(tempAsarPath, appAsarPath), tempAsarPath, appAsarPath, logger)
+        await onInstall(() => renameSync(tempAsarPath, appNameAsarPath), tempAsarPath, appNameAsarPath, logger)
       }
 
-      const mainDir = is.dev ? electronDevDistPath : appAsarPath
+      const mainDir = is.dev ? electronDevDistPath : appNameAsarPath
 
       const entry = resolve(__dirname, mainDir, mainPath)
       await beforeStart?.(entry, logger)
