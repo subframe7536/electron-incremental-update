@@ -87,14 +87,14 @@ export async function buildEntry({
   minify,
   appEntryPath,
   entryOutputDirPath,
-  moduleEntryMap,
+  nativeModuleEntryMap,
   overrideEsbuildOptions,
   postBuild,
 }: BuildEntryOption) {
   await build({
     entryPoints: {
-      entry: appEntryPath,
-      ...moduleEntryMap,
+      index: appEntryPath,
+      ...nativeModuleEntryMap,
     },
     bundle: true,
     platform: 'node',
@@ -113,9 +113,12 @@ export async function buildEntry({
     getPathFromEntryOutputDir(...paths) {
       return join(entryOutputDirPath, ...paths)
     },
-    existsAndCopyToEntryOutputDir(from, to) {
+    existsAndCopyToEntryOutputDir({ from, to, skipIfExist = true }) {
       if (existsSync(from)) {
-        cpSync(from, join(entryOutputDirPath, to ?? basename(from)))
+        const target = join(entryOutputDirPath, to ?? basename(from))
+        if (!skipIfExist || !existsSync(target)) {
+          cpSync(from, target)
+        }
       }
     },
   })

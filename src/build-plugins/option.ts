@@ -68,14 +68,13 @@ export type BuildEntryOption = {
    */
   appEntryPath: string
   /**
-   * esbuild path map of modules in entry directory
+   * esbuild path map of native modules in entry directory
    *
-   * **All Native Modules** should be in `moduleMap`
    * @default {}
    * @example
    * { db: './electron/native/db.ts' }
    */
-  moduleEntryMap?: Record<string, string>
+  nativeModuleEntryMap?: Record<string, string>
   /**
    * custom options for esbuild
    * ```ts
@@ -109,9 +108,21 @@ export type BuildEntryOption = {
      */
     getPathFromEntryOutputDir: (...paths: string[]) => string
     /**
-     * copy file to `entryOutputDirPath`, if second param absent, set to `basename(from)`
+     * copy file to `entryOutputDirPath`
+     *
+     * if `to` absent, set to `basename(from)`
+     *
+     * if `skipIfExist` absent, skip copy if `to` exist
      */
-    existsAndCopyToEntryOutputDir: (from: string, to?: string) => void
+    existsAndCopyToEntryOutputDir: (options: {
+      from: string
+      to?: string
+      /**
+       * skip copy if `to` exist
+       * @default true
+       */
+      skipIfExist?: boolean
+    }) => void
   }) => Promisable<void>
 }
 
@@ -192,19 +203,23 @@ export type ElectronUpdaterOptions = {
    */
   keys?: {
     /**
-     * Path to the pem file that contains private key
+     * path to the pem file that contains private key
      * if not ended with .pem, it will be appended
+     *
+     * **if `UPDATER_PK` is set, will read it instead of read from `privateKeyPath`**
      * @default 'keys/private.pem'
      */
     privateKeyPath?: string
     /**
-     * Path to the pem file that contains public key
+     * path to the pem file that contains public key
      * if not ended with .pem, it will be appended
+     *
+     * **if `UPDATER_CERT` is set, will read it instead of read from `certPath`**
      * @default 'keys/cert.pem'
      */
     certPath?: string
     /**
-     * Length of the key
+     * length of the key
      * @default 2048
      */
     keyLength?: number
@@ -231,7 +246,7 @@ export type ElectronUpdaterOptions = {
   }
 }
 
-export function parseOptions(options: ElectronUpdaterOptions, isBuild: boolean, pkg: PKG) {
+export function parseOptions(isBuild: boolean, pkg: PKG, options: ElectronUpdaterOptions = {}) {
   const {
     minimumVersion = '0.0.0',
     entry: {
@@ -239,8 +254,8 @@ export function parseOptions(options: ElectronUpdaterOptions, isBuild: boolean, 
       sourcemap = isBuild,
       entryOutputDirPath = 'dist-entry',
       appEntryPath = 'electron/entry.ts',
-      moduleEntryMap = {},
-      postBuild: resolveFiles,
+      nativeModuleEntryMap = {},
+      postBuild,
     } = {},
     paths: {
       asarOutputPath = `release/${pkg.name}.asar`,
@@ -277,8 +292,8 @@ export function parseOptions(options: ElectronUpdaterOptions, isBuild: boolean, 
     sourcemap,
     entryOutputDirPath,
     appEntryPath,
-    moduleEntryMap,
-    postBuild: resolveFiles,
+    nativeModuleEntryMap,
+    postBuild,
   }
   // generate keys or get from file
   const { privateKey, cert } = parseKeys({

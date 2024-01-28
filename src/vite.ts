@@ -1,6 +1,9 @@
 import { join, resolve } from 'node:path'
 import { rmSync } from 'node:fs'
-import { type InlineConfig, createLogger, mergeConfig, normalizePath } from 'vite'
+import type { InlineConfig, Plugin } from 'vite'
+import { createLogger, mergeConfig, normalizePath } from 'vite'
+import ElectronSimple from 'vite-plugin-electron/simple'
+import { startup } from 'vite-plugin-electron'
 import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
 import type { Prettify } from '@subframe7536/type-utils'
 import { notBundle } from 'vite-plugin-electron/plugin'
@@ -43,7 +46,7 @@ export function debugStartup(args: {
     : args.startup()
 }
 
-export type BuildElectronPluginOptions = {
+export type ElectronWithUpdaterOptions = {
   /**
    * whether is in build mode
    * ```ts
@@ -88,6 +91,7 @@ export type BuildElectronPluginOptions = {
 }
 
 const id = 'electron-incremental-updater'
+const log = createLogger('info', { prefix: `[${id}]` })
 
 /**
  * build options for `vite-plugin-electron/simple`
@@ -128,30 +132,30 @@ const id = 'electron-incremental-updater'
  *   }
  * })
  */
-export function buildElectronPluginOptions(options: BuildElectronPluginOptions): ElectronSimpleOptions {
-  const log = createLogger('info', { prefix: `[${id}]` })
+export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   const {
     isBuild,
     pkg,
     main: _main,
     preload: _preload,
-    updater = {},
+    updater,
     useNotBundle = true,
     logParsedOptions,
   } = options
-  const _options = parseOptions(updater, isBuild, pkg)
+  const _options = parseOptions(isBuild, pkg, updater)
 
-  rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
-  log.info(`remove old files in '${_options.buildAsarOption.electronDistPath}'`)
-  rmSync(_options.buildEntryOption.entryOutputDirPath, { recursive: true, force: true })
-  log.info(`remove old files in '${_options.buildEntryOption.entryOutputDirPath}'`)
+  try {
+    rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
+    rmSync(_options.buildEntryOption.entryOutputDirPath, { recursive: true, force: true })
+  } catch (ignore) { }
+  log.info(`remove old files`, { timestamp: true })
 
   const { buildAsarOption, buildEntryOption, buildVersionOption } = _options
-  const { entryOutputDirPath } = buildEntryOption
+  const { entryOutputDirPath, nativeModuleEntryMap } = buildEntryOption
 
   const sourcemap = isBuild || !!process.env.VSCODE_DEBUG
 
-  const _appPath = join(entryOutputDirPath, 'entry.js')
+  const _appPath = join(entryOutputDirPath, 'index.js')
   if (resolve(normalizePath(pkg.main)) !== resolve(normalizePath(_appPath))) {
     throw new Error(`wrong "main" field in package.json: "${pkg.main}", it should be "${_appPath.replace(/\\/g, '/')}"`)
   }
@@ -163,7 +167,7 @@ export function buildElectronPluginOptions(options: BuildElectronPluginOptions):
     log.info(`build entry to '${entryOutputDirPath}'`, { timestamp: true })
   }
 
-  const result: ElectronSimpleOptions = {
+  const electronPluginOptions: ElectronSimpleOptions = {
     main: {
       entry: _main.files,
       onstart: async (args) => {
@@ -228,7 +232,7 @@ export function buildElectronPluginOptions(options: BuildElectronPluginOptions):
   logParsedOptions && log.info(
     JSON.stringify(
       {
-        ...result,
+        ...electronPluginOptions,
         updater: { buildAsarOption, buildEntryOption, buildVersionOption },
       },
       (key, value) => ((key === 'privateKey' || key === 'cert') ? '***' : value),
@@ -237,5 +241,22 @@ export function buildElectronPluginOptions(options: BuildElectronPluginOptions):
     { timestamp: true },
   )
 
-  return result
+  let extraHmrPlugin: Plugin | undefined
+
+  if (nativeModuleEntryMap) {
+    const files = Object.values(nativeModuleEntryMap).map(file => resolve(normalizePath(file)))
+    extraHmrPlugin = {
+      name: `${id}-dev`,
+      apply() {
+        return !isBuild
+      },
+      configureServer: (server) => {
+        server.watcher
+          .add(files)
+          .on('change', p => files.includes(p) && startup())
+      },
+    }
+  }
+
+  return [ElectronSimple(electronPluginOptions), extraHmrPlugin]
 }
