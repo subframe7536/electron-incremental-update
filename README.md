@@ -10,6 +10,8 @@ The new `${name}.asar`, which can download from remote or load from buffer, will
 
 All **native modules** should be packaged into `app.asar` to reduce `${name}.asar` file size, [see usage](#use-native-modules)
 
+no `vite-plugin-electron-renderer` config
+
 - inspired by [Obsidian](https://obsidian.md/)'s upgrade strategy
 
 ## Install
@@ -38,7 +40,9 @@ electron
 ├── entry.ts // <- entry file
 ├── main
 │   └── index.ts
-└── preload
+├── preload
+│   └── index.ts
+└── native // possible native modules
     └── index.ts
 src
 └── ...
@@ -194,8 +198,10 @@ export default startupWithUpdater((updater) => {
       if (response !== 0) {
         return
       }
-      console.log(await updater.download())
-      updater.quitAndInstall()
+      const downloadResult = await updater.download()
+      if (downloadResult) {
+        updater.quitAndInstall()
+      }
     }
   })
 })
@@ -207,8 +213,9 @@ All the **native modules** should be set as `dependency` in `package.json`. `ele
 
 If you are using `electron-builder` to build distributions, all the native modules with its **large relavent `node_modiles`** will be packaged into `app.asar` by default. You can setup `nativeModuleEntryMap` option to prebundle all the native modules and skip bundled by `electron-builder`
 
+in `vite.config.ts`
+
 ```ts
-// in vite.config.ts
 const plugin = electronWithUpdater({
   // options...
   updater: {
@@ -228,8 +235,9 @@ const plugin = electronWithUpdater({
 })
 ```
 
+in `electron/native/db.ts`
+
 ```ts
-// in electron/native/db.ts
 import Database from 'better-sqlite3'
 import { getPaths } from 'electron-incremental-update/utils'
 
@@ -254,8 +262,9 @@ export function test() {
 }
 ```
 
+in `electron/main/service.ts`
+
 ```ts
-// in electron/main/service.ts
 import { loadNativeModuleFromEntry } from 'electron-incremental-update/utils'
 
 const requireNative = loadNativeModuleFromEntry()
@@ -263,8 +272,9 @@ const requireNative = loadNativeModuleFromEntry()
 requireNative<typeof import('../native/db')>('db').test()
 ```
 
+in `electron-builder.config.js`
+
 ```js
-// electron-builder.config.js
 module.exports = {
   files: [
     'dist-entry',
