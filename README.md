@@ -1,137 +1,130 @@
-## electron incremental updater
+## Electron Incremental Updater
 
-This project provide a vite plugin, `Updater` class and some useful functions to generate incremental update.
+This project is based on [vite-plugin-electron](https://github.com/electron-vite/vite-plugin-electron), provide a plugin that build on top of `ElectronSimple`, an `Updater` class and some useful utils for Electron.
 
-There will be two asar in production, `app.asar` and `main.asar` (if "main" is your app's name).
+There will be two asar in production, `app.asar` and `${name}.asar` (`electron.app.name`, also as the `name` field in `package.json`).
 
-The `app.asar` is used to load `main.asar` and initialize the `updater`. Also, all the **native modules**, which are set as `dependencies` in `package.json`, will be packaged into `app.asar` by `electron-builder`, [see usage](#use-native-modules).
+The `app.asar` is used to load `${name}.asar` and initialize the `Updater`.
 
-The new `main.asar` downloaded from remote will be verified by presigned RSA + Signature. When pass the check and restart, the old `main.asar` will be replaced by the new one. Hooks like `beforeDoUpdate` are provided.
+The new `${name}.asar`, which can download from remote or load from buffer, will be verified by `Updater` using presigned RSA + Signature. While passing the check and restart, the old `${name}.asar` will be replaced by the new one. Hooks like `beforeDoUpdate` are provided.
 
-- inspired by Obsidian's update strategy
+All **native modules** should be packaged into `app.asar` to reduce `${name}.asar` file size, [see usage](#use-native-modules)
 
-### notice
+- inspired by [Obsidian](https://obsidian.md/)'s upgrade strategy
 
-- this plugin is developed with [vite-plugin-electron](https://github.com/electron-vite/vite-plugin-electron), and may be effect in other electron vite frameworks
-- **all options are documented in the jsdoc**
-
-## install
+## Install
 
 ### npm
 ```bash
-npm install electron-incremental-update
+npm install -D vite-plugin-electron electron-incremental-update
 ```
 ### yarn
 ```bash
-yarn add electron-incremental-update
+yarn add -D vite-plugin-electron electron-incremental-update
 ```
 ### pnpm
 ```bash
-pnpm add electron-incremental-update
+pnpm add -D vite-plugin-electron electron-incremental-update
 ```
 
-## setup
+## Getting started
+
+### Project structure
 
 base on [electron-vite-vue](https://github.com/electron-vite/electron-vite-vue)
 
 ```
 electron
-├── app.ts // <- add app entry file
-├── electron-env.d.ts
+├── entry.ts // <- entry file
 ├── main
-│   ├── db.ts
-│   ├── index.ts
+│   └── index.ts
 └── preload
     └── index.ts
 src
 └── ...
 ```
 
-### setup app
+### Setup entry
 
 ```ts
-// electron/app.ts
-import { initApp, parseGithubCdnURL } from 'electron-incremental-update'
-import { name, repository } from '../package.json'
+// electron/entry.ts
+import { initApp } from 'electron-incremental-update'
+import { parseGithubCdnURL } from 'electron-incremental-update/utils'
+import { repository } from '../package.json'
 
 const SIGNATURE_CERT = '' // auto generate certificate when start app
 
 initApp({ onStart: console.log })
-  // can be updater option or function that return updater
   .setUpdater({
     SIGNATURE_CERT,
-    productName: name,
-    repository,
-    updateJsonURL: parseGithubCdnURL(repository, '...', 'version.json'),
-    releaseAsarURL: parseGithubCdnURL(repository, '...', `download/latest/${name}.asar.gz`),
-    receiveBeta: true
+    // repository,
+    // updateJsonURL: parseGithubCdnURL(repository, 'https://your.cdn.url/', 'version.json'),
+    // releaseAsarURL: parseGithubCdnURL(repository, 'https://your.cdn.url/', `download/latest/${name}.asar.gz`),
+    // receiveBeta: true
   })
 ```
 
-- [some cdn resources](https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34):
+- [some CDN resources](https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34):
 
-### setup vite.config.ts
+### Setup `vite.config.ts`
 
-make sure the plugin is set in the **last** build task
+All options are documented with JSDoc
 
-- for `vite-plugin-electron`, set it to `preload` (the second object in the plugin option array)
-- cert is read from `process.env.UPDATER_CERT` first, then read config
-- privatekey is read from `process.env.UPDATER_PK` first, then read config
+- cert will read from `process.env.UPDATER_CERT` first, if absend, read config
+- privatekey will read from `process.env.UPDATER_PK` first, if absend, read config
 
 ```ts
-// vite.config.ts
-export default defineConfig(({ command }) => {
-  const isBuild = command === 'build'
-  // ...
+// vite.config.mts
+import { defineConfig } from 'vite'
+import { debugStartup, electronWithUpdater } from 'electron-incremental-update/vite'
+import pkg from './package.json'
 
+export default defineConfig(async ({ command }) => {
+  const isBuild = command === 'build'
   return {
     plugins: [
-      electron([
-        // main
-        {
-          // ...
+      electronWithUpdater({
+        pkg,
+        isBuild,
+        logParsedOptions: true,
+        main: {
+          files: ['./electron/main/index.ts', './electron/main/worker.ts'],
+          // see https://github.com/electron-vite/electron-vite-vue/blob/85ed267c4851bf59f32888d766c0071661d4b94c/vite.config.ts#L22-L28
+          onstart: debugStartup,
         },
-        // preload
-        {
-          // ...
-          vite: {
-            plugins: [
-              updater({
-                productName: pkg.name,
-                version: pkg.version,
-                isBuild,
-              }),
-            ],
-            // ...
-          }
+        preload: {
+          files: './electron/preload/index.ts',
         },
-        // when using vite-plugin-electron-renderer
-        {
-          // ...
+        updater: {
+          // options
         }
-      ]),
-      // ...
+      }),
     ],
-    // ...
+    server: process.env.VSCODE_DEBUG && (() => {
+      const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL)
+      return {
+        host: url.hostname,
+        port: +url.port,
+      }
+    })(),
   }
 })
 ```
 
-### modify package.json
+### Modify package.json
 
 ```json
 {
-  // ...
-  "main": "app.js" // <- app entry file path
+  "main": "dist-entry/entry.js" // <- entry file path
 }
 ```
 
-### config electron-builder
+### Config electron-builder
 
 ```js
 const { name } = require('./package.json')
 
-const target = `${name}.asar`
+const targetFile = `${name}.asar`
 /**
  * @type {import('electron-builder').Configuration}
  */
@@ -139,26 +132,21 @@ module.exports = {
   appId: 'YourAppID',
   productName: name,
   files: [
-    'app.js', // <- app entry file
-    '!**/{.eslintignore,.eslintrc.cjs,.editorconfig,.prettierignore,.prettierrc.yaml,dev-app-update.yml,LICENSE,.nvmrc,.npmrc}',
-    '!**/{tsconfig.json,tsconfig.node.json,tsconfig.web.json}',
-    '!**/*debug*.*',
-    '!**/*.{md,zip,map}',
-    '!**/*.{c,cpp,h,hpp,cc,hh,cxx,hxx,gypi,gyp,sh}',
-    '!**/.{github,vscode}',
-    '!node_modules/**/better-sqlite3/deps/**',
+    // entry files
+    'dist-entry',
   ],
+  npmRebuild: false,
   asarUnpack: [
-    '**/*.{node,dll}',
+    '**/*.{node,dll,dylib,so}',
   ],
   directories: {
     output: 'release',
   },
   extraResources: [
-    { from: `release/${target}`, to: target }, // <- asar file
+    { from: `release/${targetFile}`, to: targetFile }, // <- asar file
   ],
-  publish: null, // <- disable publish
-  // ...
+  // disable publish
+  publish: null,
 }
 ```
 
@@ -170,21 +158,23 @@ To use electron's `net` module for updating, the `checkUpdate` and `download` fu
 
 However, you have the option to customize the download function when creating the updater.
 
-**NOTE: There can only be one function and should be default export in the entry file**
+**NOTE: There should only one function and should be default export in the entry file**
 
 ```ts
 // electron/main/index.ts
-import type { StartupWithUpdater, Updater } from 'electron-incremental-update'
-import { appInfo, getAppVersion, getElectronVersion, getProductAsarPath } from 'electron-incremental-update/utils'
+import { startupWithUpdater } from 'electron-incremental-update'
+import { getPathFromAppNameAsar, getVersions } from 'electron-incremental-update/utils'
 import { app } from 'electron'
-import { name } from '../../package.json'
 
-const startup: StartupWithUpdater = (updater: Updater) => {
+export default startupWithUpdater((updater) => {
   await app.whenReady()
-  console.log('\ncurrent:')
-  console.log(`\tasar path: ${getProductAsarPath(name)}`)
-  console.log(`\tapp:       ${getAppVersion(name)}`)
-  console.log(`\telectron:  ${getElectronVersion()}`)
+
+  const { appVersion, electronVersion, entryVersion } = getVersions()
+  console.log(`${app.name}.asar path`, getPathFromAppNameAsar())
+  console.log('app version:', appVersion)
+  console.log('entry (installer) version', entryVersion)
+  console.log('electron version', electronVersion)
+
   updater.onDownloading = ({ percent }) => {
     console.log(percent)
   }
@@ -201,41 +191,89 @@ const startup: StartupWithUpdater = (updater: Updater) => {
         buttons: ['Download', 'Later'],
         message: 'Application update available!',
       })
-      response === 0 && console.log(await updater.download())
+      if (response !== 0) {
+        return
+      }
+      console.log(await updater.download())
+      updater.quitAndInstall()
     }
   })
-}
-export default startup
+})
 ```
 
 ### use native modules
 
-the native modules is packed in `app.asar`, so you cannot directly access it when in production
+All the **native modules** should be set as `dependency` in `package.json`. `electron-rebuild` only check dependencies inside `dependency` field.
 
-to use it, you can prebundle native modules, or use `requireNative` to load.
+If you are using `electron-builder` to build distributions, all the native modules with its **large relavent `node_modiles`** will be packaged into `app.asar` by default. You can setup `nativeModuleEntryMap` option to prebundle all the native modules and skip bundled by `electron-builder`
 
 ```ts
-// db.ts
-import { isNoSuchNativeModuleError, requireNative } from 'electron-incremental-update/utils'
-
-const Database = requireNative<typeof import('better-sqlite3')>('better-sqlite3')
-if (isNoSuchNativeModuleError(Database)) {
-  // ...
-}
-const db = new Database(':memory:')
-db.exec(
-  'DROP TABLE IF EXISTS employees; '
-  + 'CREATE TABLE IF NOT EXISTS employees (name TEXT, salary INTEGER)',
-)
-
-db.prepare('INSERT INTO employees VALUES (:n, :s)').run({
-  n: 'James',
-  s: 50000,
+// in vite.config.ts
+const plugin = electronWithUpdater({
+  // options...
+  updater: {
+    entry: {
+      nativeModuleEntryMap: {
+        db: './electron/native/db.ts',
+      },
+      postBuild: async ({ existsAndCopyToEntryOutputDir }) => {
+        // for better-sqlite3
+        existsAndCopyToEntryOutputDir({
+          from: './node_modules/better-sqlite3/build/Release/better_sqlite3.node',
+          skipIfExist: false,
+        })
+      },
+    },
+  },
 })
-
-const r = db.prepare('SELECT * from employees').all()
-console.log(r)
-// [ { name: 'James', salary: 50000 } ]
-
-db.close()
 ```
+
+```ts
+// in electron/native/db.ts
+import Database from 'better-sqlite3'
+import { getPaths } from 'electron-incremental-update/utils'
+
+const db = new Database(':memory:', { nativeBinding: getPaths().getPathFromEntryAsar('better_sqlite3.node') })
+
+export function test() {
+  db.exec(
+    'DROP TABLE IF EXISTS employees; '
+    + 'CREATE TABLE IF NOT EXISTS employees (name TEXT, salary INTEGER)',
+  )
+
+  db.prepare('INSERT INTO employees VALUES (:n, :s)').run({
+    n: 'James',
+    s: 5000,
+  })
+
+  const r = db.prepare('SELECT * from employees').all()
+  console.log(r)
+  // [ { name: 'James', salary: 50000 } ]
+
+  db.close()
+}
+```
+
+```ts
+// in electron/main/service.ts
+import { loadNativeModuleFromEntry } from 'electron-incremental-update/utils'
+
+const requireNative = loadNativeModuleFromEntry()
+
+requireNative<typeof import('../native/db')>('db').test()
+```
+
+```js
+// electron-builder.config.js
+module.exports = {
+  files: [
+    'dist-entry',
+    // exclude better-sqlite3 from electron-builder
+    '!node_modules/better-sqlite3/**',
+  ]
+}
+```
+
+## License
+
+MIT

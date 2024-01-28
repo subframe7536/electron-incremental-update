@@ -53,7 +53,7 @@ export class Updater {
 
   private async needUpdate(version: string, minVersion: string) {
     const compare = this.option.overrideFunctions?.compareVersion ?? compareVersionDefault
-    const { app: appVersion, entry: entryVersion } = getVersions()
+    const { appVersion, entryVersion } = getVersions()
     if (await compare(entryVersion, minVersion)) {
       throw new MinimumVersionError(entryVersion, minVersion)
     }

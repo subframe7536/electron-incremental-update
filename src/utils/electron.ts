@@ -22,9 +22,10 @@ export const is: Is = {
 }
 
 /**
- * get the absolute path of `${app.name}.asar` (not `app.asar`),
+ * get the absolute path of `${app.name}.asar` (not `app.asar`)
+ *
  * if is in dev, return `'DEV.asar'`
- * @todo change a better function name
+ * @todo change a better function name or merge into {@link getPaths}
  */
 export function getPathFromAppNameAsar(...path: string[]) {
   return is.dev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${app.name}.asar`, ...path)
@@ -36,34 +37,47 @@ export function getPathFromAppNameAsar(...path: string[]) {
  * App version is read from `version` file in `${app.name}.asar`
  *
  * Entry version is read from `package.json`
+ *
+ * SystemVersion: `${platform} ${os.release()}`
  */
 export function getVersions() {
   const platform = is.win
     ? 'Windows'
     : is.mac
-      ? 'Mac'
-      : process.platform.toLocaleUpperCase()
+      ? 'MacOS'
+      : process.platform.toUpperCase()
 
   return {
-    app: is.dev
+    appVersion: is.dev
       ? app.getVersion()
       : readFileSync(getPathFromAppNameAsar('version'), 'utf-8'),
-    entry: app.getVersion(),
-    electron: process.versions.electron,
-    node: process.versions.node,
-    system: `${platform} ${release()}`,
+    entryVersion: app.getVersion(),
+    electronVersion: process.versions.electron,
+    nodeVersion: process.versions.node,
+    systemVersion: `${platform} ${release()}`,
   }
 }
 
 /**
- * load module from entry
+ * load native module from entry
+ * @param moduleName file name in entry
+ */
+type RequireNative = <T = any>(moduleName: string) => T
+
+/**
+ * load module from entry, **only for main and preload**
+ * @remark use `require`, only support **CommonJS**
  * @param devEntryDirPath entry directory path when dev, default `../../dist-entry`
  * @param entryDirPath entry directory path when not dev, default `join(app.getAppPath(), basename(devEntryDirPath))`
+ * @example
+ * const requireNative = loadNativeModuleFromEntry()
+ * const db = requireNative<typeof import('../native/db')>('db')
+ * db.test()
  */
-export function loadModuleFromEntry(
+export function loadNativeModuleFromEntry(
   devEntryDirPath = '../../dist-entry',
   entryDirPath = join(app.getAppPath(), basename(devEntryDirPath)),
-): <T = any>(moduleName: string) => T {
+): RequireNative {
   const path = is.dev ? devEntryDirPath : entryDirPath
   return (moduleName) => {
     try {
@@ -158,7 +172,7 @@ export function waitAppReady(timeout = 1000): Promise<void> {
 }
 
 /**
- * get paths
+ * get paths, **only for main and preload**
  * @param entryDirName entry dir name, default to `dist-entry`
  */
 export function getPaths(entryDirName = 'dist-entry') {
@@ -185,17 +199,33 @@ export function getPaths(entryDirName = 'dist-entry') {
      * ```
      */
     indexHTMLPath,
-    getPathFromEntryAsar(...path: string[]) {
-      return join(app.getAppPath(), entryDirName, ...path)
+    /**
+     * get path inside entry asar
+     * @param paths joined path
+     */
+    getPathFromEntryAsar(...paths: string[]) {
+      return join(app.getAppPath(), entryDirName, ...paths)
     },
-    getPathFromMain(...path: string[]) {
-      return join(mainDirPath, ...path)
+    /**
+     * get path inside `${app.name}.asar/main`
+     * @param paths joined path
+     */
+    getPathFromMain(...paths: string[]) {
+      return join(mainDirPath, ...paths)
     },
-    getPathFromPreload(...path: string[]) {
-      return join(preloadDirPath, ...path)
+    /**
+     * get path inside `${app.name}.asar/preload`
+     * @param paths joined path
+     */
+    getPathFromPreload(...paths: string[]) {
+      return join(preloadDirPath, ...paths)
     },
-    getPathFromPublic(...path: string[]) {
-      return join(publicDirPath, ...path)
+    /**
+     * get path inside public dir
+     * @param paths joined path
+     */
+    getPathFromPublic(...paths: string[]) {
+      return join(publicDirPath, ...paths)
     },
   }
 }
