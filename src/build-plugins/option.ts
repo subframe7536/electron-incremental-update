@@ -1,4 +1,4 @@
-import type { Prettify, Promisable } from '@subframe7536/type-utils'
+import type { Promisable } from '@subframe7536/type-utils'
 import type { BuildOptions } from 'esbuild'
 import type { UpdateJSON } from '../utils/noDep'
 import { parseKeys } from './key'
@@ -127,7 +127,7 @@ export type BuildEntryOption = {
 }
 
 export type GetKeysOption = {
-  entryPath: string
+  appEntryPath: string
   privateKeyPath: string
   certPath: string
   keyLength: number
@@ -300,7 +300,7 @@ export function parseOptions(isBuild: boolean, pkg: PKG, options: ElectronUpdate
     keyLength,
     privateKeyPath,
     certPath,
-    entryPath: appEntryPath,
+    appEntryPath,
     subject,
     days,
   })

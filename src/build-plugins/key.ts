@@ -24,40 +24,29 @@ export function generateKeyPair(keyLength: number, subject: CertSubject, days: n
   writeFileSync(certPath, cert.replace(/\r\n?/g, '\n'))
 }
 
-export function writeCertToMain(entryPath: string, cert: string) {
+const noCertRegex = /(?<=const SIGNATURE_CERT\s*=\s*)['"]{2}/m
+const existCertRegex = /(?<=const SIGNATURE_CERT\s*=\s*)(['"]-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n['"])/m
+
+export function writeCertToEntry(entryPath: string, cert: string) {
+  if (!existsSync(entryPath)) {
+    throw new Error(`entry not exist: ${entryPath}`)
+  }
   const file = readFileSync(entryPath, 'utf-8')
 
-  const initRegex = /(?<=const SIGNATURE_CERT\s*=\s*)['"]{2}/m
-  const existRegex = /(?<=const SIGNATURE_CERT\s*=\s*)(['"]-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n['"])/m
-  const eol = file.includes('\r') ? '\r\n' : '\n'
   const replacement = cert
     .split('\n')
     .filter(Boolean)
     .map(s => `'${s}\\n'`)
-    .join(`${eol}  + `)
+    .join('\n  + ')
 
   let replaced = file
 
-  if (initRegex.test(file)) {
-    replaced = file.replace(initRegex, replacement)
-  } else if (existRegex.test(file)) {
-    replaced = file.replace(existRegex, replacement)
+  if (noCertRegex.test(file)) {
+    replaced = file.replace(noCertRegex, replacement)
+  } else if (existCertRegex.test(file)) {
+    replaced = file.replace(existCertRegex, replacement)
   } else {
-    const lines = file.split(eol)
-    const r = `${eol}const SIGNATURE_CERT = ${replacement}${eol}`
-    let isMatched = false
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      if (!line.startsWith('import') && !line.startsWith('/')) {
-        lines.splice(i, 0, r)
-        isMatched = true
-        break
-      }
-    }
-
-    !isMatched && lines.push(r)
-    replaced = lines.join(eol)
+    throw new Error('no `SIGNATURE_CERT` found in entry')
   }
 
   writeFileSync(entryPath, replaced)
@@ -67,7 +56,7 @@ export function parseKeys({
   keyLength,
   privateKeyPath,
   certPath,
-  entryPath,
+  appEntryPath,
   subject,
   days,
 }: GetKeysOption): { privateKey: string, cert: string } {
@@ -75,24 +64,20 @@ export function parseKeys({
   !existsSync(keysDir) && mkdirSync(keysDir)
 
   if (!existsSync(privateKeyPath) || !existsSync(certPath)) {
+    console.warn('no key pair found, generate new key pair')
     generateKeyPair(keyLength, parseSubjects(subject), days, privateKeyPath, certPath)
-    console.log('no key pair found, generate new key pair')
   }
 
   const privateKey = process.env.UPDATER_PK || readFileSync(privateKeyPath, 'utf-8')
   const cert = process.env.UPDATER_CERT || readFileSync(certPath, 'utf-8')
-  writeCertToMain(entryPath, cert)
-  return {
-    privateKey,
-    cert,
-  }
+
+  writeCertToEntry(appEntryPath, cert)
+
+  return { privateKey, cert }
 }
 
 function parseSubjects(subject: DistinguishedName): CertSubject {
-  const ret = [] as CertSubject
-  Object.keys(subject).forEach((name: string) => {
-    const value = subject[name as keyof DistinguishedName]
-    value && ret.push({ name, value })
-  })
-  return ret
+  return Object.entries(subject)
+    .filter(([_, value]) => !!value)
+    .map(([name, value]) => ({ name, value }))
 }

@@ -99,6 +99,7 @@ const log = createLogger('info', { prefix: `[${id}]` })
  * - only contains `main` and `preload` configs
  * - remove old electron files
  * - externalize dependencies
+ * - auto restart when entry file changes
  * - other configs in {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template}
  * - no `vite-plugin-electron-renderer` config
  *
@@ -151,16 +152,15 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   log.info(`remove old files`, { timestamp: true })
 
   const { buildAsarOption, buildEntryOption, buildVersionOption } = _options
-  const { entryOutputDirPath, nativeModuleEntryMap } = buildEntryOption
+  const { entryOutputDirPath, nativeModuleEntryMap, appEntryPath } = buildEntryOption
 
   const sourcemap = isBuild || !!process.env.VSCODE_DEBUG
 
-  const _appPath = join(entryOutputDirPath, 'index.js')
+  const _appPath = join(entryOutputDirPath, 'entry.js')
   if (resolve(normalizePath(pkg.main)) !== resolve(normalizePath(_appPath))) {
     throw new Error(`wrong "main" field in package.json: "${pkg.main}", it should be "${_appPath.replace(/\\/g, '/')}"`)
   }
 
-  // todo: reload when `entryPath` changes
   let isInit = false
   const _buildEntry = async () => {
     await buildEntry(buildEntryOption)
@@ -244,7 +244,8 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   let extraHmrPlugin: Plugin | undefined
 
   if (nativeModuleEntryMap) {
-    const files = Object.values(nativeModuleEntryMap).map(file => resolve(normalizePath(file)))
+    const files = [...Object.values(nativeModuleEntryMap), appEntryPath].map(file => resolve(normalizePath(file)))
+
     extraHmrPlugin = {
       name: `${id}-dev`,
       apply() {
@@ -253,7 +254,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
       configureServer: (server) => {
         server.watcher
           .add(files)
-          .on('change', p => files.includes(p) && startup())
+          .on('change', p => files.includes(p) && _buildEntry().then(() => startup()))
       },
     }
   }

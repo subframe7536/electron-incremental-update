@@ -93,7 +93,7 @@ export async function buildEntry({
 }: BuildEntryOption) {
   await build({
     entryPoints: {
-      index: appEntryPath,
+      entry: appEntryPath,
       ...nativeModuleEntryMap,
     },
     bundle: true,
