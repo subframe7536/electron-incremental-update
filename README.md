@@ -50,8 +50,9 @@ src
 
 ### Setup entry
 
+in `electron/entry.ts`
+
 ```ts
-// electron/entry.ts
 import { initApp } from 'electron-incremental-update'
 import { parseGithubCdnURL } from 'electron-incremental-update/utils'
 import { repository } from '../package.json'
@@ -77,8 +78,9 @@ All options are documented with JSDoc
 - cert will read from `process.env.UPDATER_CERT` first, if absend, read config
 - privatekey will read from `process.env.UPDATER_PK` first, if absend, read config
 
+in `vite.config.mts`
+
 ```ts
-// vite.config.mts
 import { defineConfig } from 'vite'
 import { debugStartup, electronWithUpdater } from 'electron-incremental-update/vite'
 import pkg from './package.json'
@@ -164,8 +166,9 @@ However, you have the option to customize the download function when creating th
 
 **NOTE: There should only one function and should be default export in the entry file**
 
+in `electron/main/index.ts`
+
 ```ts
-// electron/main/index.ts
 import { startupWithUpdater } from 'electron-incremental-update'
 import { getPathFromAppNameAsar, getVersions } from 'electron-incremental-update/utils'
 import { app } from 'electron'
