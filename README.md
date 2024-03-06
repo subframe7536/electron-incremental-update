@@ -232,6 +232,13 @@ const plugin = electronWithUpdater({
           from: './node_modules/better-sqlite3/build/Release/better_sqlite3.node',
           skipIfExist: false,
         })
+        // for @napi-rs/image
+        const startStr = '@napi-rs+image-'
+        const fileName = (await readdir('./node_modules/.pnpm')).filter(p => p.startsWith(startStr))[0]
+        const archName = fileName.substring(startStr.length).split('@')[0]
+        existsAndCopyToEntryOutputDir({
+          from: `./node_modules/.pnpm/${fileName}/node_modules/@napi-rs/image-${archName}/image.${archName}.node`,
+        })
       },
     },
   },
@@ -283,6 +290,8 @@ module.exports = {
     'dist-entry',
     // exclude better-sqlite3 from electron-builder
     '!node_modules/better-sqlite3/**',
+    // exclude @napi-rs/image from electron-builder
+    '!node_modules/@napi-rs*/**',
   ]
 }
 ```
