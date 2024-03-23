@@ -256,6 +256,7 @@ export function parseOptions(isBuild: boolean, pkg: PKG, options: ElectronUpdate
       appEntryPath = 'electron/entry.ts',
       nativeModuleEntryMap = {},
       postBuild,
+      overrideEsbuildOptions,
     } = {},
     paths: {
       asarOutputPath = `release/${pkg.name}.asar`,
@@ -294,6 +295,7 @@ export function parseOptions(isBuild: boolean, pkg: PKG, options: ElectronUpdate
     appEntryPath,
     nativeModuleEntryMap,
     postBuild,
+    overrideEsbuildOptions,
   }
   // generate keys or get from file
   const { privateKey, cert } = parseKeys({

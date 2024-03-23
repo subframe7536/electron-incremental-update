@@ -168,7 +168,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
 
   const _appPath = join(entryOutputDirPath, 'entry.js')
   if (resolve(normalizePath(pkg.main)) !== resolve(normalizePath(_appPath))) {
-    throw new Error(`wrong "main" field in package.json: "${pkg.main}", it should be "${_appPath.replace(/\\/g, '/')}"`)
+    throw new Error(`wrong "main" field in package.json: "${pkg.main}", it should be "${normalizePath(_appPath)}"`)
   }
 
   let isInit = false
