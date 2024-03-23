@@ -50,7 +50,7 @@ src
 
 ### Setup entry
 
-in `electron/entry.ts`
+in `electron/entry.ts` (build by `Esbuild`)
 
 ```ts
 import { initApp } from 'electron-incremental-update'
