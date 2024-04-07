@@ -49,21 +49,21 @@
     "vite-plugin-electron": "^0.15.6 || ^0.28"
   },
   "dependencies": {
-    "@electron/asar": "^3.2.8",
-    "@subframe7536/type-utils": "^0.1.4",
+    "@electron/asar": "^3.2.9",
+    "@subframe7536/type-utils": "^0.1.6",
     "selfsigned": "^2.4.1"
   },
   "devDependencies": {
-    "@subframe7536/eslint-config": "^0.5.9",
-    "@types/node": "^20.11.5",
-    "bumpp": "^9.3.0",
+    "@subframe7536/eslint-config": "^0.6.0",
+    "@types/node": "^20.12.5",
+    "bumpp": "^9.4.0",
     "electron": "28.1.1",
-    "eslint": "^8.56.0",
-    "tsup": "^8.0.1",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.12",
-    "vite-plugin-electron": "^0.15.6",
-    "vitest": "^1.2.1"
+    "eslint": "^8.57.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.4",
+    "vite": "^5.2.8",
+    "vite-plugin-electron": "^0.28.4",
+    "vitest": "^1.4.0"
   },
   "pnpm": {
     "overrides": {
