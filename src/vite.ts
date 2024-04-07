@@ -185,7 +185,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
           isInit = true
           await _buildEntry()
         }
-        _main.onstart?.(args) ?? args.startup()
+        _main.onstart ? _main.onstart(args) : args.startup()
       },
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
