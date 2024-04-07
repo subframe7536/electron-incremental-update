@@ -7,6 +7,7 @@ import { signature } from '../crypto'
 import { isUpdateJSON, parseVersion } from '../utils/noDep'
 import { zipFile } from '../utils/zip'
 import type { UpdateJSON } from '../utils'
+import { log } from '../vite'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 
 export async function buildAsar({
@@ -50,7 +51,7 @@ export async function buildVersion({
       if (isUpdateJSON(oldVersionJson)) {
         _json = oldVersionJson
       } else {
-        console.warn('old version json is invalid, ignore it')
+        log.warn('old version json is invalid, ignore it')
       }
     } catch (error) {}
   }
@@ -117,7 +118,11 @@ export async function buildEntry({
       if (existsSync(from)) {
         const target = join(entryOutputDirPath, to ?? basename(from))
         if (!skipIfExist || !existsSync(target)) {
-          cpSync(from, target)
+          try {
+            cpSync(from, target)
+          } catch (ignore) {
+            log.warn(`copy failed: ${ignore}`)
+          }
         }
       }
     },

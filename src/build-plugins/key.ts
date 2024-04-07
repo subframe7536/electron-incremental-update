@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { generate } from 'selfsigned'
+import { log } from '../vite'
 import type { CertSubject, DistinguishedName, GetKeysOption } from './option'
 
 export function generateKeyPair(keyLength: number, subject: CertSubject, days: number, privateKeyPath: string, certPath: string) {
@@ -64,7 +65,7 @@ export function parseKeys({
   !existsSync(keysDir) && mkdirSync(keysDir)
 
   if (!existsSync(privateKeyPath) || !existsSync(certPath)) {
-    console.warn('no key pair found, generate new key pair')
+    log.warn('no key pair found, generate new key pair')
     generateKeyPair(keyLength, parseSubjects(subject), days, privateKeyPath, certPath)
   }
 

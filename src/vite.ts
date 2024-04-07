@@ -91,7 +91,7 @@ export type ElectronWithUpdaterOptions = {
 }
 
 const id = 'electron-incremental-updater'
-const log = createLogger('info', { prefix: `[${id}]` })
+export const log = createLogger('info', { prefix: `[${id}]` })
 
 /**
  * build options for `vite-plugin-electron/simple`
