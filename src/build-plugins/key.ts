@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { generate } from 'selfsigned'
 import { log } from '../vite'
-import type { CertSubject, DistinguishedName, GetKeysOption } from './option'
+import type { CertSubject, DistinguishedName } from './option'
 
 export function generateKeyPair(keyLength: number, subject: CertSubject, days: number, privateKeyPath: string, certPath: string) {
   const privateKeyDir = dirname(privateKeyPath)
@@ -51,6 +51,15 @@ export function writeCertToEntry(entryPath: string, cert: string) {
   }
 
   writeFileSync(entryPath, replaced)
+}
+
+export type GetKeysOption = {
+  appEntryPath: string
+  privateKeyPath: string
+  certPath: string
+  keyLength: number
+  subject: DistinguishedName
+  days: number
 }
 
 export function parseKeys({

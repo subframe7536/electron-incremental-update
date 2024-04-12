@@ -66,15 +66,11 @@ export type ElectronWithUpdaterOptions = {
   /**
    * main options
    */
-  main: Prettify<
-    MakeRequiredAndReplaceKey<ElectronSimpleOptions['main'], 'entry', 'files'>
-  >
+  main: MakeRequiredAndReplaceKey<ElectronSimpleOptions['main'], 'entry', 'files'>
   /**
    * preload options
    */
-  preload: Prettify<
-    MakeRequiredAndReplaceKey<Exclude<ElectronSimpleOptions['preload'], undefined>, 'input', 'files'>
-  >
+  preload: MakeRequiredAndReplaceKey<Exclude<ElectronSimpleOptions['preload'], undefined>, 'input', 'files'>
   /**
    * updater options
    */

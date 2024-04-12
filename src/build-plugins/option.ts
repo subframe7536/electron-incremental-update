@@ -127,17 +127,6 @@ export type BuildEntryOption = {
   }) => Promisable<void>
 }
 
-export type GetKeysOption = {
-  appEntryPath: string
-  privateKeyPath: string
-  certPath: string
-  keyLength: number
-  subject: DistinguishedName
-  days: number
-}
-
-export type FunctionGenerateSignature = (buffer: Buffer, privateKey: string, cert: string, version: string) => string | Promise<string>
-
 export type GeneratorOverrideFunctions = {
   /**
    * custom signature generate function

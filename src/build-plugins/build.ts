@@ -1,6 +1,6 @@
 import { readFile, rename, writeFile } from 'node:fs/promises'
-import { cpSync, existsSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import Asar from '@electron/asar'
 import { build } from 'esbuild'
 import { signature } from '../crypto'
