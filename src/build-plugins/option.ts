@@ -51,22 +51,22 @@ export type BuildEntryOption = {
    * whether to minify
    * @default isBuild
    */
-  minify: boolean
+  minify?: boolean
   /**
-   * Whether to generate sourcemap
+   * whether to generate sourcemap
    * @default isBuild
    */
-  sourcemap: boolean
+  sourcemap?: boolean
   /**
    * path to app entry output file
    * @default 'dist-entry'
    */
-  entryOutputDirPath: string
+  entryOutputDirPath?: string
   /**
    * path to app entry file
    * @default 'electron/entry.ts'
    */
-  appEntryPath: string
+  appEntryPath?: string
   /**
    * esbuild path map of native modules in entry directory
    *
@@ -100,7 +100,8 @@ export type BuildEntryOption = {
    */
   overrideEsbuildOptions?: BuildOptions
   /**
-   * resolve extra files, such as `.node`
+   * resolve extra files on startup, such as `.node`
+   * @remark won't trigger will reload
    */
   postBuild?: (args: {
     /**
@@ -167,7 +168,7 @@ export type ElectronUpdaterOptions = {
   /**
    * config for entry (app.asar)
    */
-  entry?: Partial<BuildEntryOption>
+  entry?: BuildEntryOption
   /**
    * paths config
    */
@@ -256,7 +257,7 @@ export function parseOptions(isBuild: boolean, pkg: PKG, options: ElectronUpdate
       appEntryPath = 'electron/entry.ts',
       nativeModuleEntryMap = {},
       postBuild,
-      overrideEsbuildOptions,
+      overrideEsbuildOptions = {},
     } = {},
     paths: {
       asarOutputPath = `release/${pkg.name}.asar`,
@@ -288,13 +289,12 @@ export function parseOptions(isBuild: boolean, pkg: PKG, options: ElectronUpdate
     electronDistPath,
     rendererDistPath,
   }
-  const buildEntryOption: BuildEntryOption = {
+  const buildEntryOption: Required<Omit<BuildEntryOption, 'postBuild'>> = {
     minify,
     sourcemap,
     entryOutputDirPath,
     appEntryPath,
     nativeModuleEntryMap,
-    postBuild,
     overrideEsbuildOptions,
   }
   // generate keys or get from file
@@ -317,5 +317,5 @@ export function parseOptions(isBuild: boolean, pkg: PKG, options: ElectronUpdate
     generateVersionJson,
   }
 
-  return { buildAsarOption, buildEntryOption, buildVersionOption }
+  return { buildAsarOption, buildEntryOption, buildVersionOption, postBuild }
 }

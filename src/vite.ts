@@ -1,5 +1,5 @@
-import { join, resolve } from 'node:path'
-import { rmSync } from 'node:fs'
+import { basename, join, resolve } from 'node:path'
+import { cpSync, existsSync, rmSync } from 'node:fs'
 import type { InlineConfig, Plugin } from 'vite'
 import { createLogger, mergeConfig, normalizePath } from 'vite'
 import ElectronSimple from 'vite-plugin-electron/simple'
@@ -161,7 +161,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   } catch (ignore) { }
   log.info(`remove old files`, { timestamp: true })
 
-  const { buildAsarOption, buildEntryOption, buildVersionOption } = _options
+  const { buildAsarOption, buildEntryOption, buildVersionOption, postBuild } = _options
   const { entryOutputDirPath, nativeModuleEntryMap, appEntryPath } = buildEntryOption
 
   const sourcemap = isBuild || !!process.env.VSCODE_DEBUG
@@ -177,6 +177,26 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
     log.info(`build entry to '${entryOutputDirPath}'`, { timestamp: true })
   }
 
+  const _postBuild = postBuild
+    ? async () => postBuild({
+      getPathFromEntryOutputDir(...paths) {
+        return join(entryOutputDirPath, ...paths)
+      },
+      existsAndCopyToEntryOutputDir({ from, to, skipIfExist = true }) {
+        if (existsSync(from)) {
+          const target = join(entryOutputDirPath, to ?? basename(from))
+          if (!skipIfExist || !existsSync(target)) {
+            try {
+              cpSync(from, target)
+            } catch (ignore) {
+              log.warn(`copy failed: ${ignore}`)
+            }
+          }
+        }
+      },
+    })
+    : async () => {}
+
   const electronPluginOptions: ElectronSimpleOptions = {
     main: {
       entry: _main.files,
@@ -184,6 +204,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
         if (!isInit) {
           isInit = true
           await _buildEntry()
+          await _postBuild()
         }
         _main.onstart ? _main.onstart(args) : args.startup()
       },
@@ -264,7 +285,15 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
       configureServer: (server) => {
         server.watcher
           .add(files)
-          .on('change', p => files.includes(p) && _buildEntry().then(() => startup()))
+          .on(
+            'change',
+            p => files.includes(p) && _buildEntry()
+              .then(async () => {
+                await startup.exit()
+                await _postBuild()
+                await startup()
+              }),
+          )
       },
     }
   }

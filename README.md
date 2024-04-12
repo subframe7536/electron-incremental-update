@@ -42,7 +42,7 @@ electron
 │   └── index.ts
 ├── preload
 │   └── index.ts
-└── native // possible native modules
+└── native // <- possible native modules
     └── index.ts
 src
 └── ...

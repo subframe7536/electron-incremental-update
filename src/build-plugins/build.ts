@@ -90,8 +90,7 @@ export async function buildEntry({
   entryOutputDirPath,
   nativeModuleEntryMap,
   overrideEsbuildOptions,
-  postBuild,
-}: BuildEntryOption) {
+}: Required<Omit<BuildEntryOption, 'postBuild'>>) {
   await build({
     entryPoints: {
       entry: appEntryPath,
@@ -109,22 +108,5 @@ export async function buildEntry({
       '.node': 'empty',
     },
     ...overrideEsbuildOptions,
-  })
-  await postBuild?.({
-    getPathFromEntryOutputDir(...paths) {
-      return join(entryOutputDirPath, ...paths)
-    },
-    existsAndCopyToEntryOutputDir({ from, to, skipIfExist = true }) {
-      if (existsSync(from)) {
-        const target = join(entryOutputDirPath, to ?? basename(from))
-        if (!skipIfExist || !existsSync(target)) {
-          try {
-            cpSync(from, target)
-          } catch (ignore) {
-            log.warn(`copy failed: ${ignore}`)
-          }
-        }
-      }
-    },
   })
 }
