@@ -317,6 +317,15 @@ export type ElectronWithUpdaterOptions = {
    */
   pkg: PKG
   /**
+   * use NotBundle() plugin in main
+   * @default true
+   */
+  useNotBundle?: boolean
+  /**
+   * Whether to log parsed options
+   */
+  logParsedOptions?: boolean
+  /**
    * main options
    */
   main: MakeRequiredAndReplaceKey<ElectronSimpleOptions['main'], 'entry', 'files'>
@@ -328,15 +337,94 @@ export type ElectronWithUpdaterOptions = {
    * updater options
    */
   updater?: ElectronUpdaterOptions
+}
+
+export type ElectronUpdaterOptions = {
   /**
-   * use NotBundle() plugin in main
-   * @default true
+   * mini version of entry
+   * @default '0.0.0'
    */
-  useNotBundle?: boolean
+  minimumVersion?: string
   /**
-   * Whether to log parsed options
+   * config for entry (app.asar)
    */
-  logParsedOptions?: boolean
+  entry?: BuildEntryOption
+  /**
+   * paths config
+   */
+  paths?: {
+    /**
+     * Path to asar file
+     * @default `release/${app.name}.asar`
+     */
+    asarOutputPath?: string
+    /**
+     * Path to version info output, content is {@link UpdateJSON}
+     * @default `version.json`
+     */
+    versionPath?: string
+    /**
+     * Path to gzipped asar file
+     * @default `release/${app.name}-${version}.asar.gz`
+     */
+    gzipPath?: string
+    /**
+     * Path to electron build output
+     * @default `dist-electron`
+     */
+    electronDistPath?: string
+    /**
+     * Path to renderer build output
+     * @default `dist`
+     */
+    rendererDistPath?: string
+  }
+  /**
+   * signature config
+   */
+  keys?: {
+    /**
+     * path to the pem file that contains private key
+     * if not ended with .pem, it will be appended
+     *
+     * **if `UPDATER_PK` is set, will read it instead of read from `privateKeyPath`**
+     * @default 'keys/private.pem'
+     */
+    privateKeyPath?: string
+    /**
+     * path to the pem file that contains public key
+     * if not ended with .pem, it will be appended
+     *
+     * **if `UPDATER_CERT` is set, will read it instead of read from `certPath`**
+     * @default 'keys/cert.pem'
+     */
+    certPath?: string
+    /**
+     * length of the key
+     * @default 2048
+     */
+    keyLength?: number
+    /**
+     * X509 certificate info
+     *
+     * only generate simple **self-signed** certificate **without extensions**
+     */
+    certInfo?: {
+      /**
+       * the subject of the certificate
+       *
+       * @default { commonName: `${app.name}`, organizationName: `org.${app.name}` }
+       */
+      subject?: DistinguishedName
+      /**
+       * expire days of the certificate
+       *
+       * @default 3650
+       */
+      days?: number
+    }
+    overrideGenerator?: GeneratorOverrideFunctions
+  }
 }
 
 export type BuildEntryOption = {
@@ -439,94 +527,6 @@ export type GeneratorOverrideFunctions = {
    * @returns The updated version json
    */
   generateVersionJson?: (existingJson: UpdateJSON, buffer: Buffer, signature: string, version: string, minVersion: string) => UpdateJSON | Promise<UpdateJSON>
-}
-
-export type ElectronUpdaterOptions = {
-  /**
-   * mini version of entry
-   * @default '0.0.0'
-   */
-  minimumVersion?: string
-  /**
-   * config for entry (app.asar)
-   */
-  entry?: BuildEntryOption
-  /**
-   * paths config
-   */
-  paths?: {
-    /**
-     * Path to asar file
-     * @default `release/${app.name}.asar`
-     */
-    asarOutputPath?: string
-    /**
-     * Path to version info output, content is {@link UpdateJSON}
-     * @default `version.json`
-     */
-    versionPath?: string
-    /**
-     * Path to gzipped asar file
-     * @default `release/${app.name}-${version}.asar.gz`
-     */
-    gzipPath?: string
-    /**
-     * Path to electron build output
-     * @default `dist-electron`
-     */
-    electronDistPath?: string
-    /**
-     * Path to renderer build output
-     * @default `dist`
-     */
-    rendererDistPath?: string
-  }
-  /**
-   * signature config
-   */
-  keys?: {
-    /**
-     * path to the pem file that contains private key
-     * if not ended with .pem, it will be appended
-     *
-     * **if `UPDATER_PK` is set, will read it instead of read from `privateKeyPath`**
-     * @default 'keys/private.pem'
-     */
-    privateKeyPath?: string
-    /**
-     * path to the pem file that contains public key
-     * if not ended with .pem, it will be appended
-     *
-     * **if `UPDATER_CERT` is set, will read it instead of read from `certPath`**
-     * @default 'keys/cert.pem'
-     */
-    certPath?: string
-    /**
-     * length of the key
-     * @default 2048
-     */
-    keyLength?: number
-    /**
-     * X509 certificate info
-     *
-     * only generate simple **self-signed** certificate **without extensions**
-     */
-    certInfo?: {
-      /**
-       * the subject of the certificate
-       *
-       * @default { commonName: `${app.name}`, organizationName: `org.${app.name}` }
-       */
-      subject?: DistinguishedName
-      /**
-       * expire days of the certificate
-       *
-       * @default 3650
-       */
-      days?: number
-    }
-    overrideGenerator?: GeneratorOverrideFunctions
-  }
 }
 ```
 
