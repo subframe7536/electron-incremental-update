@@ -2,13 +2,13 @@
 
 This project is based on [vite-plugin-electron](https://github.com/electron-vite/vite-plugin-electron), provide a plugin that build on top of `ElectronSimple`, an `Updater` class and some useful utils for Electron.
 
-There will be two asar in production, `app.asar` and `${name}.asar` (`electron.app.name`, also as the `name` field in `package.json`).
+There will be two asar in production, `app.asar` and `${electron.app.name}.asar` (also as the `name` field in `package.json`).
 
-The `app.asar` is used to load `${name}.asar` and initialize the `Updater`.
+The `app.asar` is used to load `${electron.app.name}.asar` and initialize the `Updater`.
 
-The new `${name}.asar`, which can download from remote or load from buffer, will be verified by `Updater` using presigned RSA + Signature. While passing the check and restart, the old `${name}.asar` will be replaced by the new one. Hooks like `beforeDoUpdate` are provided.
+The new `${electron.app.name}.asar`, which can download from remote or load from buffer, will be verified by `Updater` using presigned RSA + Signature. While passing the check and restart, the old `${electron.app.name}.asar` will be replaced by the new one. Hooks like `beforeDoUpdate` are provided.
 
-All **native modules** should be packaged into `app.asar` to reduce `${name}.asar` file size, [see usage](#use-native-modules)
+All **native modules** should be packaged into `app.asar` to reduce `${electron.app.name}.asar` file size, [see usage](#use-native-modules). Therefore, auto upgrade of portable app is possible.
 
 no `vite-plugin-electron-renderer` config
 
@@ -75,7 +75,7 @@ initApp({ onStart: console.log })
 
 All options are documented with JSDoc
 
-- cert will read from `process.env.UPDATER_CERT` first, if absend, read config
+- certificate will read from `process.env.UPDATER_CERT` first, if absend, read config
 - privatekey will read from `process.env.UPDATER_PK` first, if absend, read config
 
 in `vite.config.mts`

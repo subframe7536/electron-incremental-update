@@ -4,28 +4,20 @@ import { release } from 'node:os'
 import type { BrowserWindow } from 'electron'
 import { app } from 'electron'
 
-type Is = {
-  dev: boolean
-  win: boolean
-  mac: boolean
-  linux: boolean
-}
-
 /**
- * get app info
+ * app info
  */
-export const is: Is = {
+export const is = {
   dev: !app.isPackaged,
   win: process.platform === 'win32',
   mac: process.platform === 'darwin',
   linux: process.platform === 'linux',
-}
+} as const
 
 /**
- * get the absolute path of `${app.name}.asar` (not `app.asar`)
+ * get the absolute path of `${electron.app.name}.asar` (not `app.asar`)
  *
  * if is in dev, return `'DEV.asar'`
- * @todo change a better function name or merge into {@link getPaths}
  */
 export function getPathFromAppNameAsar(...path: string[]) {
   return is.dev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${app.name}.asar`, ...path)

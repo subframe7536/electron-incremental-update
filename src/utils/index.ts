@@ -1,3 +1,3 @@
 export * from './electron'
 export * from './zip'
-export * from './noDep'
+export * from './pure'

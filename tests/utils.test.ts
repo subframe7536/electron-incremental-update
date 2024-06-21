@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseGithubCdnURL } from '../src/utils/noDep'
+import { parseGithubCdnURL } from '../src/utils/pure'
 
 describe('parseGithubCdnURL', () => {
   it('should throw an error if url does not start with https://github.com/', () => {
