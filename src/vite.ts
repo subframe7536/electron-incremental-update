@@ -233,6 +233,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
               },
               async closeBundle() {
                 await _buildEntry()
+                await _postBuild()
 
                 await buildAsar(buildAsarOption)
                 log.info(`build asar to '${buildAsarOption.asarOutputPath}'`, { timestamp: true })
