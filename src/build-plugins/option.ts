@@ -236,12 +236,17 @@ export type ElectronUpdaterOptions = {
   }
 }
 
-export function parseOptions(isBuild: boolean, pkg: PKG, options: ElectronUpdaterOptions = {}) {
+export function parseOptions(
+  pkg: PKG,
+  sourcemap = false,
+  minify = false,
+  options: ElectronUpdaterOptions = {},
+) {
   const {
     minimumVersion = '0.0.0',
     entry: {
-      minify = isBuild,
-      sourcemap = isBuild,
+      minify: entryMinify,
+      sourcemap: entrySourcemap,
       entryOutputDirPath = 'dist-entry',
       appEntryPath = 'electron/entry.ts',
       nativeModuleEntryMap = {},
@@ -279,8 +284,8 @@ export function parseOptions(isBuild: boolean, pkg: PKG, options: ElectronUpdate
     rendererDistPath,
   }
   const buildEntryOption: Required<Omit<BuildEntryOption, 'postBuild'>> = {
-    minify,
-    sourcemap,
+    minify: entryMinify ?? minify,
+    sourcemap: entrySourcemap ?? sourcemap,
     entryOutputDirPath,
     appEntryPath,
     nativeModuleEntryMap,

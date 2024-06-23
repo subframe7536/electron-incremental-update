@@ -1,3 +1,8 @@
-const { defineEslintConfig } = require('@subframe7536/eslint-config')
+import { defineEslintConfig } from '@subframe7536/eslint-config'
 
-module.exports = defineEslintConfig()
+export default defineEslintConfig({
+  solid: false,
+  overrideRules: {
+    'prefer-template': 'off',
+  },
+})

@@ -33,7 +33,7 @@ export interface Version {
 }
 
 export function parseVersion(version: string): Version {
-  const semver = /^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9\.-]+))?/i
+  const semver = /^(\d+)\.(\d+)\.(\d+)(?:-([a-z0-9.-]+))?/i
   const match = semver.exec(version)
   if (!match) {
     throw new TypeError(`invalid version: ${version}`)

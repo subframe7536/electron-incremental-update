@@ -1,5 +1,6 @@
 {
   "name": "electron-incremental-update",
+  "type": "module",
   "version": "1.0.3",
   "description": "electron incremental update tools, powered by vite",
   "author": "subframe7536",
@@ -8,24 +9,24 @@
   "keywords": [
     "electron",
     "incremental update",
-    "updater"
+    "updater",
+    "bytecode"
   ],
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./vite": {
-      "import": "./dist/vite.mjs",
-      "require": "./dist/vite.js"
+      "import": "./dist/vite.js"
     },
     "./utils": {
-      "import": "./dist/utils.mjs",
-      "require": "./dist/utils.js"
+      "import": "./dist/utils.js",
+      "require": "./dist/utils.cjs"
     }
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "files": [
     "dist",
     "utils.d.ts",
@@ -35,7 +36,7 @@
   ],
   "scripts": {
     "dev": "tsup --watch",
-    "build": "tsup && node fix-module.js",
+    "build": "tsup && esno fix-module.cjs",
     "release": "pnpm test && pnpm run build && bumpp --all && npm publish",
     "test": "vitest --run",
     "lint": "eslint . --fix"
@@ -45,9 +46,23 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
+    "@babel/core": "^7.24.7",
+    "@babel/plugin-transform-arrow-functions": "^7.24.7",
     "@electron/asar": "*",
     "esbuild": "*",
+    "magic-string": "*",
     "vite-plugin-electron": "^0.15.6 || ^0.28"
+  },
+  "peerDependenciesMeta": {
+    "@babel/core": {
+      "optional": true
+    },
+    "@babel/plugin-transform-arrow-functions": {
+      "optional": true
+    },
+    "magic-string": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@subframe7536/type-utils": "^0.1.6",
@@ -55,19 +70,16 @@
   },
   "devDependencies": {
     "@subframe7536/eslint-config": "^0.6.5",
+    "@types/babel__core": "^7.20.5",
     "@types/node": "^20.14.7",
     "bumpp": "^9.4.1",
-    "electron": "28.1.1",
+    "electron": "28.2.10",
     "eslint": "^9.5.0",
+    "esno": "^4.7.0",
     "tsup": "^8.1.0",
     "typescript": "^5.5.2",
     "vite": "^5.3.1",
     "vite-plugin-electron": "^0.28.7",
     "vitest": "^1.6.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "has": "npm:@nolyfill/has@latest"
-    }
   }
 }

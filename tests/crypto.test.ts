@@ -1,7 +1,7 @@
 import { join } from 'node:path/posix'
 import { readFileSync, rmSync } from 'node:fs'
 import { afterAll, describe, expect, it } from 'vitest'
-import { decrypt, encrypt, key, signature, verify } from '../src/crypto'
+import { decrypt, encrypt, hashString, signature, verify } from '../src/crypto'
 import { generateKeyPair } from '../src/build-plugins/key'
 
 let plain = ''
@@ -9,8 +9,8 @@ for (let i = 0; i < 1_000; i++) {
   plain += 'hello+world'
 }
 describe('test aes', async () => {
-  const k = key(Buffer.from(plain, 'utf-8'), 32)
-  const iv = key(Buffer.from(plain, 'utf-8'), 16)
+  const k = hashString(Buffer.from(plain, 'utf-8'), 32)
+  const iv = hashString(Buffer.from(plain, 'utf-8'), 16)
   it('test', async () => {
     const e = encrypt(plain, k, iv)
     expect(decrypt(e, k, iv)).toBe(plain)

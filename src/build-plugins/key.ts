@@ -25,8 +25,8 @@ export function generateKeyPair(keyLength: number, subject: CertSubject, days: n
   writeFileSync(certPath, cert.replace(/\r\n?/g, '\n'))
 }
 
-const noCertRegex = /(?<=const SIGNATURE_CERT\s*=\s*)['"]{2}/m
-const existCertRegex = /(?<=const SIGNATURE_CERT\s*=\s*)(['"]-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n['"])/m
+const noCertRegex = /(?<=const SIGNATURE_CERT\s*=\s*)['"]{2}/
+const existCertRegex = /(?<=const SIGNATURE_CERT\s*=\s*)(['"]-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n['"])/
 
 export function writeCertToEntry(entryPath: string, cert: string) {
   if (!existsSync(entryPath)) {
