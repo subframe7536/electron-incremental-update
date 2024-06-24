@@ -8,16 +8,6 @@ import { isUpdateJSON, parseVersion } from '../utils/pure'
 import { zipFile } from '../utils/zip'
 import type { UpdateJSON } from '../utils'
 import { log } from '../vite'
-import {
-  log as bytecodeLog,
-  bytecodeModuleLoader,
-  compileToBytecode,
-  convertArrowToFunction,
-  convertStringToAscii,
-  toRelativePath,
-  useStrict,
-} from '../bytecode/utils'
-import { bytecodeModuleLoaderCode } from '../bytecode/staticCode'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 
 export async function buildAsar({
@@ -102,9 +92,8 @@ export async function buildEntry(
     nativeModuleEntryMap,
     overrideEsbuildOptions,
   }: Required<Omit<BuildEntryOption, 'postBuild'>>,
-  bytecode?: boolean,
 ) {
-  const { metafile } = await build({
+  await build({
     entryPoints: {
       entry: appEntryPath,
       ...nativeModuleEntryMap,
@@ -114,7 +103,6 @@ export async function buildEntry(
     outdir: entryOutputDirPath,
     minify,
     sourcemap,
-    metafile: bytecode,
     entryNames: '[dir]/[name]',
     assetNames: '[dir]/[name]',
     external: ['electron', 'original-fs'],
@@ -123,34 +111,4 @@ export async function buildEntry(
     },
     ...overrideEsbuildOptions,
   })
-  if (!bytecode) {
-    return
-  }
-  writeFileSync(join(entryOutputDirPath, bytecodeModuleLoader), bytecodeModuleLoaderCode)
-  const filePaths = Object.keys(metafile?.outputs ?? [])
-  for (const filePath of filePaths) {
-    const code = readFileSync(filePath, 'utf-8')
-    const fileName = basename(filePath)
-    const transformedCode = convertStringToAscii(
-      convertArrowToFunction(code).code,
-      fileName.endsWith('entry.js') ? getProtectStringArray(code) : [],
-    ).code
-    const buffer = await compileToBytecode(transformedCode)
-    writeFileSync(`${filePath}c`, buffer)
-    writeFileSync(
-      filePath,
-      `${useStrict}require("${toRelativePath(bytecodeModuleLoader, normalizePath(fileName))}");require("./${fileName}c")`,
-    )
-    bytecodeLog.info(
-      `${filePath} => ${(buffer.byteLength / 1000).toFixed(2)} kB`,
-      { timestamp: true },
-    )
-  }
-  bytecodeLog.info(`${filePaths.length} bundles compiled into bytecode`, { timestamp: true })
-}
-
-function getProtectStringArray(code: string) {
-  const cert = code.match(/-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----/)?.[0]
-  console.log(cert)
-  return cert ? [cert] : []
 }

@@ -109,13 +109,13 @@ export type BuildEntryOption = {
      */
     getPathFromEntryOutputDir: (...paths: string[]) => string
     /**
-     * copy file to `entryOutputDirPath`
+     * check exist and copy file to `entryOutputDirPath`
      *
      * if `to` absent, set to `basename(from)`
      *
      * if `skipIfExist` absent, skip copy if `to` exist
      */
-    existsAndCopyToEntryOutputDir: (options: {
+    copyToEntryOutputDir: (options: {
       from: string
       to?: string
       /**

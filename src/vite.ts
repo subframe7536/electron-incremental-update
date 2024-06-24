@@ -10,7 +10,6 @@ import { buildAsar, buildEntry, buildVersion } from './build-plugins/build'
 import type { ElectronUpdaterOptions, PKG } from './build-plugins/option'
 import { parseOptions } from './build-plugins/option'
 import { id } from './constant'
-import { type BytecodeOptions, bytecodePlugin } from './bytecode'
 
 type MakeRequired<T, K extends keyof T> = Exclude<T, undefined> & { [P in K]-?: T[P] }
 type ReplaceKey<
@@ -92,10 +91,6 @@ export type ElectronWithUpdaterOptions = {
    */
   logParsedOptions?: boolean
   /**
-   * whether to compile files to bytecode
-   */
-  bytecode?: boolean | BytecodeOptions
-  /**
    * main options
    */
   main: MakeRequiredAndReplaceKey<ElectronSimpleOptions['main'], 'entry', 'files'>
@@ -169,7 +164,6 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
     preload: _preload,
     sourcemap,
     minify,
-    bytecode,
     updater,
     useNotBundle = true,
     logParsedOptions,
@@ -196,12 +190,8 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
     throw new Error(`wrong "main" field in package.json: "${pkg.main}", it should be "${_appPath}"`)
   }
 
-  const _bytecodePlugin = bytecode
-    ? (env: 'main' | 'preload') => bytecodePlugin(isBuild, env, bytecode === true ? {} : bytecode)
-    : () => undefined
-
-  const _buildEntry = async (bytecode?: boolean) => {
-    await buildEntry(buildEntryOption, bytecode)
+  const _buildEntry = async () => {
+    await buildEntry(buildEntryOption)
     log.info(`vite build entry to '${entryOutputDirPath}'`, { timestamp: true })
   }
 
@@ -210,7 +200,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
       getPathFromEntryOutputDir(...paths) {
         return join(entryOutputDirPath, ...paths)
       },
-      existsAndCopyToEntryOutputDir({ from, to, skipIfExist = true }) {
+      copyToEntryOutputDir({ from, to, skipIfExist = true }) {
         if (existsSync(from)) {
           const target = join(entryOutputDirPath, to ?? basename(from))
           if (!skipIfExist || !existsSync(target)) {
@@ -240,10 +230,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
       },
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
-          plugins: [
-            _bytecodePlugin('main'),
-            !isBuild && useNotBundle ? notBundle() : undefined,
-          ],
+          plugins: [!isBuild && useNotBundle ? notBundle() : undefined],
           build: {
             sourcemap,
             minify,
@@ -262,7 +249,6 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
           plugins: [
-            _bytecodePlugin('preload'),
             {
               name: `${id}-build`,
               enforce: 'post',
@@ -270,7 +256,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
                 return isBuild
               },
               async closeBundle() {
-                await _buildEntry(!!bytecode)
+                await _buildEntry()
                 await _postBuild()
 
                 await buildAsar(buildAsarOption)

@@ -226,9 +226,9 @@ const plugin = electronWithUpdater({
       nativeModuleEntryMap: {
         db: './electron/native/db.ts',
       },
-      postBuild: async ({ existsAndCopyToEntryOutputDir }) => {
+      postBuild: async ({ copyToEntryOutputDir }) => {
         // for better-sqlite3
-        existsAndCopyToEntryOutputDir({
+        copyToEntryOutputDir({
           from: './node_modules/better-sqlite3/build/Release/better_sqlite3.node',
           skipIfExist: false,
         })
@@ -236,7 +236,7 @@ const plugin = electronWithUpdater({
         const startStr = '@napi-rs+image-'
         const fileName = (await readdir('./node_modules/.pnpm')).filter(p => p.startsWith(startStr))[0]
         const archName = fileName.substring(startStr.length).split('@')[0]
-        existsAndCopyToEntryOutputDir({
+        copyToEntryOutputDir({
           from: `./node_modules/.pnpm/${fileName}/node_modules/@napi-rs/image-${archName}/image.${archName}.node`,
         })
       },
@@ -288,10 +288,8 @@ in `electron-builder.config.js`
 module.exports = {
   files: [
     'dist-entry',
-    // exclude better-sqlite3 from electron-builder
-    '!node_modules/better-sqlite3/**',
-    // exclude @napi-rs/image from electron-builder
-    '!node_modules/@napi-rs*/**',
+    // exclude dependencies in electron-builder config
+    '!node_modules/**',
   ]
 }
 ```
