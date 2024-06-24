@@ -294,6 +294,14 @@ module.exports = {
 }
 ```
 
+### Bytecode protection
+
+WIP
+
+plan to use [electron-vite](https://github.com/alex8088/electron-vite/blob/master/src/plugins/bytecode.ts), but fail to load the default function in `${electron.app.name}.asar/dist-electron/index.js`.
+
+try to wrap with [`Module.wrap`](https://github.com/bytenode/bytenode?tab=readme-ov-file#bytenodecompileelectroncodejavascriptcode-options--promisebuffer), but still fail.
+
 ### Types
 
 ```ts
