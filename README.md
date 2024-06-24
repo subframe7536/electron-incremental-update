@@ -297,7 +297,7 @@ module.exports = {
 ### Types
 
 ```ts
-export type ElectronWithUpdaterOptions = {
+type ElectronWithUpdaterOptions = {
   /**
    * whether is in build mode
    * ```ts
@@ -308,12 +308,20 @@ export type ElectronWithUpdaterOptions = {
    */
   isBuild: boolean
   /**
-   * name, version and main in `package.json`
+   * manullay setup package.json, read name, version and main
    * ```ts
    * import pkg from './package.json'
    * ```
    */
-  pkg: PKG
+  pkg?: PKG
+  /**
+   * whether to generate sourcemap
+   */
+  sourcemap?: boolean
+  /**
+   * whether to minify the code
+   */
+  minify?: boolean
   /**
    * use NotBundle() plugin in main
    * @default true
@@ -337,7 +345,7 @@ export type ElectronWithUpdaterOptions = {
   updater?: ElectronUpdaterOptions
 }
 
-export type ElectronUpdaterOptions = {
+type ElectronUpdaterOptions = {
   /**
    * mini version of entry
    * @default '0.0.0'
@@ -425,7 +433,7 @@ export type ElectronUpdaterOptions = {
   }
 }
 
-export type BuildEntryOption = {
+type BuildEntryOption = {
   /**
    * whether to minify
    * @default isBuild
@@ -488,13 +496,13 @@ export type BuildEntryOption = {
      */
     getPathFromEntryOutputDir: (...paths: string[]) => string
     /**
-     * copy file to `entryOutputDirPath`
+     * check exist and copy file to `entryOutputDirPath`
      *
      * if `to` absent, set to `basename(from)`
      *
      * if `skipIfExist` absent, skip copy if `to` exist
      */
-    existsAndCopyToEntryOutputDir: (options: {
+    copyToEntryOutputDir: (options: {
       from: string
       to?: string
       /**
@@ -506,7 +514,7 @@ export type BuildEntryOption = {
   }) => Promisable<void>
 }
 
-export type GeneratorOverrideFunctions = {
+type GeneratorOverrideFunctions = {
   /**
    * custom signature generate function
    * @param buffer file buffer
