@@ -77,6 +77,10 @@ export type ElectronWithUpdaterOptions = {
   minify?: boolean
   /**
    * whether to generate bytecode
+   *
+   * **only support commonjs**
+   *
+   * only main process by default, if you want to use in preload script, please use `electronWithUpdater({ bytecode: { enablePreload: true } })` and set `sandbox: false` when creating window
    */
   bytecode?: boolean | BytecodeOptions
   /**

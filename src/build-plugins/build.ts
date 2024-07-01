@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
-import Module from 'node:module'
 import Asar from '@electron/asar'
-import { build } from 'esbuild'
+import { type BuildOptions, build } from 'esbuild'
+import { mergeConfig } from 'vite'
 import { signature } from '../crypto'
 import { isUpdateJSON, parseVersion } from '../utils/pure'
 import { zipFile } from '../utils/zip'
@@ -102,28 +102,32 @@ export async function buildEntry(
   cert: string,
   protectedStrings?: string[],
 ) {
-  const { metafile } = await build({
-    entryPoints: {
-      entry: appEntryPath,
-      ...nativeModuleEntryMap,
-    },
-    bundle: true,
-    metafile: true,
-    platform: 'node',
-    outdir: entryOutputDirPath,
-    minify,
-    sourcemap,
-    entryNames: '[dir]/[name]',
-    assetNames: '[dir]/[name]',
-    external: ['electron', 'original-fs'],
-    loader: {
-      '.node': 'empty',
-    },
-    define: {
-      __SIGNATURE_CERT__: JSON.stringify(cert),
-    },
-    ...overrideEsbuildOptions,
-  })
+  const option: BuildOptions = mergeConfig(
+    {
+      entryPoints: {
+        entry: appEntryPath,
+        ...nativeModuleEntryMap,
+      },
+      bundle: true,
+      metafile: true,
+      platform: 'node',
+      outdir: entryOutputDirPath,
+      minify,
+      sourcemap,
+      entryNames: '[dir]/[name]',
+      assetNames: '[dir]/[name]',
+      external: ['electron', 'original-fs'],
+      loader: {
+        '.node': 'empty',
+      },
+      define: {
+        __SIGNATURE_CERT__: JSON.stringify(cert),
+      },
+    } satisfies BuildOptions,
+    overrideEsbuildOptions ?? {},
+  )
+  const { metafile } = await build(option)
+
   if (protectedStrings === undefined) {
     return
   }
@@ -151,6 +155,6 @@ export async function buildEntry(
 }
 
 function getProtectStringArray(code: string) {
-  const cert = code.match(/-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----/)?.[0]
+  const cert = code.match(/"-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\n"/)?.[0]
   return cert ? [cert] : []
 }

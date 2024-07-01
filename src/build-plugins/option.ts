@@ -95,6 +95,9 @@ export type BuildEntryOption = {
    *   loader: {
    *     '.node': 'empty',
    *   },
+   *   define: {
+   *     __SIGNATURE_CERT__: JSON.stringify(cert),
+   *   },
    * }
    * ```
    */

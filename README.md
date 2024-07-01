@@ -57,12 +57,10 @@ import { initApp } from 'electron-incremental-update'
 import { parseGithubCdnURL } from 'electron-incremental-update/utils'
 import { repository } from '../package.json'
 
-const SIGNATURE_CERT = '' // auto generate certificate when start app
-
 initApp({
   // can be updater option or function that return updater
   updater: {
-    SIGNATURE_CERT,
+    SIGNATURE_CERT: 'custom certificate',
     repository,
     updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${app.name}.asar.gz`),
@@ -86,14 +84,12 @@ in `vite.config.mts`
 ```ts
 import { defineConfig } from 'vite'
 import { debugStartup, electronWithUpdater } from 'electron-incremental-update/vite'
-import pkg from './package.json'
 
 export default defineConfig(async ({ command }) => {
   const isBuild = command === 'build'
   return {
     plugins: [
       electronWithUpdater({
-        pkg,
         isBuild,
         logParsedOptions: true,
         main: {
@@ -299,11 +295,19 @@ module.exports = {
 
 ### Bytecode protection
 
-WIP
+credit to [electron-vite](https://github.com/alex8088/electron-vite/blob/master/src/plugins/bytecode.ts)
 
-plan to use [electron-vite](https://github.com/alex8088/electron-vite/blob/master/src/plugins/bytecode.ts), but fail to load the default function in `${electron.app.name}.asar/dist-electron/index.js`.
+```ts
+electronWithUpdater({
+  // ...
+  bytecode: true,
+})
+```
 
-try to wrap with [`Module.wrap`](https://github.com/bytenode/bytenode?tab=readme-ov-file#bytenodecompileelectroncodejavascriptcode-options--promisebuffer), but still fail.
+#### Limitation
+
+- only support commonjs
+- only for main process by default, if you want to use in preload script, please use `electronWithUpdater({ bytecode: { enablePreload: true } })` and set `sandbox: false` when creating window
 
 ### Types
 
@@ -334,14 +338,24 @@ type ElectronWithUpdaterOptions = {
    */
   minify?: boolean
   /**
+   * whether to generate bytecode
+   *
+   * **only support commonjs**
+   *
+   * only main process by default, if you want to use in preload script, please use `electronWithUpdater({ bytecode: { enablePreload: true } })` and set `sandbox: false` when creating window
+   */
+  bytecode?: boolean | BytecodeOptions
+  /**
    * use NotBundle() plugin in main
    * @default true
    */
   useNotBundle?: boolean
   /**
    * Whether to log parsed options
+   *
+   * to show certificate and private keys, set `logParsedOptions: { showKeys: true }`
    */
-  logParsedOptions?: boolean
+  logParsedOptions?: boolean | { showKeys: boolean }
   /**
    * main options
    */
@@ -474,7 +488,7 @@ type BuildEntryOption = {
    */
   nativeModuleEntryMap?: Record<string, string>
   /**
-   * custom options for esbuild
+   * override options for esbuild
    * ```ts
    * // default options
    * const options = {
@@ -492,6 +506,9 @@ type BuildEntryOption = {
    *   external: ['electron', 'original-fs'],
    *   loader: {
    *     '.node': 'empty',
+   *   },
+   *   define: {
+   *     __SIGNATURE_CERT__: JSON.stringify(cert),
    *   },
    * }
    * ```

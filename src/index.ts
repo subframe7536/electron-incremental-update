@@ -84,14 +84,13 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  * import { getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
  * import { repository } from '../package.json'
  *
- * const SIGNATURE_CERT = '' // auto generate certificate when start app
  * const { cdnPrefix: asarPrefix } = getGithubReleaseCdnGroup()[0]
  * const { cdnPrefix: jsonPrefix } = getGithubFileCdnGroup()[0]
  *
  * initApp({
  *   // can be updater option or function that return updater
  *   updater: {
- *     SIGNATURE_CERT,
+ *     SIGNATURE_CERT: 'custom certificate',
  *     repository,
  *     updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
  *     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${app.name}.asar.gz`),

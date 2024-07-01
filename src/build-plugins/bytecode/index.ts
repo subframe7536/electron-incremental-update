@@ -16,8 +16,13 @@ import {
 import { bytecodeModuleLoaderCode } from './code'
 
 export type BytecodeOptions = {
-  chunkAlias?: string | string[]
+  /**
+   * strings that should be transformed
+   */
   protectedStrings?: string[]
+  /**
+   * Remember to set `sandbox: false` when creating window
+   */
   enablePreload?: boolean
 }
 
@@ -34,7 +39,6 @@ export function bytecodePlugin(
   }
 
   const {
-    chunkAlias = [],
     protectedStrings = [],
     enablePreload = false,
   } = options
@@ -44,13 +48,7 @@ export function bytecodePlugin(
     return null
   }
 
-  const _chunkAlias = Array.isArray(chunkAlias) ? chunkAlias : [chunkAlias]
-
   const filter = createFilter(/\.(m?[jt]s|[jt]sx)$/)
-
-  const isBytecodeChunk = (chunkName: string): boolean => {
-    return _chunkAlias.length === 0 || _chunkAlias.includes(chunkName)
-  }
 
   let config: ResolvedConfig
   let bytecodeRequired = false
@@ -62,9 +60,6 @@ export function bytecodePlugin(
     enforce: 'post',
     configResolved(resolvedConfig) {
       config = resolvedConfig
-      if (resolvedConfig.build.minify && protectedStrings.length > 0) {
-        bytecodeLog.warn('Strings cannot be protected when minification is enabled.', { timestamp: true })
-      }
     },
     transform(code, id) {
       if (config.build.minify || protectedStrings.length === 0 || !filter(id)) {
@@ -90,7 +85,7 @@ export function bytecodePlugin(
         )
         return null
       }
-      if (chunk.type === 'chunk' && isBytecodeChunk(chunk.name)) {
+      if (chunk.type === 'chunk') {
         bytecodeRequired = true
         return convertArrowToFunction(code)
       }
@@ -107,7 +102,7 @@ export function bytecodePlugin(
 
       const bundles = Object.keys(output)
       const chunks = Object.values(output).filter(
-        chunk => chunk.type === 'chunk' && isBytecodeChunk(chunk.name) && chunk.fileName !== bytecodeModuleLoader,
+        chunk => chunk.type === 'chunk' && chunk.fileName !== bytecodeModuleLoader,
       ) as any[]
       const bytecodeChunks = chunks.map(chunk => chunk.fileName)
       const nonEntryChunks = chunks.filter(chunk => !chunk.isEntry).map(chunk => path.basename(chunk.fileName))
