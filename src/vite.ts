@@ -190,7 +190,7 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   } catch (ignore) { }
   log.info(`remove old files`, { timestamp: true })
 
-  const { buildAsarOption, buildEntryOption, buildVersionOption, postBuild } = _options
+  const { buildAsarOption, buildEntryOption, buildVersionOption, postBuild, cert } = _options
   const { entryOutputDirPath, nativeModuleEntryMap, appEntryPath } = buildEntryOption
 
   sourcemap ??= (isBuild || !!process.env.VSCODE_DEBUG)
@@ -201,7 +201,7 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   }
 
   const _buildEntry = async () => {
-    await buildEntry(buildEntryOption, isBuild ? bytecodeOptions?.protectedStrings : undefined)
+    await buildEntry(buildEntryOption, cert, isBuild ? bytecodeOptions?.protectedStrings : undefined)
     log.info(`vite build entry to '${entryOutputDirPath}'`, { timestamp: true })
   }
 

@@ -8,7 +8,13 @@ import { DownloadError, MinimumVersionError, VerifyFailedError } from './types'
 import { downloadBufferDefault, downloadJSONDefault } from './defaultFunctions/download'
 import { compareVersionDefault } from './defaultFunctions/compareVersion'
 
+/**
+ * signature cert, used for verify, transformed by esbuild
+ */
+declare const __SIGNATURE_CERT__: string
+
 export class Updater {
+  private CERT = __SIGNATURE_CERT__
   private info?: UpdateInfo
   private option: UpdaterOption
   private asarPath: string
@@ -43,8 +49,11 @@ export class Updater {
    * initialize incremental updater
    * @param option UpdaterOption
    */
-  constructor(option: UpdaterOption) {
+  constructor(option: UpdaterOption = {}) {
     this.option = option
+    if (option.SIGNATURE_CERT) {
+      this.CERT = option.SIGNATURE_CERT
+    }
     this.asarPath = getPathFromAppNameAsar()
     this.gzipPath = `${this.asarPath}.gz`
     this.tmpFilePath = `${this.asarPath}.tmp`
@@ -210,9 +219,9 @@ export class Updater {
       // verify update file
       this.logger?.info('verify start')
       const _verify = this.option.overrideFunctions?.verifySignaure ?? verify
-      const _ver = await _verify(buffer, _sig, this.option.SIGNATURE_CERT)
+      const _ver = await _verify(buffer, _sig, this.CERT)
       if (!_ver) {
-        throw new VerifyFailedError(_sig, this.option.SIGNATURE_CERT)
+        throw new VerifyFailedError(_sig, this.CERT)
       }
       this.logger?.info('verify success')
 

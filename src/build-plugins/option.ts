@@ -296,7 +296,6 @@ export function parseOptions(
     keyLength,
     privateKeyPath,
     certPath,
-    appEntryPath,
     subject,
     days,
   })
@@ -311,5 +310,5 @@ export function parseOptions(
     generateVersionJson,
   }
 
-  return { buildAsarOption, buildEntryOption, buildVersionOption, postBuild }
+  return { buildAsarOption, buildEntryOption, buildVersionOption, postBuild, cert }
 }

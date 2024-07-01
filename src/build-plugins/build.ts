@@ -99,6 +99,7 @@ export async function buildEntry(
     nativeModuleEntryMap,
     overrideEsbuildOptions,
   }: Required<Omit<BuildEntryOption, 'postBuild'>>,
+  cert: string,
   protectedStrings?: string[],
 ) {
   const { metafile } = await build({
@@ -117,6 +118,9 @@ export async function buildEntry(
     external: ['electron', 'original-fs'],
     loader: {
       '.node': 'empty',
+    },
+    define: {
+      __SIGNATURE_CERT__: JSON.stringify(cert),
     },
     ...overrideEsbuildOptions,
   })

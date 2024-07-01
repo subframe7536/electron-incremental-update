@@ -20,7 +20,7 @@ export type AppOption = {
   /**
    * updater options
    */
-  updater: (() => Promisable<Updater>) | UpdaterOption
+  updater?: (() => Promisable<Updater>) | UpdaterOption
   /**
    * path of electron output dist when in development
    * @default '../dist-electron'
@@ -102,7 +102,7 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  * ```
  */
 export async function initApp(
-  appOptions: AppOption,
+  appOptions: AppOption = {},
 ): Promise<void> {
   const {
     updater,
@@ -121,7 +121,7 @@ export async function initApp(
     app.quit()
   }
   let updaterInstance
-  if (typeof updater === 'object') {
+  if (typeof updater === 'object' || !updater) {
     updaterInstance = createUpdater(updater)
   } else {
     updaterInstance = await updater()

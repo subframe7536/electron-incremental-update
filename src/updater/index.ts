@@ -6,7 +6,7 @@ import { Updater } from './core'
  * @param option updater option
  * @returns updater
  */
-export function createUpdater(option: UpdaterOption) {
+export function createUpdater(option?: UpdaterOption) {
   return new Updater(option)
 }
 

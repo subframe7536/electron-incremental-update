@@ -25,36 +25,7 @@ export function generateKeyPair(keyLength: number, subject: CertSubject, days: n
   writeFileSync(certPath, cert.replace(/\r\n?/g, '\n'))
 }
 
-const noCertRegex = /(?<=const SIGNATURE_CERT\s*=\s*)['"]{2}/
-const existCertRegex = /(?<=const SIGNATURE_CERT\s*=\s*)(['"]-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n['"])/
-
-export function writeCertToEntry(entryPath: string, cert: string) {
-  if (!existsSync(entryPath)) {
-    throw new Error(`entry not exist: ${entryPath}`)
-  }
-  const file = readFileSync(entryPath, 'utf-8')
-
-  const replacement = cert
-    .split('\n')
-    .filter(Boolean)
-    .map(s => `'${s}\\n'`)
-    .join('\n  + ')
-
-  let replaced = file
-
-  if (noCertRegex.test(file)) {
-    replaced = file.replace(noCertRegex, replacement)
-  } else if (existCertRegex.test(file)) {
-    replaced = file.replace(existCertRegex, replacement)
-  } else {
-    throw new Error('no `SIGNATURE_CERT` found in entry')
-  }
-
-  writeFileSync(entryPath, replaced)
-}
-
 export type GetKeysOption = {
-  appEntryPath: string
   privateKeyPath: string
   certPath: string
   keyLength: number
@@ -66,7 +37,6 @@ export function parseKeys({
   keyLength,
   privateKeyPath,
   certPath,
-  appEntryPath,
   subject,
   days,
 }: GetKeysOption): { privateKey: string, cert: string } {
@@ -80,8 +50,6 @@ export function parseKeys({
 
   const privateKey = process.env.UPDATER_PK || readFileSync(privateKeyPath, 'utf-8')
   const cert = process.env.UPDATER_CERT || readFileSync(certPath, 'utf-8')
-
-  writeCertToEntry(appEntryPath, cert)
 
   return { privateKey, cert }
 }

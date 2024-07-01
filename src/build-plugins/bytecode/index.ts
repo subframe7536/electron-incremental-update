@@ -26,7 +26,7 @@ export type BytecodeOptions = {
  */
 export function bytecodePlugin(
   isBuild: boolean,
-  env: string,
+  env: 'preload' | 'main',
   options: BytecodeOptions = {},
 ): Plugin | null {
   if (!isBuild) {
