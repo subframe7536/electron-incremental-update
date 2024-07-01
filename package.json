@@ -46,16 +46,32 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
+    "@babel/core": "^7.24.7",
+    "@babel/plugin-transform-arrow-functions": "^7.24.7",
     "@electron/asar": "*",
     "esbuild": "*",
+    "magic-string": "*",
     "vite-plugin-electron": "^0.15.6 || ^0.28"
+  },
+  "peerDependenciesMeta": {
+    "@babel/core": {
+      "optional": true
+    },
+    "@babel/plugin-transform-arrow-functions": {
+      "optional": true
+    },
+    "magic-string": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@subframe7536/type-utils": "^0.1.6",
+    "local-pkg": "^0.5.0",
     "selfsigned": "^2.4.1"
   },
   "devDependencies": {
     "@subframe7536/eslint-config": "^0.6.6",
+    "@types/babel__core": "^7.20.5",
     "@types/node": "^20.14.7",
     "bumpp": "^9.4.1",
     "electron": "28.2.10",

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { generate } from 'selfsigned'
-import { log } from '../vite'
+import { log } from './log'
 import type { CertSubject, DistinguishedName } from './option'
 
 export function generateKeyPair(keyLength: number, subject: CertSubject, days: number, privateKeyPath: string, certPath: string) {

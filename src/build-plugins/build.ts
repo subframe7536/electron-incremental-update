@@ -1,13 +1,20 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
+import Module from 'node:module'
 import Asar from '@electron/asar'
 import { build } from 'esbuild'
-import { normalizePath } from 'vite'
 import { signature } from '../crypto'
 import { isUpdateJSON, parseVersion } from '../utils/pure'
 import { zipFile } from '../utils/zip'
 import type { UpdateJSON } from '../utils'
-import { log } from '../vite'
+import { bytecodeLog, log } from './log'
+import { bytecodeModuleLoaderCode } from './bytecode/code'
+import {
+  compileToBytecode,
+  convertArrowToFunction,
+  convertStringToAscii,
+  useStrict,
+} from './bytecode/utils'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 
 export async function buildAsar({
@@ -92,13 +99,15 @@ export async function buildEntry(
     nativeModuleEntryMap,
     overrideEsbuildOptions,
   }: Required<Omit<BuildEntryOption, 'postBuild'>>,
+  protectedStrings?: string[],
 ) {
-  await build({
+  const { metafile } = await build({
     entryPoints: {
       entry: appEntryPath,
       ...nativeModuleEntryMap,
     },
     bundle: true,
+    metafile: true,
     platform: 'node',
     outdir: entryOutputDirPath,
     minify,
@@ -111,4 +120,33 @@ export async function buildEntry(
     },
     ...overrideEsbuildOptions,
   })
+  if (protectedStrings === undefined) {
+    return
+  }
+  const filePaths = Object.keys(metafile?.outputs ?? [])
+  for (const filePath of filePaths) {
+    const code = readFileSync(filePath, 'utf-8')
+    const fileName = basename(filePath)
+    const isEntry = fileName.endsWith('entry.js')
+    const transformedCode = convertStringToAscii(
+      convertArrowToFunction(code).code,
+      [...protectedStrings, ...(isEntry ? getProtectStringArray(code) : [])],
+    ).code
+    const buffer = await compileToBytecode(transformedCode)
+    writeFileSync(`${filePath}c`, buffer)
+    writeFileSync(
+      filePath,
+      `${isEntry ? bytecodeModuleLoaderCode : useStrict}${isEntry ? '' : 'module.exports = '}require("./${fileName}c")`,
+    )
+    bytecodeLog.info(
+      `${filePath} => ${(buffer.byteLength / 1000).toFixed(2)} kB`,
+      { timestamp: true },
+    )
+  }
+  bytecodeLog.info(`${filePaths.length} bundles compiled into bytecode`, { timestamp: true })
+}
+
+function getProtectStringArray(code: string) {
+  const cert = code.match(/-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----/)?.[0]
+  return cert ? [cert] : []
 }

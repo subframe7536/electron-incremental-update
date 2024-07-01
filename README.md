@@ -59,14 +59,17 @@ import { repository } from '../package.json'
 
 const SIGNATURE_CERT = '' // auto generate certificate when start app
 
-initApp({ onStart: console.log })
-  .setUpdater({
+initApp({
+  // can be updater option or function that return updater
+  updater: {
     SIGNATURE_CERT,
-    // repository,
-    // updateJsonURL: parseGithubCdnURL(repository, 'https://your.cdn.url/', 'version.json'),
-    // releaseAsarURL: parseGithubCdnURL(repository, 'https://your.cdn.url/', `download/latest/${name}.asar.gz`),
-    // receiveBeta: true
-  })
+    repository,
+    updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
+    releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${app.name}.asar.gz`),
+    receiveBeta: true,
+  },
+  onStart: console.log
+})
 ```
 
 - [some CDN resources](https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34):
@@ -316,7 +319,7 @@ type ElectronWithUpdaterOptions = {
    */
   isBuild: boolean
   /**
-   * manullay setup package.json, read name, version and main
+   * manually setup package.json, read name, version and main
    * ```ts
    * import pkg from './package.json'
    * ```

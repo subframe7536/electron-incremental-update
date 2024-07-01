@@ -26,7 +26,7 @@ export function getPathFromAppNameAsar(...path: string[]) {
 /**
  * get versions of App, Entry, Electron, Node and System
  *
- * App version is read from `version` file in `${app.name}.asar`
+ * App version is read from `version` file in `${electron.app.name}.asar`
  *
  * Entry version is read from `package.json`
  *
@@ -91,7 +91,7 @@ export function restartApp() {
 
 /**
  * fix app use model id, only for Windows
- * @param id app id @default `org.${app.name}`
+ * @param id app id @default `org.${electron.app.name}`
  */
 export function setAppUserModelId(id?: string) {
   app.setAppUserModelId(is.dev ? process.execPath : id ?? `org.${app.name}`)
@@ -199,14 +199,14 @@ export function getPaths(entryDirName = 'dist-entry') {
       return join(app.getAppPath(), entryDirName, ...paths)
     },
     /**
-     * get path inside `${app.name}.asar/main`
+     * get path inside `${electron.app.name}.asar/main`
      * @param paths joined path
      */
     getPathFromMain(...paths: string[]) {
       return join(mainDirPath, ...paths)
     },
     /**
-     * get path inside `${app.name}.asar/preload`
+     * get path inside `${electron.app.name}.asar/preload`
      * @param paths joined path
      */
     getPathFromPreload(...paths: string[]) {

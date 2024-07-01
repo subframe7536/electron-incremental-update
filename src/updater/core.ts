@@ -1,5 +1,4 @@
-import { existsSync } from 'node:fs'
-import { rm, writeFile } from 'node:fs/promises'
+import { existsSync, rmSync, writeFileSync } from 'node:fs'
 import { app } from 'electron'
 import { getPathFromAppNameAsar, getVersions, isUpdateJSON, restartApp, unzipFile } from '../utils'
 import { verify } from '../crypto'
@@ -78,12 +77,12 @@ export class Updater {
   private async parseData(format: 'json' | 'buffer', data?: string | Buffer | UpdateJSON) {
     if (existsSync(this.tmpFilePath)) {
       this.logger?.warn(`remove tmp file: ${this.tmpFilePath}`)
-      await rm(this.tmpFilePath)
+      rmSync(this.tmpFilePath)
     }
 
     if (existsSync(this.gzipPath)) {
       this.logger?.warn(`remove .gz file: ${this.gzipPath}`)
-      await rm(this.gzipPath)
+      rmSync(this.gzipPath)
     }
 
     if (!['string', 'object', 'undefined'].includes(typeof data)) {
@@ -219,7 +218,7 @@ export class Updater {
 
       // write file
       this.logger?.info(`write to ${this.gzipPath}`)
-      await writeFile(this.gzipPath, buffer)
+      writeFileSync(this.gzipPath, buffer)
       // extract file to tmp path
       this.logger?.info(`extract to ${this.tmpFilePath}`)
       await unzipFile(this.gzipPath, this.tmpFilePath)

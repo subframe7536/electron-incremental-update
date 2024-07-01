@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { gunzip, gzip } from 'node:zlib'
+import { brotliCompress, brotliDecompress } from 'node:zlib'
 
 export async function unzipFile(gzipPath: string, targetFilePath = gzipPath.slice(0, -3)) {
   if (!existsSync(gzipPath)) {
@@ -9,7 +9,7 @@ export async function unzipFile(gzipPath: string, targetFilePath = gzipPath.slic
   const compressedBuffer = readFileSync(gzipPath)
 
   return new Promise((resolve, reject) => {
-    gunzip(compressedBuffer, (err, buffer) => {
+    brotliDecompress(compressedBuffer, (err, buffer) => {
       rmSync(gzipPath)
       if (err) {
         reject(err)
@@ -26,7 +26,7 @@ export async function zipFile(filePath: string, targetFilePath = `${filePath}.gz
   }
   const buffer = readFileSync(filePath)
   return new Promise((resolve, reject) => {
-    gzip(buffer, (err, buffer) => {
+    brotliCompress(buffer, (err, buffer) => {
       if (err) {
         reject(err)
       }

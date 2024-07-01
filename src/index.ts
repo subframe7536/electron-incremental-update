@@ -18,6 +18,10 @@ type OnInstallFunction = (
 
 export type AppOption = {
   /**
+   * updater options
+   */
+  updater: (() => Promisable<Updater>) | UpdaterOption
+  /**
    * path of electron output dist when in development
    * @default '../dist-electron'
    */
@@ -68,14 +72,6 @@ export function startupWithUpdater(fn: (updater: Updater) => Promisable<void>) {
   return fn
 }
 
-type StartupWithUpdater = {
-  /**
-   * starup app
-   * @param updater updater option or create function
-   */
-  startupWithUpdater: (updater: (() => Promisable<Updater>) | UpdaterOption) => void
-}
-
 const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
   install()
   logger?.info(`update success!`)
@@ -91,21 +87,25 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  * const SIGNATURE_CERT = '' // auto generate certificate when start app
  * const { cdnPrefix: asarPrefix } = getGithubReleaseCdnGroup()[0]
  * const { cdnPrefix: jsonPrefix } = getGithubFileCdnGroup()[0]
- * initApp({ onStart: console.log })
+ *
+ * initApp({
  *   // can be updater option or function that return updater
- *   .startupWithUpdater({
+ *   updater: {
  *     SIGNATURE_CERT,
  *     repository,
  *     updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
  *     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${app.name}.asar.gz`),
  *     receiveBeta: true,
- *   })
+ *   },
+ *   onStart: console.log
+ * })
  * ```
  */
-export function initApp(
-  appOptions?: AppOption,
-): StartupWithUpdater {
+export async function initApp(
+  appOptions: AppOption,
+): Promise<void> {
   const {
+    updater,
     electronDevDistPath = '../dist-electron',
     mainPath = 'main/index.js',
     hooks,
@@ -120,41 +120,31 @@ export function initApp(
     onStartError?.(err, logger)
     app.quit()
   }
-  async function startup(updater: Updater) {
-    const logger = updater.logger
-    try {
-      const appNameAsarPath = getPathFromAppNameAsar()
-
-      // apply updated asar
-      const tempAsarPath = `${appNameAsarPath}.tmp`
-      if (existsSync(tempAsarPath)) {
-        logger?.info(`installing new asar: ${tempAsarPath}`)
-        await onInstall(() => renameSync(tempAsarPath, appNameAsarPath), tempAsarPath, appNameAsarPath, logger)
-      }
-
-      const mainDir = is.dev ? electronDevDistPath : appNameAsarPath
-
-      const entry = resolve(__dirname, mainDir, mainPath)
-      await beforeStart?.(entry, logger)
-      // eslint-disable-next-line ts/no-require-imports, ts/no-var-requires
-      require(entry)(updater)
-    } catch (error) {
-      handleError(error, logger)
-    }
+  let updaterInstance
+  if (typeof updater === 'object') {
+    updaterInstance = createUpdater(updater)
+  } else {
+    updaterInstance = await updater()
   }
-  let timer = setTimeout(() => {
-    handleError('start app timeout, please start app with `initApp(options).startupWithUpdater(options)`')
-  }, 3000)
-  return {
-    async startupWithUpdater(updater) {
-      clearTimeout(timer)
-      if (typeof updater === 'object') {
-        await startup(createUpdater(updater))
-      } else if (typeof updater === 'function') {
-        await startup(await updater())
-      } else {
-        handleError('invalid updater option or updater is not a function')
-      }
-    },
+
+  const logger = updaterInstance.logger
+  try {
+    const appNameAsarPath = getPathFromAppNameAsar()
+
+    // do update: replace the old asar with new asar
+    const tempAsarPath = `${appNameAsarPath}.tmp`
+    if (existsSync(tempAsarPath)) {
+      logger?.info(`installing new asar: ${tempAsarPath}`)
+      await onInstall(() => renameSync(tempAsarPath, appNameAsarPath), tempAsarPath, appNameAsarPath, logger)
+    }
+
+    const mainDir = is.dev ? electronDevDistPath : appNameAsarPath
+
+    const entry = resolve(__dirname, mainDir, mainPath)
+    await beforeStart?.(entry, logger)
+    // eslint-disable-next-line ts/no-require-imports, ts/no-var-requires
+    require(entry)(updaterInstance)
+  } catch (error) {
+    handleError(error, logger)
   }
 }

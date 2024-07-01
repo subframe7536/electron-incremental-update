@@ -1,15 +1,19 @@
 import { basename, join, resolve } from 'node:path'
 import { cpSync, existsSync, readFileSync, rmSync } from 'node:fs'
-import type { InlineConfig, Plugin } from 'vite'
-import { createLogger, mergeConfig, normalizePath } from 'vite'
+import { builtinModules } from 'node:module'
+import type { BuildOptions, InlineConfig, Plugin } from 'vite'
+import { mergeConfig, normalizePath } from 'vite'
 import ElectronSimple from 'vite-plugin-electron/simple'
 import { startup } from 'vite-plugin-electron'
 import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
 import { notBundle } from 'vite-plugin-electron/plugin'
+import { loadPackageJSON } from 'local-pkg'
 import { buildAsar, buildEntry, buildVersion } from './build-plugins/build'
 import type { ElectronUpdaterOptions, PKG } from './build-plugins/option'
 import { parseOptions } from './build-plugins/option'
-import { id } from './constant'
+import { id } from './build-plugins/constant'
+import { type BytecodeOptions, bytecodePlugin } from './build-plugins/bytecode'
+import { log } from './build-plugins/log'
 
 type MakeRequired<T, K extends keyof T> = Exclude<T, undefined> & { [P in K]-?: T[P] }
 type ReplaceKey<
@@ -46,16 +50,6 @@ export function debugStartup(args: {
     : args.startup()
 }
 
-function resolvePackageJson(root = process.cwd()) {
-  const packageJsonPath = join(root, 'package.json')
-  const packageJsonStr = readFileSync(packageJsonPath, 'utf8')
-  try {
-    return JSON.parse(packageJsonStr)
-  } catch {
-    return null
-  }
-}
-
 export type ElectronWithUpdaterOptions = {
   /**
    * whether is in build mode
@@ -67,7 +61,7 @@ export type ElectronWithUpdaterOptions = {
    */
   isBuild: boolean
   /**
-   * manullay setup package.json, read name, version and main
+   * manually setup package.json, read name, version and main
    * ```ts
    * import pkg from './package.json'
    * ```
@@ -82,14 +76,20 @@ export type ElectronWithUpdaterOptions = {
    */
   minify?: boolean
   /**
+   * whether to generate bytecode
+   */
+  bytecode?: boolean | BytecodeOptions
+  /**
    * use NotBundle() plugin in main
    * @default true
    */
   useNotBundle?: boolean
   /**
    * Whether to log parsed options
+   *
+   * to show certificate and private keys, set `logParsedOptions: { showKeys: true }`
    */
-  logParsedOptions?: boolean
+  logParsedOptions?: boolean | { showKeys: boolean }
   /**
    * main options
    */
@@ -103,8 +103,6 @@ export type ElectronWithUpdaterOptions = {
    */
   updater?: ElectronUpdaterOptions
 }
-
-export const log = createLogger('info', { prefix: `[${id}]` })
 
 /**
  * build options for `vite-plugin-electron/simple`
@@ -156,15 +154,16 @@ export const log = createLogger('info', { prefix: `[${id}]` })
  *   }
  * })
  */
-export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
+export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   let {
     isBuild,
-    pkg = resolvePackageJson() as PKG,
+    pkg = await loadPackageJSON() as PKG,
     main: _main,
     preload: _preload,
     sourcemap,
     minify,
     updater,
+    bytecode,
     useNotBundle = true,
     logParsedOptions,
   } = options
@@ -172,8 +171,19 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
     log.error(`package.json not found`, { timestamp: true })
     return null
   }
+  if (!pkg.version || !pkg.name || !pkg.main) {
+    log.error(`package.json not valid`, { timestamp: true })
+    return null
+  }
   const _options = parseOptions(pkg, sourcemap, minify, updater)
-
+  const bytecodeOptions = typeof bytecode === 'object'
+    ? bytecode
+    : bytecode === true
+      ? { protectedStrings: [] }
+      : undefined
+  if (bytecodeOptions) {
+    minify = false
+  }
   try {
     rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
     rmSync(_options.buildEntryOption.entryOutputDirPath, { recursive: true, force: true })
@@ -191,7 +201,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   }
 
   const _buildEntry = async () => {
-    await buildEntry(buildEntryOption)
+    await buildEntry(buildEntryOption, isBuild ? bytecodeOptions?.protectedStrings : undefined)
     log.info(`vite build entry to '${entryOutputDirPath}'`, { timestamp: true })
   }
 
@@ -217,6 +227,14 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
 
   let isInit = false
 
+  const rollupOptions: BuildOptions['rollupOptions'] = {
+    // external: [
+    //   /^node:/,
+    //   ...Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}),
+    // ],
+    external: src => src.startsWith('node:') || Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}).includes(src),
+  }
+
   const electronPluginOptions: ElectronSimpleOptions = {
     main: {
       entry: _main.files,
@@ -230,14 +248,15 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
       },
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
-          plugins: [!isBuild && useNotBundle ? notBundle() : undefined],
+          plugins: [
+            !isBuild && useNotBundle ? notBundle() : undefined,
+            bytecodeOptions && bytecodePlugin(isBuild, 'main', bytecodeOptions),
+          ],
           build: {
             sourcemap,
             minify,
             outDir: `${buildAsarOption.electronDistPath}/main`,
-            rollupOptions: {
-              external: Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}),
-            },
+            rollupOptions,
           },
         },
         _main.vite ?? {},
@@ -249,6 +268,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
           plugins: [
+            bytecodeOptions && bytecodePlugin(isBuild, 'preload', bytecodeOptions),
             {
               name: `${id}-build`,
               enforce: 'post',
@@ -271,9 +291,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
             sourcemap: sourcemap ? 'inline' : undefined,
             minify,
             outDir: `${buildAsarOption.electronDistPath}/preload`,
-            rollupOptions: {
-              external: Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}),
-            },
+            rollupOptions,
           },
         },
         _preload.vite ?? {},
@@ -287,7 +305,7 @@ export function electronWithUpdater(options: ElectronWithUpdaterOptions) {
         ...electronPluginOptions,
         updater: { buildAsarOption, buildEntryOption, buildVersionOption },
       },
-      (key, value) => ((key === 'privateKey' || key === 'cert') ? '***' : value),
+      (key, value) => (((key === 'privateKey' || key === 'cert') && !(typeof logParsedOptions === 'object' && logParsedOptions.showKeys === true)) ? '***' : value),
       2,
     ),
     { timestamp: true },
