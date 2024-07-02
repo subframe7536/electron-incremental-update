@@ -62,7 +62,7 @@ export function bytecodePlugin(
       config = resolvedConfig
     },
     transform(code, id) {
-      if (config.build.minify || protectedStrings.length === 0 || !filter(id)) {
+      if (protectedStrings.length === 0 || !filter(id)) {
         return
       }
       return convertStringToAscii(code, protectedStrings, !!config.build.sourcemap)
@@ -136,7 +136,7 @@ export function bytecodePlugin(
               }
               _code = s.toString()
             }
-            const chunkFileName = path.resolve(outDir, name)
+            const chunkFilePath = path.resolve(outDir, name)
             if (bytecodeChunks.includes(name)) {
               const bytecodeBuffer = await compileToBytecode(_code)
               fs.writeFileSync(path.resolve(outDir, name + 'c'), bytecodeBuffer)
@@ -144,9 +144,9 @@ export function bytecodePlugin(
                 const bytecodeLoaderBlock = getBytecodeLoaderBlock(chunk.fileName)
                 const bytecodeModuleBlock = `require("./${path.basename(name) + 'c'}");`
                 const code = `${useStrict}\n${bytecodeLoaderBlock}\nmodule.exports=${bytecodeModuleBlock}\n`
-                fs.writeFileSync(chunkFileName, code)
+                fs.writeFileSync(chunkFilePath, code)
               } else {
-                fs.unlinkSync(chunkFileName)
+                fs.unlinkSync(chunkFilePath)
               }
               bytecodeFiles.push({ name: name + 'c', size: bytecodeBuffer.length })
             } else {
@@ -172,7 +172,7 @@ export function bytecodePlugin(
                 const bytecodeLoaderBlock = getBytecodeLoaderBlock(chunk.fileName)
                 _code = hasBytecodeMoudle ? _code.replace(useStrict, `${useStrict}\n${bytecodeLoaderBlock}`) : _code
               }
-              fs.writeFileSync(chunkFileName, _code)
+              fs.writeFileSync(chunkFilePath, _code)
             }
           }
         }),

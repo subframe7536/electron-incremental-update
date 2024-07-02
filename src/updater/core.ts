@@ -9,7 +9,7 @@ import { downloadBufferDefault, downloadJSONDefault } from './defaultFunctions/d
 import { compareVersionDefault } from './defaultFunctions/compareVersion'
 
 /**
- * signature cert, used for verify, transformed by esbuild
+ * type only signature cert, used for verify, transformed by esbuild's define
  */
 declare const __SIGNATURE_CERT__: string
 

@@ -69,10 +69,12 @@ export type ElectronWithUpdaterOptions = {
   pkg?: PKG
   /**
    * whether to generate sourcemap
+   * @default !isBuild
    */
   sourcemap?: boolean
   /**
    * whether to minify the code
+   * @default isBuild
    */
   minify?: boolean
   /**
@@ -164,8 +166,8 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
     pkg = await loadPackageJSON() as PKG,
     main: _main,
     preload: _preload,
-    sourcemap,
-    minify,
+    sourcemap = !isBuild,
+    minify = isBuild,
     updater,
     bytecode,
     useNotBundle = true,

@@ -106,37 +106,27 @@ export function convertArrowToFunction(code: string): { code: string, map: any }
 
 function escapeRegExpString(str: string): string {
   return str
-    .replace(/\\/g, '\\\\\\\\')
+    .replace(/\\/g, '\\\\')
     .replace(/[|{}()[\]^$+*?.]/g, '\\$&')
-    .replace(/-/g, '\\u002d')
 }
 
 export function convertStringToAscii(
   code: string,
-  protectedStrings: string[] = [],
+  strings: string[],
   sourcemap?: boolean,
 ): { code: string, map?: any } {
-  let match: RegExpExecArray | null
-  let s: MagicString | undefined
-
   if (!isMagicStringInstalled()) {
     throw new Error('Please make sure `magic-string` installed')
   }
+  let s: MagicString | null = null
 
-  protectedStrings.forEach((str) => {
-    const escapedStr = escapeRegExpString(str)
-    const re = new RegExp(`\\u0027${escapedStr}\\u0027|\\u0022${escapedStr}\\u0022`, 'g')
-    const charCodes = Array.from(str).map(s => s.charCodeAt(0))
-    const replacement = `String.fromCharCode(${charCodes.toString()})`
-    // eslint-disable-next-line no-cond-assign
-    while ((match = re.exec(code))) {
-      s ||= new MagicString(code)
-      const [full] = match
-      s.overwrite(match.index, match.index + full.length, replacement, {
-        contentOnly: true,
-      })
-    }
-  })
+  for (const str of strings.filter(Boolean)) {
+    const regex = new RegExp(`["']${escapeRegExpString(str)}["']`, 'g')
+    s ||= new MagicString(code).replace(regex, (match) => {
+      const codes = Array.from(match.slice(1, -1)).map(s => `0o${s.charCodeAt(0).toString(8)}`).join(',')
+      return `String.fromCharCode(${codes})`
+    })
+  }
 
   return s
     ? {

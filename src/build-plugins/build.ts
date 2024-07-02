@@ -133,12 +133,20 @@ export async function buildEntry(
   }
   const filePaths = Object.keys(metafile?.outputs ?? [])
   for (const filePath of filePaths) {
-    const code = readFileSync(filePath, 'utf-8')
+    let code = readFileSync(filePath, 'utf-8')
     const fileName = basename(filePath)
     const isEntry = fileName.endsWith('entry.js')
+
+    if (isEntry) {
+      code = code.replace(
+        /(`-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\n`)/,
+        (_, cert: string) => `"${cert.slice(1, -1).replace(/\n/g, '\\n')}"`,
+      )
+    }
+
     const transformedCode = convertStringToAscii(
       convertArrowToFunction(code).code,
-      [...protectedStrings, ...(isEntry ? getProtectStringArray(code) : [])],
+      [...protectedStrings, ...(isEntry ? getCert(code) : [])],
     ).code
     const buffer = await compileToBytecode(transformedCode)
     writeFileSync(`${filePath}c`, buffer)
@@ -154,7 +162,7 @@ export async function buildEntry(
   bytecodeLog.info(`${filePaths.length} bundles compiled into bytecode`, { timestamp: true })
 }
 
-function getProtectStringArray(code: string) {
-  const cert = code.match(/"-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\n"/)?.[0]
+function getCert(code: string) {
+  const cert = code.match(/-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n/)?.[0]
   return cert ? [cert] : []
 }
