@@ -12,7 +12,7 @@ import { bytecodeModuleLoaderCode } from './bytecode/code'
 import {
   compileToBytecode,
   convertArrowToFunction,
-  convertStringToAscii,
+  convertString,
   useStrict,
 } from './bytecode/utils'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
@@ -144,7 +144,7 @@ export async function buildEntry(
       )
     }
 
-    const transformedCode = convertStringToAscii(
+    const transformedCode = convertString(
       convertArrowToFunction(code).code,
       [...protectedStrings, ...(isEntry ? getCert(code) : [])],
     ).code

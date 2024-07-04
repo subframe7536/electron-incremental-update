@@ -53,17 +53,6 @@
     "magic-string": "*",
     "vite-plugin-electron": "^0.15.6 || ^0.28"
   },
-  "peerDependenciesMeta": {
-    "@babel/core": {
-      "optional": true
-    },
-    "@babel/plugin-transform-arrow-functions": {
-      "optional": true
-    },
-    "magic-string": {
-      "optional": true
-    }
-  },
   "dependencies": {
     "@subframe7536/type-utils": "^0.1.6",
     "local-pkg": "^0.5.0",

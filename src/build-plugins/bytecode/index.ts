@@ -8,8 +8,7 @@ import {
   bytecodeModuleLoader,
   compileToBytecode,
   convertArrowToFunction,
-  convertStringToAscii,
-  isMagicStringInstalled,
+  convertString,
   toRelativePath,
   useStrict,
 } from './utils'
@@ -65,7 +64,7 @@ export function bytecodePlugin(
       if (protectedStrings.length === 0 || !filter(id)) {
         return
       }
-      return convertStringToAscii(code, protectedStrings, !!config.build.sourcemap)
+      return convertString(code, protectedStrings, !!config.build.sourcemap)
     },
     generateBundle(options): void {
       if (options.format !== 'es' && bytecodeRequired) {
@@ -112,10 +111,6 @@ export function bytecodePlugin(
 
       const getBytecodeLoaderBlock = (chunkFileName: string): string => {
         return `require("${toRelativePath(bytecodeModuleLoader, normalizePath(chunkFileName))}");`
-      }
-
-      if (!isMagicStringInstalled()) {
-        throw new Error('Please make sure `magic-string` installed')
       }
 
       await Promise.all(

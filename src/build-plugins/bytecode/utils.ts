@@ -10,20 +10,6 @@ import { bytecodeGeneratorScript } from './code'
 const electronModulePath = getPackageInfoSync('electron')?.rootPath
 export const useStrict = '\'use strict\';'
 export const bytecodeModuleLoader = '__loader__.js'
-function ensurePackages(packages: string[]) {
-  if (process.env.CI || process.stdout.isTTY === false) {
-    return true
-  }
-
-  return packages.filter(i => i && !isPackageExists(i)).length === 0
-}
-
-export function isBabelInstalled() {
-  return ensurePackages(['@babel/core', '@babel/plugin-transform-arrow-functions'])
-}
-export function isMagicStringInstalled() {
-  return ensurePackages(['magic-string'])
-}
 
 function getElectronPath(): string {
   let electronExecPath = process.env.ELECTRON_EXEC_PATH || ''
@@ -92,9 +78,6 @@ export function compileToBytecode(code: string): Promise<Buffer> {
 }
 
 export function convertArrowToFunction(code: string): { code: string, map: any } {
-  if (!isBabelInstalled()) {
-    throw new Error('Please make sure `@babel/core` and `@babel/plugin-transform-arrow-functions` installed')
-  }
   const result = babel.transform(code, {
     plugins: ['@babel/plugin-transform-arrow-functions'],
   })
@@ -110,14 +93,11 @@ function escapeRegExpString(str: string): string {
     .replace(/[|{}()[\]^$+*?.]/g, '\\$&')
 }
 
-export function convertStringToAscii(
+export function convertString(
   code: string,
   strings: string[],
   sourcemap?: boolean,
 ): { code: string, map?: any } {
-  if (!isMagicStringInstalled()) {
-    throw new Error('Please make sure `magic-string` installed')
-  }
   let s: MagicString | null = null
 
   for (const str of strings.filter(Boolean)) {
