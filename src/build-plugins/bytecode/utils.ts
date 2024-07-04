@@ -102,10 +102,7 @@ export function convertString(
 
   for (const str of strings.filter(Boolean)) {
     const regex = new RegExp(`["']${escapeRegExpString(str)}["']`, 'g')
-    s ||= new MagicString(code).replace(regex, (match) => {
-      const codes = Array.from(match.slice(1, -1)).map(s => `0o${s.charCodeAt(0).toString(8)}`).join(',')
-      return `String.fromCharCode(${codes})`
-    })
+    s ||= new MagicString(code).replace(regex, match => obfuscateString(match.slice(1, -1)))
   }
 
   return s
@@ -114,4 +111,12 @@ export function convertString(
         map: sourcemap ? s.generateMap({ hires: 'boundary' }) : null,
       }
     : { code }
+}
+
+function obfuscateString(input: string): string {
+  const offset = Math.floor(Math.random() * 2 << 4) + 1
+  const hexArray = Array.from(input).map(c => '0x' + (c.charCodeAt(0) + offset).toString(16))
+  const decodeFn = `function(a,b){return String.fromCharCode.apply(null,a.map(x=>+x-b))}`
+
+  return `(${decodeFn})([${hexArray.join(',')}],${offset})`
 }
