@@ -1,6 +1,5 @@
 import { basename, join, resolve } from 'node:path'
-import { cpSync, existsSync, readFileSync, rmSync } from 'node:fs'
-import { builtinModules } from 'node:module'
+import { cpSync, existsSync, rmSync } from 'node:fs'
 import type { BuildOptions, InlineConfig, Plugin } from 'vite'
 import { mergeConfig, normalizePath } from 'vite'
 import ElectronSimple from 'vite-plugin-electron/simple'

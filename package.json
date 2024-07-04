@@ -39,7 +39,7 @@
     "build": "tsup && esno fix-module.cjs",
     "release": "pnpm test && pnpm run build && bumpp --all && npm publish",
     "test": "vitest --run",
-    "lint": "eslint . --fix"
+    "format": "eslint . --fix"
   },
   "publishConfig": {
     "access": "public",

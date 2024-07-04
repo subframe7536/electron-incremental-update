@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 import * as babel from '@babel/core'
 import MagicString from 'magic-string'
-import { getPackageInfoSync, isPackageExists } from 'local-pkg'
+import { getPackageInfoSync } from 'local-pkg'
 import { log } from '../log'
 import { bytecodeGeneratorScript } from './code'
 
