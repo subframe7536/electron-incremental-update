@@ -82,7 +82,7 @@ export class Updater {
    * @param data download URL or update json or buffer
    */
   private async parseData(format: 'json', data?: string | UpdateJSON): Promise<UpdateJSON>
-  private async parseData(format: 'buffer', data?: Buffer): Promise<Buffer>
+  private async parseData(format: 'buffer', data?: string | Buffer): Promise<Buffer>
   private async parseData(format: 'json' | 'buffer', data?: string | Buffer | UpdateJSON) {
     if (existsSync(this.tmpFilePath)) {
       this.logger?.warn(`remove tmp file: ${this.tmpFilePath}`)
@@ -94,17 +94,12 @@ export class Updater {
       rmSync(this.gzipPath)
     }
 
-    if (!['string', 'object', 'undefined'].includes(typeof data)) {
-      throw new TypeError(`invalid type at format '${format}': ${data}`)
-    }
-
-    if (typeof data === 'object' && ((format === 'json' && isUpdateJSON(data))
-      || (format === 'buffer' && Buffer.isBuffer(data)))) {
-      return data
-    }
-
     if (typeof data === 'object') {
-      throw new TypeError(`invalid type at format '${format}': ${data}`)
+      if ((format === 'json' && isUpdateJSON(data)) || (format === 'buffer' && Buffer.isBuffer(data))) {
+        return data
+      } else {
+        throw new TypeError(`invalid type at format '${format}': ${data}`)
+      }
     }
 
     const ua = this.option.downloadConfig?.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
@@ -114,13 +109,13 @@ export class Updater {
       ...this.option.downloadConfig?.extraHeader,
     }
 
-    this.logger?.info(`download headers: ${JSON.stringify(headers, null, 2)}`)
+    this.logger?.debug(`download headers: ${JSON.stringify(headers)}`)
 
     const config = format === 'json'
       ? {
           name: 'updateJsonURL',
           url: this.option.updateJsonURL,
-          repoFallback: `${this.option.repository!.replace('github.com', 'raw.githubusercontent.com')}/master/version.json`,
+          repoFallback: `${this.option.repository?.replace('github.com', 'raw.githubusercontent.com')}/master/version.json`,
           fn: this.option.overrideFunctions?.downloadJSON ?? downloadJSONDefault,
         }
       : {
@@ -143,12 +138,12 @@ export class Updater {
     }
 
     // fetch data from remote
-    this.logger?.info(`download ${format} from ${data}`)
+    this.logger?.debug(`download ${format} from ${data}`)
     try {
       const ret = format === 'json'
         ? await (config.fn as typeof downloadJSONDefault)(data, headers)
         : await (config.fn as typeof downloadBufferDefault)(data, headers, this.info!.size, this.onDownloading)
-      this.logger?.info(`download ${format} success${format === 'buffer' ? `, file size: ${(ret as Buffer).length}` : ''}`)
+      this.logger?.debug(`download ${format} success${format === 'buffer' ? `, file size: ${(ret as Buffer).length}` : ''}`)
       return ret
     } catch (e) {
       throw new DownloadError((e as object).toString())
@@ -156,15 +151,31 @@ export class Updater {
   }
 
   /**
-   * check update info
-   *
-   * if you want to update **offline**, you can set `data` and `sig` add update info
-   * @param data custom download URL of `updatejson` or existing update json
+   * check update info using default options
+   * @returns
+   * - Available: `{size: number, version: string}`
+   * - Unavailable: `undefined`
+   * - Fail: `CheckResultError`
+   */
+  public async checkUpdate(): Promise<CheckResult>
+  /**
+   * check update info using custom url
+   * @param url custom download URL of `updatejson`
    * @returns
    * - Available:`{size: number, version: string}`
    * - Unavailable: `undefined`
    * - Fail: `CheckResultError`
    */
+  public async checkUpdate(url: string): Promise<CheckResult>
+  /**
+   * check update info using existing update json
+   * @param data existing update json
+   * @returns
+   * - Available:`{size: number, version: string}`
+   * - Unavailable: `undefined`
+   * - Fail: `CheckResultError`
+   */
+  public async checkUpdate(data: UpdateJSON): Promise<CheckResult>
   public async checkUpdate(data?: string | UpdateJSON): Promise<CheckResult> {
     try {
       let { signature, size, version, minimumVersion, beta } = await this.parseData('json', data)
@@ -174,7 +185,7 @@ export class Updater {
         minimumVersion = beta.minimumVersion
         size = beta.size
       }
-      this.logger?.info(`checked version: ${version}, size: ${size}, signature: ${signature}`)
+      this.logger?.debug(`checked version: ${version}, size: ${size}, signature: ${signature}`)
 
       // if not need update, return
       if (!await this.needUpdate(version, minimumVersion)) {
@@ -197,16 +208,30 @@ export class Updater {
   }
 
   /**
-   * download update
-   *
-   * if you want to update **offline**, you can set both `data` and `sig` to verify and install
-   * @param data custom download URL of `asar.gz` or existing `asar.gz` buffer
+   * download update using default options
+   * @returns
+   * - Success: `true`
+   * - Fail: `DownloadResultError`
+   */
+  public async download(): Promise<DownloadResult>
+  /**
+   * download update using custom url
+   * @param url custom download URL
+   * @returns
+   * - Success: `true`
+   * - Fail: `DownloadResultError`
+   */
+  public async download(url: string): Promise<DownloadResult>
+  /**
+   * download update using existing `asar.gz` buffer and signature
+   * @param data existing `asar.gz` buffer
    * @param sig signature
    * @returns
    * - `true`: success
    * - `DownloadResultError`: fail
    */
-  public async download(data?: Buffer, sig?: string): Promise<DownloadResult> {
+  public async download(data: Buffer, sig: string): Promise<DownloadResult>
+  public async download(data?: string | Buffer, sig?: string): Promise<DownloadResult> {
     try {
       const _sig = sig ?? this.info?.signature
       if (!_sig) {
@@ -217,19 +242,19 @@ export class Updater {
       const buffer = await this.parseData('buffer', data)
 
       // verify update file
-      this.logger?.info('verify start')
+      this.logger?.debug('verify start')
       const _verify = this.option.overrideFunctions?.verifySignaure ?? verify
       const _ver = await _verify(buffer, _sig, this.CERT)
       if (!_ver) {
         throw new VerifyFailedError(_sig, this.CERT)
       }
-      this.logger?.info('verify success')
+      this.logger?.debug('verify success')
 
       // write file
-      this.logger?.info(`write to ${this.gzipPath}`)
+      this.logger?.debug(`write to ${this.gzipPath}`)
       writeFileSync(this.gzipPath, buffer)
       // extract file to tmp path
-      this.logger?.info(`extract to ${this.tmpFilePath}`)
+      this.logger?.debug(`extract to ${this.tmpFilePath}`)
       await unzipFile(this.gzipPath, this.tmpFilePath)
 
       this.logger?.info(`download success, version: ${_ver}`)
