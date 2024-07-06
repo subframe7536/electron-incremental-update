@@ -1,36 +1,21 @@
 import type { UpdateInfo, UpdateJSON } from '../utils'
 
-export class MinimumVersionError extends Error {
-  currentVersion: string
-  minVersion: string
-  constructor(version: string, minimumVersion: string) {
-    super(`current entry version is ${version}, less than the minimumVersion ${minimumVersion}`)
-    this.currentVersion = version
-    this.minVersion = minimumVersion
+export const ErrorInfo = {
+  downlaod: 'Download failed',
+  validate: 'Validate failed',
+  param: 'Missing params',
+  version: 'Unsatisfied version',
+} as const
+
+export class UpdaterError extends Error {
+  constructor(msg: typeof ErrorInfo[keyof typeof ErrorInfo], info: string) {
+    super(msg + ': ' + info)
   }
 }
 
-export class VerifyFailedError extends Error {
-  signature: string
-  cert: string
-  constructor(signature: string, cert: string) {
-    super('verify failed, invalid signature or certificate')
-    this.signature = signature
-    this.cert = cert
-  }
-}
+export type CheckResult = UpdateInfo | undefined | UpdaterError
 
-export class DownloadError extends Error {
-  constructor(msg: string) {
-    super(`download update error, ${msg}`)
-  }
-}
-
-export type CheckResult = UpdateInfo | undefined | CheckResultError
-export type CheckResultError = MinimumVersionError | DownloadError | TypeError | Error
-
-export type DownloadResult = true | DownloadResultError
-export type DownloadResultError = DownloadError | VerifyFailedError | TypeError | Error
+export type DownloadResult = true | UpdaterError
 
 export type DownloadingInfo = {
   /**
@@ -59,9 +44,9 @@ export type UpdaterOverrideFunctions = {
    * custom version compare function
    * @param version1 old version string
    * @param version2 new version string
-   * @returns whether version1 < version2
+   * @returns if version1 < version2
    */
-  compareVersion?: (version1: string, version2: string) => boolean | Promise<boolean>
+  isLowerVersion?: (version1: string, version2: string) => boolean | Promise<boolean>
   /**
    * custom verify signature function
    * @param buffer file buffer

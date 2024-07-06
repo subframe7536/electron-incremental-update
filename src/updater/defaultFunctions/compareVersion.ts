@@ -2,7 +2,7 @@ import type { Version } from '../../utils/pure'
 import { parseVersion } from '../../utils/pure'
 import type { Func } from './download'
 
-export const compareVersionDefault: Func['compareVersion'] = (version1, version2) => {
+export const isLowerVersionDefault: Func['isLowerVersion'] = (version1, version2) => {
   const oldV = parseVersion(version1)
   const newV = parseVersion(version2)
 

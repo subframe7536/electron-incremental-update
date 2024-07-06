@@ -4,9 +4,9 @@ import { getPathFromAppNameAsar, getVersions, isUpdateJSON, restartApp, unzipFil
 import { verify } from '../crypto'
 import type { UpdateInfo, UpdateJSON } from '../utils'
 import type { CheckResult, DownloadResult, DownloadingInfo, Logger, UpdaterOption } from './types'
-import { DownloadError, MinimumVersionError, VerifyFailedError } from './types'
+import { ErrorInfo, UpdaterError } from './types'
 import { downloadBufferDefault, downloadJSONDefault } from './defaultFunctions/download'
-import { compareVersionDefault } from './defaultFunctions/compareVersion'
+import { isLowerVersionDefault } from './defaultFunctions/compareVersion'
 
 /**
  * type only signature cert, used for verify, transformed by esbuild's define
@@ -60,14 +60,16 @@ export class Updater {
   }
 
   private async needUpdate(version: string, minVersion: string) {
-    const compare = this.option.overrideFunctions?.compareVersion ?? compareVersionDefault
+    const isLowerVersion = this.option.overrideFunctions?.isLowerVersion ?? isLowerVersionDefault
     const { appVersion, entryVersion } = getVersions()
-    if (await compare(entryVersion, minVersion)) {
-      throw new MinimumVersionError(entryVersion, minVersion)
+
+    if (await isLowerVersion(entryVersion, minVersion)) {
+      throw new UpdaterError(ErrorInfo.version, `entry version (${entryVersion}) < minimumVersion (${minVersion})`)
     }
+
     this.logger?.info(`check update: current version is ${appVersion}, new version is ${version}`)
 
-    return await compare(appVersion, version)
+    return await isLowerVersion(appVersion, version)
   }
 
   /**
@@ -98,7 +100,7 @@ export class Updater {
       if ((format === 'json' && isUpdateJSON(data)) || (format === 'buffer' && Buffer.isBuffer(data))) {
         return data
       } else {
-        throw new TypeError(`invalid type at format '${format}': ${data}`)
+        throw new UpdaterError(ErrorInfo.param, `invalid type at format '${format}': ${JSON.stringify(data)}`)
       }
     }
 
@@ -129,10 +131,10 @@ export class Updater {
     if (!data) {
       this.logger?.debug(`no ${config.name}, fallback to use repository`)
       if (!this.option.repository) {
-        throw new Error(`${config.name} or repository are not set`)
+        throw new UpdaterError(ErrorInfo.param, `${config.name} or repository is not set`)
       }
       if (format === 'buffer' && !this.info?.version) {
-        throw new Error('version are not set')
+        throw new UpdaterError(ErrorInfo.param, 'version is not set')
       }
       data = config.repoFallback
     }
@@ -146,7 +148,7 @@ export class Updater {
       this.logger?.debug(`download ${format} success${format === 'buffer' ? `, file size: ${(ret as Buffer).length}` : ''}`)
       return ret
     } catch (e) {
-      throw new DownloadError((e as object).toString())
+      throw new UpdaterError(ErrorInfo.downlaod, (e as object).toString())
     }
   }
 
@@ -155,7 +157,7 @@ export class Updater {
    * @returns
    * - Available: `{size: number, version: string}`
    * - Unavailable: `undefined`
-   * - Fail: `CheckResultError`
+   * - Fail: `UpdaterError`
    */
   public async checkUpdate(): Promise<CheckResult>
   /**
@@ -164,7 +166,7 @@ export class Updater {
    * @returns
    * - Available:`{size: number, version: string}`
    * - Unavailable: `undefined`
-   * - Fail: `CheckResultError`
+   * - Fail: `UpdaterError`
    */
   public async checkUpdate(url: string): Promise<CheckResult>
   /**
@@ -173,7 +175,7 @@ export class Updater {
    * @returns
    * - Available:`{size: number, version: string}`
    * - Unavailable: `undefined`
-   * - Fail: `CheckResultError`
+   * - Fail: `UpdaterError`
    */
   public async checkUpdate(data: UpdateJSON): Promise<CheckResult>
   public async checkUpdate(data?: string | UpdateJSON): Promise<CheckResult> {
@@ -211,7 +213,7 @@ export class Updater {
    * download update using default options
    * @returns
    * - Success: `true`
-   * - Fail: `DownloadResultError`
+   * - Fail: `UpdaterError`
    */
   public async download(): Promise<DownloadResult>
   /**
@@ -219,7 +221,7 @@ export class Updater {
    * @param url custom download URL
    * @returns
    * - Success: `true`
-   * - Fail: `DownloadResultError`
+   * - Fail: `UpdaterError`
    */
   public async download(url: string): Promise<DownloadResult>
   /**
@@ -227,15 +229,15 @@ export class Updater {
    * @param data existing `asar.gz` buffer
    * @param sig signature
    * @returns
-   * - `true`: success
-   * - `DownloadResultError`: fail
+   * - Success: `true`
+   * - Fail: `UpdaterError`
    */
   public async download(data: Buffer, sig: string): Promise<DownloadResult>
   public async download(data?: string | Buffer, sig?: string): Promise<DownloadResult> {
     try {
       const _sig = sig ?? this.info?.signature
       if (!_sig) {
-        throw new Error('signature are not set, please checkUpdate first or set the second parameter')
+        throw new UpdaterError(ErrorInfo.param, 'signature is empty')
       }
 
       // if typeof data is Buffer, the version will not be used
@@ -246,7 +248,7 @@ export class Updater {
       const _verify = this.option.overrideFunctions?.verifySignaure ?? verify
       const _ver = await _verify(buffer, _sig, this.CERT)
       if (!_ver) {
-        throw new VerifyFailedError(_sig, this.CERT)
+        throw new UpdaterError(ErrorInfo.validate, 'invalid signature or certificate')
       }
       this.logger?.debug('verify success')
 
