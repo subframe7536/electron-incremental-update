@@ -10,6 +10,8 @@ The new `${electron.app.name}.asar`, which can download from remote or load from
 
 All **native modules** should be packaged into `app.asar` to reduce `${electron.app.name}.asar` file size, [see usage](#use-native-modules). Therefore, auto upgrade of portable app is possible.
 
+Support bytecode protection, [see details](#bytecode-protection)
+
 No `vite-plugin-electron-renderer` config
 
 - inspired by [Obsidian](https://obsidian.md/)'s upgrade strategy
@@ -179,7 +181,7 @@ initApp({
 in `electron/main/index.ts`
 
 ```ts
-import { startupWithUpdater } from 'electron-incremental-update'
+import { startupWithUpdater, UpdaterError } from 'electron-incremental-update'
 import { getPathFromAppNameAsar, getVersions } from 'electron-incremental-update/utils'
 import { app } from 'electron'
 
@@ -196,10 +198,12 @@ export default startupWithUpdater((updater) => {
     console.log(percent)
   }
   updater.logger = console
+  updater.receiveBeta = true
+  
   updater.checkUpdate().then(async (result) => {
     if (result === undefined) {
       console.log('Update Unavailable')
-    } else if (result instanceof Error) {
+    } else if (result instanceof UpdaterError) {
       console.error(result)
     } else {
       console.log('new version: ', result.version)
