@@ -285,7 +285,5 @@ export function getPathFromPublic(...paths: string[]): string {
 }
 
 export function getPathFromEntryAsar(...paths: string[]): string {
-  return isDev
-    ? join(app.getAppPath(), __EIU_ENTRY_DIST_PATH__, ...paths)
-    : getPathFromAppNameAsar(__EIU_ENTRY_DIST_PATH__, ...paths)
+  return join(app.getAppPath(), __EIU_ENTRY_DIST_PATH__, ...paths)
 }
