@@ -49,6 +49,36 @@ export function debugStartup(args: {
     : args.startup()
 }
 
+function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files'], isBuild: boolean) {
+  let mainFilePath
+  if (typeof options === 'string') {
+    mainFilePath = basename(options)
+  } else if (Array.isArray(options)) {
+    mainFilePath = basename(options[0])
+  } else {
+    const name = options?.index ?? options?.main
+    if (!name) {
+      throw new Error(`\`options.main.files\` (${options}) must have "index" or "main" key, like \`{ index: "..." }\``)
+    }
+    mainFilePath = options?.index ? 'index.js' : 'main.js'
+  }
+  mainFilePath = mainFilePath.replace(/\.[cm]?ts$/, '.js')
+  return isBuild ? join('main', mainFilePath) : mainFilePath
+}
+
+type ExcludeOutputDirOptions = {
+  vite?: {
+    build?: {
+      outDir: never
+      rollupOptions?: {
+        output?: {
+          dir: never
+        }
+      }
+    }
+  }
+}
+
 export type ElectronWithUpdaterOptions = {
   /**
    * whether is in build mode
@@ -96,13 +126,17 @@ export type ElectronWithUpdaterOptions = {
    */
   logParsedOptions?: boolean | { showKeys: boolean }
   /**
-   * main options
+   * main process options
+   *
+   * to change output directories, use `options.updater.paths.electronDistPath` instead
    */
-  main: MakeRequiredAndReplaceKey<ElectronSimpleOptions['main'], 'entry', 'files'>
+  main: MakeRequiredAndReplaceKey<ElectronSimpleOptions['main'], 'entry', 'files'> & ExcludeOutputDirOptions
   /**
-   * preload options
+   * preload process options
+   *
+   * to change output directories, use `options.updater.paths.electronDistPath` instead
    */
-  preload: MakeRequiredAndReplaceKey<Exclude<ElectronSimpleOptions['preload'], undefined>, 'input', 'files'>
+  preload: MakeRequiredAndReplaceKey<Exclude<ElectronSimpleOptions['preload'], undefined>, 'input', 'files'> & ExcludeOutputDirOptions
   /**
    * updater options
    */
@@ -119,9 +153,7 @@ export type ElectronWithUpdaterOptions = {
  * - other configs in {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template}
  * - no `vite-plugin-electron-renderer` config
  *
- * you can override all the configs
- *
- * **Limitation**: entry file change cannot trigger auto restart
+ * you can override all the vite configs, except output directories (use `options.updater.paths.electronDistPath` instead)
  *
  * @example
  * import { defineConfig } from 'vite'
@@ -247,10 +279,6 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   let isInit = false
 
   const rollupOptions: BuildOptions['rollupOptions'] = {
-    // external: [
-    //   /^node:/,
-    //   ...Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}),
-    // ],
     external: src => src.startsWith('node:') || Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}).includes(src),
   }
 
