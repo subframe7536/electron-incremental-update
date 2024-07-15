@@ -32,7 +32,6 @@ export type BuildAsarOption = {
   gzipPath: string
   electronDistPath: string
   rendererDistPath: string
-  extraFiles?: string | string[]
 }
 
 export type BuildVersionOption = {
