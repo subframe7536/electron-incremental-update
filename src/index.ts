@@ -38,26 +38,21 @@ export type AppOption = {
    */
   updater?: (() => Promisable<Updater>) | UpdaterOption
   /**
-   * update hooks
+   * hooks on rename temp asar path to `${app.name}.asar`
    */
-  hooks?: {
-    /**
-     * hooks on rename temp asar path to `${app.name}.asar`
-     */
-    onInstall?: OnInstallFunction
-    /**
-     * hooks before app start up
-     * @param mainFilePath main file path of `${app.name}.asar`
-     * @param logger logger
-     */
-    beforeStart?: (mainFilePath: string, logger: Logger) => Promisable<void>
-    /**
-     * hooks on app start up error
-     * @param err installing or startup error
-     * @param logger logger
-     */
-    onStartError?: (err: unknown, logger: Logger) => void
-  }
+  onInstall?: OnInstallFunction
+  /**
+   * hooks before app start up
+   * @param mainFilePath main file path of `${app.name}.asar`
+   * @param logger logger
+   */
+  beforeStart?: (mainFilePath: string, logger: Logger) => Promisable<void>
+  /**
+   * hooks on app start up error
+   * @param err installing or startup error
+   * @param logger logger
+   */
+  onStartError?: (err: unknown, logger: Logger) => void
 }
 
 /**
@@ -106,11 +101,9 @@ export async function initApp(
 ): Promise<void> {
   const {
     updater,
-    hooks: {
-      onInstall = defaultOnInstall,
-      beforeStart,
-      onStartError,
-    } = {},
+    onInstall = defaultOnInstall,
+    beforeStart,
+    onStartError,
   } = appOptions
 
   let updaterInstance
