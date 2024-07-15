@@ -5,22 +5,48 @@ import type { BrowserWindow } from 'electron'
 import { app } from 'electron'
 
 /**
+ * type only entry dir path, transformed by esbuild's define
+ */
+declare const __EIU_ENTRY_DIST_PATH__: string
+/**
+ * type only electron dist path, transformed by esbuild's define
+ */
+declare const __EIU_ELECTRON_DIST_PATH__: string
+/**
+ * type only is dev, transformed by esbuild's define
+ */
+declare const __EIU_IS_DEV__: boolean
+
+/**
+ * compile time dev check
+ */
+export const isDev = __EIU_IS_DEV__
+
+export const isWin = process.platform === 'win32'
+
+export const isMac = process.platform === 'darwin'
+
+export const isLinux = process.platform === 'linux'
+
+/**
+ * @deprecated use {@link isDev} / {@link isWin} / {@link isMac} / {@link isLinux} instead
+ *
  * app info
  */
 export const is = {
-  dev: !app.isPackaged,
-  win: process.platform === 'win32',
-  mac: process.platform === 'darwin',
-  linux: process.platform === 'linux',
-} as const
+  dev: isDev,
+  win: isWin,
+  mac: isMac,
+  linux: isLinux,
+}
 
 /**
  * get the absolute path of `${electron.app.name}.asar` (not `app.asar`)
  *
- * if is in dev, return `'DEV.asar'`
+ * if is in dev, **always** return `'DEV.asar'`
  */
 export function getPathFromAppNameAsar(...path: string[]) {
-  return is.dev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${app.name}.asar`, ...path)
+  return isDev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${app.name}.asar`, ...path)
 }
 
 /**
@@ -33,14 +59,16 @@ export function getPathFromAppNameAsar(...path: string[]) {
  * SystemVersion: `${platform} ${os.release()}`
  */
 export function getVersions() {
-  const platform = is.win
+  const platform = isWin
     ? 'Windows'
-    : is.mac
+    : isMac
       ? 'MacOS'
-      : process.platform.toUpperCase()
+      : isLinux
+        ? 'Linux'
+        : process.platform
 
   return {
-    appVersion: is.dev
+    appVersion: isDev
       ? app.getVersion()
       : readFileSync(getPathFromAppNameAsar('version'), 'utf-8'),
     entryVersion: app.getVersion(),
@@ -57,6 +85,7 @@ export function getVersions() {
 type RequireNative = <T = any>(moduleName: string) => T
 
 /**
+ * @deprecated use {@link requireNative} instead
  * load module from entry, **only for main and preload**
  * @remark use `require`, only support **CommonJS**
  * @param devEntryDirPath entry directory path when dev, default `../../dist-entry`
@@ -70,7 +99,7 @@ export function loadNativeModuleFromEntry(
   devEntryDirPath = '../../dist-entry',
   entryDirPath = join(app.getAppPath(), basename(devEntryDirPath)),
 ): RequireNative {
-  const path = is.dev ? devEntryDirPath : entryDirPath
+  const path = isDev ? devEntryDirPath : entryDirPath
   return (moduleName) => {
     try {
       // eslint-disable-next-line ts/no-require-imports
@@ -79,6 +108,15 @@ export function loadNativeModuleFromEntry(
       console.error('fail to load module', error)
     }
   }
+}
+
+/**
+ * use `require` to load native module from entry
+ * @param moduleName file name in entry
+ */
+export function requireNative<T = any>(moduleName: string): T {
+  // eslint-disable-next-line ts/no-require-imports
+  return require(join(app.getAppPath(), __EIU_ENTRY_DIST_PATH__, moduleName))
 }
 
 /**
@@ -91,10 +129,10 @@ export function restartApp() {
 
 /**
  * fix app use model id, only for Windows
- * @param id app id @default `org.${electron.app.name}`
+ * @param id app id, default is `org.${electron.app.name}`
  */
 export function setAppUserModelId(id?: string) {
-  app.setAppUserModelId(is.dev ? process.execPath : id ?? `org.${app.name}`)
+  isWin && app.setAppUserModelId(id ?? `org.${app.name}`)
 }
 
 /**
@@ -164,6 +202,7 @@ export function waitAppReady(timeout = 1000): Promise<void> {
 }
 
 /**
+ * @deprecated use {@link loadPage} / {@link getPathFromPreload} / {@link getPathFromEntryAsar} / {@link getPathFromPublic} instead
  * get paths, **only for main and preload**
  * @param entryDirName entry dir name, default to `dist-entry`
  */
@@ -220,4 +259,33 @@ export function getPaths(entryDirName = 'dist-entry') {
       return join(publicDirPath, ...paths)
     },
   }
+}
+
+/**
+ * load `process.env.VITE_DEV_SERVER_URL` when dev, else load html file
+ * @param win window
+ * @param htmlFilePath html file path, default is `index.html`
+ */
+export function loadPage(win: BrowserWindow, htmlFilePath = 'index.html') {
+  isDev
+    ? win.loadURL(process.env.VITE_DEV_SERVER_URL! + htmlFilePath)
+    : win.loadFile(getPathFromAppNameAsar('renderer', htmlFilePath))
+}
+
+export function getPathFromPreload(...paths: string[]): string {
+  return isDev
+    ? join(app.getAppPath(), __EIU_ELECTRON_DIST_PATH__, 'preload', ...paths)
+    : getPathFromAppNameAsar('preload', ...paths)
+}
+
+export function getPathFromPublic(...paths: string[]): string {
+  return isDev
+    ? join(app.getAppPath(), 'public', ...paths)
+    : getPathFromAppNameAsar('renderer', ...paths)
+}
+
+export function getPathFromEntryAsar(...paths: string[]): string {
+  return isDev
+    ? join(app.getAppPath(), __EIU_ENTRY_DIST_PATH__, ...paths)
+    : getPathFromAppNameAsar(__EIU_ENTRY_DIST_PATH__, ...paths)
 }

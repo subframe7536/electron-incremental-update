@@ -205,8 +205,22 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
     throw new Error(`wrong "main" field in package.json: "${pkg.main}", it should be "${_appPath}"`)
   }
 
+  /// keep-sorted
+  const define = {
+    __EIU_ELECTRON_DIST_PATH__: JSON.stringify(buildAsarOption.electronDistPath),
+    __EIU_ENTRY_DIST_PATH__: JSON.stringify(buildEntryOption.entryOutputDirPath),
+    __EIU_IS_DEV__: JSON.stringify(!isBuild),
+    __EIU_MAIN_DEV_DIR__: JSON.stringify(`${buildAsarOption.electronDistPath}/main`),
+    __EIU_MAIN_FILE__: JSON.stringify(getMainFilePath(_main.files, isBuild)),
+    __EIU_SIGNATURE_CERT__: JSON.stringify(cert),
+  }
+
   const _buildEntry = async () => {
-    await buildEntry(buildEntryOption, cert, isBuild ? bytecodeOptions?.protectedStrings : undefined)
+    await buildEntry(
+      buildEntryOption,
+      define,
+      isBuild ? bytecodeOptions?.protectedStrings : undefined,
+    )
     log.info(`vite build entry to '${entryOutputDirPath}'`, { timestamp: true })
   }
 
@@ -263,6 +277,7 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
             outDir: `${buildAsarOption.electronDistPath}/main`,
             rollupOptions,
           },
+          define,
         },
         _main.vite ?? {},
       ),
@@ -298,6 +313,7 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
             outDir: `${buildAsarOption.electronDistPath}/preload`,
             rollupOptions,
           },
+          define,
         },
         _preload.vite ?? {},
       ),

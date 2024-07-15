@@ -7,6 +7,15 @@ import { getPathFromAppNameAsar, is } from './utils'
 
 export * from './updater'
 
+/**
+ * type only electron main file path, transformed by esbuild's define
+ */
+declare const __EIU_MAIN_FILE__: string
+/**
+ * type only electron main dir path when dev, transformed by esbuild's define
+ */
+declare const __EIU_MAIN_DEV_DIR__: string
+
 type Promisable<T> = T | Promise<T>
 
 type OnInstallFunction = (
@@ -137,12 +146,10 @@ export async function initApp(
       await onInstall(() => renameSync(tempAsarPath, appNameAsarPath), tempAsarPath, appNameAsarPath, logger)
     }
 
-    const mainDir = is.dev ? electronDevDistPath : appNameAsarPath
-
-    const entry = resolve(__dirname, mainDir, mainPath)
-    await beforeStart?.(entry, logger)
+    const mainFilePath = join(isDev ? __EIU_MAIN_DEV_DIR__ : appNameAsarPath, __EIU_MAIN_FILE__)
+    await beforeStart?.(mainFilePath, logger)
     // eslint-disable-next-line ts/no-require-imports, ts/no-var-requires
-    require(entry)(updaterInstance)
+    require(mainFilePath)(updaterInstance)
   } catch (error) {
     handleError(error, logger)
   }

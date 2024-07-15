@@ -99,7 +99,7 @@ export async function buildEntry(
     nativeModuleEntryMap,
     overrideEsbuildOptions,
   }: Required<Omit<BuildEntryOption, 'postBuild'>>,
-  cert: string,
+  define: Record<string, string>,
   protectedStrings?: string[],
 ) {
   const option: BuildOptions = mergeConfig(
@@ -120,9 +120,7 @@ export async function buildEntry(
       loader: {
         '.node': 'empty',
       },
-      define: {
-        __SIGNATURE_CERT__: JSON.stringify(cert),
-      },
+      define,
     } satisfies BuildOptions,
     overrideEsbuildOptions ?? {},
   )

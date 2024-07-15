@@ -9,12 +9,12 @@ import { downloadBufferDefault, downloadJSONDefault } from './defaultFunctions/d
 import { isLowerVersionDefault } from './defaultFunctions/compareVersion'
 
 /**
- * type only signature cert, used for verify, transformed by esbuild's define
+ * type only signature cert, transformed by esbuild's define
  */
-declare const __SIGNATURE_CERT__: string
+declare const __EIU_SIGNATURE_CERT__: string
 
 export class Updater {
-  private CERT = __SIGNATURE_CERT__
+  private CERT = __EIU_SIGNATURE_CERT__
   private info?: UpdateInfo
   private option: UpdaterOption
   private asarPath: string
