@@ -120,7 +120,7 @@ export class Updater {
       ? {
           name: 'updateJsonURL',
           url: this.option.updateJsonURL,
-          repoFallback: `${this.option.repository?.replace('github.com', 'raw.githubusercontent.com')}/master/version.json`,
+          repoFallback: `${this.option.repository?.replace('github.com', 'raw.githubusercontent.com')}/HEAD/version.json`,
           fn: this.option.overrideFunctions?.downloadJSON ?? downloadJSONDefault,
         }
       : {

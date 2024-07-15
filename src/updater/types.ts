@@ -116,7 +116,7 @@ export interface UpdaterOption {
   repository?: string
   /**
    * URL of version info json
-   * @default `${repository.replace('github.com', 'raw.githubusercontent.com')}/master/version.json`
+   * @default `${repository.replace('github.com', 'raw.githubusercontent.com')}/HEAD/version.json`
    * @throws if `updateJsonURL` and `repository` are all not set
    */
   updateJsonURL?: string
