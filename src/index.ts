@@ -1,9 +1,8 @@
-import { resolve } from 'node:path'
+import { join } from 'node:path'
 import { existsSync, renameSync } from 'node:fs'
 import { app } from 'electron'
-import type { Logger, Updater, UpdaterOption } from './updater'
-import { createUpdater } from './updater'
-import { getPathFromAppNameAsar, is } from './utils'
+import { type Logger, Updater, type UpdaterOption } from './updater'
+import { getPathFromAppNameAsar, isDev } from './utils'
 
 export * from './updater'
 
@@ -18,11 +17,19 @@ declare const __EIU_MAIN_DEV_DIR__: string
 
 type Promisable<T> = T | Promise<T>
 
+/**
+ * hooks on rename temp asar path to `${app.name}.asar`
+ * @param install `() => renameSync(tempAsarPath, appNameAsarPath)`
+ * @param tempAsarPath temp(updated) asar path
+ * @param appNameAsarPath `${app.name}.asar` path
+ * @param logger logger
+ * @default install(); logger.info(`update success!`)
+ */
 type OnInstallFunction = (
   install: VoidFunction,
   tempAsarPath: string,
   appNameAsarPath: string,
-  logger?: Logger
+  logger: Logger
 ) => Promisable<void>
 
 export type AppOption = {
@@ -31,40 +38,25 @@ export type AppOption = {
    */
   updater?: (() => Promisable<Updater>) | UpdaterOption
   /**
-   * path of electron output dist when in development
-   * @default '../dist-electron'
-   */
-  electronDevDistPath?: string
-  /**
-   * relative path of main entry in electron dist
-   * @default 'main/index.js'
-   */
-  mainPath?: string
-  /**
    * update hooks
    */
   hooks?: {
     /**
      * hooks on rename temp asar path to `${app.name}.asar`
-     * @param install `() => renameSync(tempAsarPath, appNameAsarPath)`
-     * @param tempAsarPath temp(updated) asar path
-     * @param appNameAsarPath `${app.name}.asar` path
-     * @param logger logger
-     * @default install(); logger?.info(`update success!`)
      */
     onInstall?: OnInstallFunction
     /**
-     * hooks before start
-     * @param appNameAsarPath path of `${app.name}.asar`
+     * hooks before app start up
+     * @param mainFilePath main file path of `${app.name}.asar`
      * @param logger logger
      */
-    beforeStart?: (appNameAsarPath: string, logger?: Logger) => Promisable<void>
+    beforeStart?: (mainFilePath: string, logger: Logger) => Promisable<void>
     /**
-     * hooks on start up error
+     * hooks on app start up error
      * @param err installing or startup error
      * @param logger logger
      */
-    onStartError?: (err: unknown, logger?: Logger) => void
+    onStartError?: (err: unknown, logger: Logger) => void
   }
 }
 
@@ -83,7 +75,7 @@ export function startupWithUpdater(fn: (updater: Updater) => Promisable<void>) {
 
 const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
   install()
-  logger?.info(`update success!`)
+  logger.info(`update success!`)
 }
 
 /**
@@ -114,35 +106,28 @@ export async function initApp(
 ): Promise<void> {
   const {
     updater,
-    electronDevDistPath = '../dist-electron',
-    mainPath = 'main/index.js',
-    hooks,
-  } = appOptions || {}
-  const {
-    onInstall = defaultOnInstall,
-    beforeStart,
-    onStartError,
-  } = hooks || {}
-  function handleError(err: unknown, logger?: Logger) {
-    console.error(err)
-    onStartError?.(err, logger)
-    app.quit()
-  }
+    hooks: {
+      onInstall = defaultOnInstall,
+      beforeStart,
+      onStartError,
+    } = {},
+  } = appOptions
+
   let updaterInstance
   if (typeof updater === 'object' || !updater) {
-    updaterInstance = createUpdater(updater)
+    updaterInstance = new Updater(updater)
   } else {
     updaterInstance = await updater()
   }
 
-  const logger = updaterInstance.logger
+  const logger = updaterInstance.logger || console
   try {
     const appNameAsarPath = getPathFromAppNameAsar()
 
     // do update: replace the old asar with new asar
     const tempAsarPath = `${appNameAsarPath}.tmp`
     if (existsSync(tempAsarPath)) {
-      logger?.info(`installing new asar: ${tempAsarPath}`)
+      logger.info(`installing new asar: ${tempAsarPath}`)
       await onInstall(() => renameSync(tempAsarPath, appNameAsarPath), tempAsarPath, appNameAsarPath, logger)
     }
 
@@ -151,6 +136,8 @@ export async function initApp(
     // eslint-disable-next-line ts/no-require-imports, ts/no-var-requires
     require(mainFilePath)(updaterInstance)
   } catch (error) {
-    handleError(error, logger)
+    logger.error('startup error', error)
+    onStartError?.(error, logger)
+    app.quit()
   }
 }

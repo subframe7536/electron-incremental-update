@@ -13,9 +13,23 @@ export class UpdaterError extends Error {
   }
 }
 
-export type CheckResult = UpdateInfo | undefined | UpdaterError
+export type CheckResult<T extends UpdateJSON> = {
+  success: true
+  data: Omit<T, 'beta'>
+} | {
+  success: true
+  data: string
+} | {
+  success: false
+  data: UpdaterError
+}
 
-export type DownloadResult = true | UpdaterError
+export type DownloadResult = {
+  success: true
+} | {
+  success: false
+  data: UpdaterError
+}
 
 export type DownloadingInfo = {
   /**
@@ -36,7 +50,7 @@ export type Logger = {
   info: (msg: string) => void
   debug: (msg: string) => void
   warn: (msg: string) => void
-  error: (msg: string, e?: Error) => void
+  error: (msg: string, e?: unknown) => void
 }
 
 export type UpdaterOverrideFunctions = {
@@ -116,6 +130,7 @@ export interface UpdaterOption {
    * whether to receive beta update
    */
   receiveBeta?: boolean
+  logger?: Logger
   overrideFunctions?: UpdaterOverrideFunctions
   downloadConfig?: UpdaterDownloadConfig
 }

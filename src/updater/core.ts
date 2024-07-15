@@ -54,6 +54,9 @@ export class Updater {
     if (option.SIGNATURE_CERT) {
       this.CERT = option.SIGNATURE_CERT
     }
+    if (option.logger) {
+      this.logger = option.logger
+    }
     this.asarPath = getPathFromAppNameAsar()
     this.gzipPath = `${this.asarPath}.gz`
     this.tmpFilePath = `${this.asarPath}.tmp`
@@ -159,7 +162,7 @@ export class Updater {
    * - Unavailable: `undefined`
    * - Fail: `UpdaterError`
    */
-  public async checkUpdate(): Promise<CheckResult>
+  public async checkUpdate<T extends UpdateJSON>(): Promise<CheckResult<T>>
   /**
    * check update info using custom url
    * @param url custom download URL of `updatejson`
@@ -168,7 +171,7 @@ export class Updater {
    * - Unavailable: `undefined`
    * - Fail: `UpdaterError`
    */
-  public async checkUpdate(url: string): Promise<CheckResult>
+  public async checkUpdate<T extends UpdateJSON>(url: string): Promise<CheckResult<T>>
   /**
    * check update info using existing update json
    * @param data existing update json
@@ -177,8 +180,8 @@ export class Updater {
    * - Unavailable: `undefined`
    * - Fail: `UpdaterError`
    */
-  public async checkUpdate(data: UpdateJSON): Promise<CheckResult>
-  public async checkUpdate(data?: string | UpdateJSON): Promise<CheckResult> {
+  public async checkUpdate<T extends UpdateJSON>(data: T): Promise<CheckResult<T>>
+  public async checkUpdate<T extends UpdateJSON>(data?: string | UpdateJSON): Promise<CheckResult<T>> {
     try {
       let { signature, size, version, minimumVersion, beta } = await this.parseData('json', data)
       if (this.receiveBeta) {
@@ -187,25 +190,25 @@ export class Updater {
         minimumVersion = beta.minimumVersion
         size = beta.size
       }
-      this.logger?.debug(`checked version: ${version}, size: ${size}, signature: ${signature}`)
+      this.logger?.debug(`checked update, version: ${version}, size: ${size}, signature: ${signature}`)
 
       // if not need update, return
       if (!await this.needUpdate(version, minimumVersion)) {
         this.logger?.info(`update unavailable: ${version} is the latest version`)
-        return undefined
+        return { success: true, data: version }
       } else {
         this.logger?.info(`update available: ${version}`)
-        this.info = {
-          signature,
-          minimumVersion,
-          version,
-          size,
-        }
-        return this.info
+        this.info = { signature, minimumVersion, version, size }
+        return { success: true, data: this.info as any }
       }
     } catch (error) {
-      this.logger?.error('check update failed', error as Error)
-      return error as Error
+      this.logger?.error('check update failed', error)
+      return {
+        success: false,
+        data: error instanceof UpdaterError
+          ? error
+          : new UpdaterError(ErrorInfo.downlaod, (error as any).toString()),
+      }
     }
   }
 
@@ -261,10 +264,15 @@ export class Updater {
 
       this.logger?.info(`download success, version: ${_ver}`)
       this.info = undefined
-      return true
+      return { success: true }
     } catch (error) {
-      this.logger?.error('download asar failed', error as Error)
-      return error as Error
+      this.logger?.error('download asar failed', error)
+      return {
+        success: false,
+        data: error instanceof UpdaterError
+          ? error
+          : new UpdaterError(ErrorInfo.downlaod, (error as any).toString()),
+      }
     }
   }
 
