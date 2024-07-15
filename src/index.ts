@@ -25,14 +25,9 @@ type Promisable<T> = T | Promise<T>
  * @param logger logger
  * @default install(); logger.info(`update success!`)
  */
-type OnInstallFunction = (
-  install: VoidFunction,
-  tempAsarPath: string,
-  appNameAsarPath: string,
-  logger: Logger
-) => Promisable<void>
+type OnInstallFunction = (install: VoidFunction, tempAsarPath: string, appNameAsarPath: string, logger: Logger) => Promisable<void>
 
-export type AppOption = {
+export interface AppOption {
   /**
    * updater options
    */

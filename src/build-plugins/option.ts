@@ -3,13 +3,13 @@ import type { BuildOptions } from 'esbuild'
 import type { UpdateJSON } from '../utils/pure'
 import { parseKeys } from './key'
 
-export type PKG = {
+export interface PKG {
   name: string
   version: string
   main: string
 }
 
-export type DistinguishedName = {
+export interface DistinguishedName {
   countryName?: string
   stateOrProvinceName?: string
   localityName?: string
@@ -26,7 +26,8 @@ export type CertSubject = {
   name: string
   value: string
 }[]
-export type BuildAsarOption = {
+
+export interface BuildAsarOption {
   version: string
   asarOutputPath: string
   gzipPath: string
@@ -34,7 +35,7 @@ export type BuildAsarOption = {
   rendererDistPath: string
 }
 
-export type BuildVersionOption = {
+export interface BuildVersionOption {
   gzipPath: string
   version: string
   minimumVersion: string
@@ -45,7 +46,7 @@ export type BuildVersionOption = {
   generateVersionJson?: GeneratorOverrideFunctions['generateVersionJson']
 }
 
-export type BuildEntryOption = {
+export interface BuildEntryOption {
   /**
    * whether to minify
    * @default isBuild
@@ -129,7 +130,7 @@ export type BuildEntryOption = {
   }) => Promisable<void>
 }
 
-export type GeneratorOverrideFunctions = {
+export interface GeneratorOverrideFunctions {
   /**
    * custom signature generate function
    * @param buffer file buffer
@@ -150,7 +151,7 @@ export type GeneratorOverrideFunctions = {
   generateVersionJson?: (existingJson: UpdateJSON, buffer: Buffer, signature: string, version: string, minVersion: string) => UpdateJSON | Promise<UpdateJSON>
 }
 
-export type ElectronUpdaterOptions = {
+export interface ElectronUpdaterOptions {
   /**
    * mini version of entry
    * @default '0.0.0'

@@ -15,8 +15,8 @@ export const verify: Required<UpdaterOverrideFunctions>['verifySignaure'] = (buf
     const result = createVerify('RSA-SHA256')
       .update(buffer)
       .verify(cert, sig, 'base64')
-    return result ? version : false
+    return result ? version : undefined
   } catch (error) {
-    return false
+    return undefined
   }
 }

@@ -45,7 +45,7 @@ export const downloadBufferDefault: Func['downloadBuffer'] = async (url, headers
     let data: any[] = []
     resp.on('data', (chunk) => {
       current += chunk.length
-      onDownloading?.({ percent: `${+((current / total).toFixed(2)) * 100}%`, total, current })
+      onDownloading?.({ percent: +((current / total).toFixed(2)) * 100 + '%' as any, total, current })
       data.push(chunk)
     })
     resp.on('end', () => resolve(Buffer.concat(data)))

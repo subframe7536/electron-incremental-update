@@ -79,7 +79,7 @@ type ExcludeOutputDirOptions = {
   }
 }
 
-export type ElectronWithUpdaterOptions = {
+export interface ElectronWithUpdaterOptions {
   /**
    * whether is in build mode
    * ```ts

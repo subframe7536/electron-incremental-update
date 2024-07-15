@@ -14,7 +14,7 @@ import {
 } from './utils'
 import { bytecodeModuleLoaderCode } from './code'
 
-export type BytecodeOptions = {
+export interface BytecodeOptions {
   /**
    * strings that should be transformed
    */

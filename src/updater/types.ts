@@ -1,4 +1,4 @@
-import type { UpdateInfo, UpdateJSON } from '../utils'
+import type { UpdateJSON } from '../utils'
 
 export const ErrorInfo = {
   downlaod: 'Download failed',
@@ -31,7 +31,7 @@ export type DownloadResult = {
   data: UpdaterError
 }
 
-export type DownloadingInfo = {
+export interface DownloadingInfo {
   /**
    * downloaded percent, 0% - 100%
    */
@@ -46,31 +46,31 @@ export type DownloadingInfo = {
   current: number
 }
 
-export type Logger = {
+export interface Logger {
   info: (msg: string) => void
   debug: (msg: string) => void
   warn: (msg: string) => void
   error: (msg: string, e?: unknown) => void
 }
 
-export type UpdaterOverrideFunctions = {
+export interface UpdaterOverrideFunctions {
   /**
    * custom version compare function
-   * @param version1 old version string
-   * @param version2 new version string
+   * @param oldVer old version string
+   * @param newVer new version string
    * @returns if version1 < version2
    */
-  isLowerVersion?: (version1: string, version2: string) => boolean | Promise<boolean>
+  isLowerVersion?: (oldVer: string, newVer: string) => boolean | Promise<boolean>
   /**
    * custom verify signature function
    * @param buffer file buffer
    * @param signature signature
    * @param cert certificate
-   * @returns if signature is valid, returns the version or `true` , otherwise returns `false`
+   * @returns if signature is valid, returns the version, otherwise returns `undefined`
    */
-  verifySignaure?: (buffer: Buffer, signature: string, cert: string) => string | false | Promise<string | false>
+  verifySignaure?: (buffer: Buffer, signature: string, cert: string) => string | undefined | Promise<string | undefined>
   /**
-   * custom download JSON function
+   * custom download `UpdateJSON` function
    * @param url download url
    * @param header download header
    * @returns `UpdateJSON`
@@ -87,7 +87,7 @@ export type UpdaterOverrideFunctions = {
   downloadBuffer?: (url: string, headers: Record<string, any>, total: number, onDownloading?: (progress: DownloadingInfo) => void) => Promise<Buffer>
 }
 
-export type UpdaterDownloadConfig = {
+export interface UpdaterDownloadConfig {
   /**
    * download user agent
    * @default 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
