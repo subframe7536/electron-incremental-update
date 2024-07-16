@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isLowerVersionDefault } from '../src/utils'
+import { isLowerVersionDefault } from '../src/utils/version'
 
 describe('compareVersionDefault', () => {
   it('should return true when new version is greater than old version', () => {
