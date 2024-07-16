@@ -1,5 +1,4 @@
 import { createCipheriv, createPrivateKey, createSign } from 'node:crypto'
-import type { GeneratorOverrideFunctions } from '../build-plugins/option'
 import { hashString } from './utils'
 
 export function encrypt(plainText: string, key: Buffer, iv: Buffer): string {
@@ -9,7 +8,7 @@ export function encrypt(plainText: string, key: Buffer, iv: Buffer): string {
   return encrypted
 }
 
-export const signature: Required<GeneratorOverrideFunctions>['generateSignature'] = (buffer, privateKey, cert, version) => {
+export function signature(buffer: Buffer, privateKey: string, cert: string, version: string): string {
   const sig = createSign('RSA-SHA256')
     .update(buffer)
     .sign(createPrivateKey(privateKey), 'base64')

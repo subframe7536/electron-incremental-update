@@ -1,6 +1,6 @@
 import type { Promisable } from '@subframe7536/type-utils'
 import type { BuildOptions } from 'esbuild'
-import type { UpdateJSON } from '../utils/pure'
+import type { UpdateJSON } from '../utils'
 import { parseKeys } from './key'
 
 export interface PKG {

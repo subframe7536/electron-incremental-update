@@ -10,9 +10,8 @@ import { loadPackageJSON } from 'local-pkg'
 import { buildAsar, buildEntry, buildVersion } from './build-plugins/build'
 import type { ElectronUpdaterOptions, PKG } from './build-plugins/option'
 import { parseOptions } from './build-plugins/option'
-import { id } from './build-plugins/constant'
+import { id, log } from './build-plugins/constant'
 import { type BytecodeOptions, bytecodePlugin } from './build-plugins/bytecode'
-import { log } from './build-plugins/log'
 
 type MakeRequired<T, K extends keyof T> = Exclude<T, undefined> & { [P in K]-?: T[P] }
 type ReplaceKey<
@@ -49,7 +48,7 @@ export function debugStartup(args: {
     : args.startup()
 }
 
-function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files'], isBuild: boolean) {
+function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files']) {
   let mainFilePath
   if (typeof options === 'string') {
     mainFilePath = basename(options)
@@ -62,8 +61,15 @@ function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files'], i
     }
     mainFilePath = options?.index ? 'index.js' : 'main.js'
   }
-  mainFilePath = mainFilePath.replace(/\.[cm]?ts$/, '.js')
-  return isBuild ? join('main', mainFilePath) : mainFilePath
+  return mainFilePath.replace(/\.[cm]?ts$/, '.js')
+}
+
+function parseVersionPath(versionPath: string) {
+  versionPath = normalizePath(versionPath)
+  if (!versionPath.startsWith('./')) {
+    versionPath = './' + versionPath
+  }
+  return new URL(versionPath, 'file://').pathname.slice(1)
 }
 
 type ExcludeOutputDirOptions = {
@@ -242,9 +248,10 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
     __EIU_ELECTRON_DIST_PATH__: JSON.stringify(buildAsarOption.electronDistPath),
     __EIU_ENTRY_DIST_PATH__: JSON.stringify(buildEntryOption.entryOutputDirPath),
     __EIU_IS_DEV__: JSON.stringify(!isBuild),
-    __EIU_MAIN_DEV_DIR__: JSON.stringify(`${buildAsarOption.electronDistPath}/main`),
-    __EIU_MAIN_FILE__: JSON.stringify(getMainFilePath(_main.files, isBuild)),
+    __EIU_MAIN_DEV_DIR__: JSON.stringify(buildAsarOption.electronDistPath),
+    __EIU_MAIN_FILE__: JSON.stringify(getMainFilePath(_main.files)),
     __EIU_SIGNATURE_CERT__: JSON.stringify(cert),
+    __EUI_VERSION_PATH__: JSON.stringify(parseVersionPath(buildVersionOption.versionPath)),
   }
 
   const _buildEntry = async () => {

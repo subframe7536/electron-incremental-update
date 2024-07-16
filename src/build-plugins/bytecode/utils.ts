@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process'
 import * as babel from '@babel/core'
 import MagicString from 'magic-string'
 import { getPackageInfoSync } from 'local-pkg'
-import { log } from '../log'
+import { log } from '../constant'
 import { bytecodeGeneratorScript } from './code'
 
 const electronModulePath = getPackageInfoSync('electron')?.rootPath

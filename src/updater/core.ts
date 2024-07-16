@@ -1,25 +1,29 @@
 import { existsSync, rmSync, writeFileSync } from 'node:fs'
 import { app } from 'electron'
-import { getPathFromAppNameAsar, getVersions, isUpdateJSON, restartApp, unzipFile } from '../utils'
-import { verify } from '../crypto'
-import type { UpdateInfo, UpdateJSON } from '../utils'
-import type { CheckResult, DownloadResult, DownloadingInfo, Logger, UpdaterOption } from './types'
+import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
+import type { IProvider, OnDownloading, URLHandler } from '../provider'
+import { getAppVersion, getEntryVersion, getPathFromAppNameAsar, isDev, restartApp } from '../utils/electron'
+import { unzipFile } from '../utils/unzip'
+import type { CheckResult, DownloadResult, Logger, UpdaterOption } from './types'
 import { ErrorInfo, UpdaterError } from './types'
-import { downloadBufferDefault, downloadJSONDefault } from './defaultFunctions/download'
-import { isLowerVersionDefault } from './defaultFunctions/compareVersion'
 
 /**
  * type only signature cert, transformed by esbuild's define
  */
 declare const __EIU_SIGNATURE_CERT__: string
+/**
+ * type only version json path, transformed by esbuild's define
+ */
+declare const __EIU_VERSION_PATH__: string
 
 export class Updater {
   private CERT = __EIU_SIGNATURE_CERT__
   private info?: UpdateInfo
-  private option: UpdaterOption
+  private options: UpdaterOption
   private asarPath: string
   private gzipPath: string
   private tmpFilePath: string
+  private provider: IProvider
   /**
    * updater logger
    */
@@ -32,25 +36,35 @@ export class Updater {
    *   console.log(`download progress: ${percent}, total: ${total}, current: ${current}`)
    * }
    */
-  public onDownloading?: (progress: DownloadingInfo) => void
+  public onDownloading?: OnDownloading
+  /**
+   * URL handler hook
+   *
+   * for Github, there are some {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34 public CDN links}
+   * @param url source url
+   * @param isDownloadAsar whether is download asar
+   */
+  public handleURL?: URLHandler
 
   /**
    * whether receive beta version
    */
   get receiveBeta() {
-    return !!this.option.receiveBeta
+    return !!this.options.receiveBeta
   }
 
   set receiveBeta(receiveBeta: boolean) {
-    this.option.receiveBeta = receiveBeta
+    this.options.receiveBeta = receiveBeta
   }
 
   /**
    * initialize incremental updater
+   * @param provider update provider
    * @param option UpdaterOption
    */
-  constructor(option: UpdaterOption = {}) {
-    this.option = option
+  constructor(provider: IProvider, option: UpdaterOption = {}) {
+    this.provider = provider
+    this.options = option
     if (option.SIGNATURE_CERT) {
       this.CERT = option.SIGNATURE_CERT
     }
@@ -63,8 +77,13 @@ export class Updater {
   }
 
   private async needUpdate(version: string, minVersion: string) {
-    const isLowerVersion = this.option.overrideFunctions?.isLowerVersion ?? isLowerVersionDefault
-    const { appVersion, entryVersion } = getVersions()
+    if (isDev) {
+      this.logger?.warn(`in dev mode, skip check update`)
+      return false
+    }
+    const isLowerVersion = this.provider.isLowerVersion
+    const entryVersion = getEntryVersion()
+    const appVersion = getAppVersion()
 
     if (await isLowerVersion(entryVersion, minVersion)) {
       throw new UpdaterError(ErrorInfo.version, `entry version (${entryVersion}) < minimumVersion (${minVersion})`)
@@ -107,81 +126,37 @@ export class Updater {
       }
     }
 
-    const ua = this.option.downloadConfig?.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
-    const headers = {
-      Accept: `application/${format === 'json' ? 'json' : 'octet-stream'}`,
-      UserAgent: ua,
-      ...this.option.downloadConfig?.extraHeader,
-    }
-
-    this.logger?.debug(`download headers: ${JSON.stringify(headers)}`)
-
-    const config = format === 'json'
-      ? {
-          name: 'updateJsonURL',
-          url: this.option.updateJsonURL,
-          repoFallback: `${this.option.repository?.replace('github.com', 'raw.githubusercontent.com')}/HEAD/version.json`,
-          fn: this.option.overrideFunctions?.downloadJSON ?? downloadJSONDefault,
-        }
-      : {
-          name: 'releaseAsarURL',
-          url: this.option.releaseAsarURL,
-          repoFallback: `${this.option.repository}/releases/download/v${this.info?.version}/${app.name}-${this.info?.version}.asar.gz`,
-          fn: this.option.overrideFunctions?.downloadBuffer ?? downloadBufferDefault,
-        }
-
-    data ??= config.url
-    if (!data) {
-      this.logger?.debug(`no ${config.name}, fallback to use repository`)
-      if (!this.option.repository) {
-        throw new UpdaterError(ErrorInfo.param, `${config.name} or repository is not set`)
-      }
-      if (format === 'buffer' && !this.info?.version) {
-        throw new UpdaterError(ErrorInfo.param, 'version is not set')
-      }
-      data = config.repoFallback
-    }
-
     // fetch data from remote
-    this.logger?.debug(`download ${format} from ${data}`)
+    this.logger?.debug(`download from ${this.provider.name}`)
     try {
-      const ret = format === 'json'
-        ? await (config.fn as typeof downloadJSONDefault)(data, headers)
-        : await (config.fn as typeof downloadBufferDefault)(data, headers, this.info!.size, this.onDownloading)
-      this.logger?.debug(`download ${format} success${format === 'buffer' ? `, file size: ${(ret as Buffer).length}` : ''}`)
-      return ret
+      const result = format === 'json'
+        ? await this.provider.downloadJSON(data ?? __EIU_VERSION_PATH__)
+        : await this.provider.downloadBuffer(app.name, this.info!, this.onDownloading)
+
+      this.logger?.debug(`download ${format} success${format === 'buffer' ? `, file size: ${(result as Buffer).length}` : ''}`)
+
+      return result
     } catch (e) {
-      throw new UpdaterError(ErrorInfo.downlaod, (e as object).toString())
+      this.logger?.warn(`download ${format} failed: ${e}`)
+      throw new UpdaterError(ErrorInfo.download, `download ${format} failed: ${e}`)
     }
   }
 
   /**
    * check update info using default options
-   * @returns
-   * - Available: `{size: number, version: string}`
-   * - Unavailable: `undefined`
-   * - Fail: `UpdaterError`
    */
   public async checkUpdate<T extends UpdateJSON>(): Promise<CheckResult<T>>
   /**
    * check update info using custom url
    * @param url custom download URL of `updatejson`
-   * @returns
-   * - Available:`{size: number, version: string}`
-   * - Unavailable: `undefined`
-   * - Fail: `UpdaterError`
    */
   public async checkUpdate<T extends UpdateJSON>(url: string): Promise<CheckResult<T>>
   /**
    * check update info using existing update json
    * @param data existing update json
-   * @returns
-   * - Available:`{size: number, version: string}`
-   * - Unavailable: `undefined`
-   * - Fail: `UpdaterError`
    */
   public async checkUpdate<T extends UpdateJSON>(data: T): Promise<CheckResult<T>>
-  public async checkUpdate<T extends UpdateJSON>(data?: string | UpdateJSON): Promise<CheckResult<T>> {
+  public async checkUpdate<T extends UpdateJSON>(data?: string | T): Promise<CheckResult<T>> {
     try {
       let { signature, size, version, minimumVersion, beta } = await this.parseData('json', data)
       if (this.receiveBeta) {
@@ -195,7 +170,7 @@ export class Updater {
       // if not need update, return
       if (!await this.needUpdate(version, minimumVersion)) {
         this.logger?.info(`update unavailable: ${version} is the latest version`)
-        return { success: true, data: version }
+        return { success: false, data: version }
       } else {
         this.logger?.info(`update available: ${version}`)
         this.info = { signature, minimumVersion, version, size }
@@ -207,49 +182,39 @@ export class Updater {
         success: false,
         data: error instanceof UpdaterError
           ? error
-          : new UpdaterError(ErrorInfo.downlaod, (error as any).toString()),
+          : new UpdaterError(ErrorInfo.download, (error as any).toString()),
       }
     }
   }
 
   /**
    * download update using default options
-   * @returns
-   * - Success: `true`
-   * - Fail: `UpdaterError`
    */
   public async download(): Promise<DownloadResult>
   /**
    * download update using custom url
    * @param url custom download URL
-   * @returns
-   * - Success: `true`
-   * - Fail: `UpdaterError`
    */
   public async download(url: string): Promise<DownloadResult>
   /**
    * download update using existing `asar.gz` buffer and signature
    * @param data existing `asar.gz` buffer
    * @param sig signature
-   * @returns
-   * - Success: `true`
-   * - Fail: `UpdaterError`
    */
   public async download(data: Buffer, sig: string): Promise<DownloadResult>
   public async download(data?: string | Buffer, sig?: string): Promise<DownloadResult> {
     try {
-      const _sig = sig ?? this.info?.signature
-      if (!_sig) {
-        throw new UpdaterError(ErrorInfo.param, 'signature is empty')
+      if (!this.info) {
+        throw new UpdaterError(ErrorInfo.param, 'no update info')
       }
+      const _sig = sig ?? this.info.signature
 
       // if typeof data is Buffer, the version will not be used
       const buffer = await this.parseData('buffer', data)
 
       // verify update file
       this.logger?.debug('verify start')
-      const _verify = this.option.overrideFunctions?.verifySignaure ?? verify
-      const _ver = await _verify(buffer, _sig, this.CERT)
+      const _ver = await this.provider.verifySignaure(buffer, _sig, this.CERT)
       if (!_ver) {
         throw new UpdaterError(ErrorInfo.validate, 'invalid signature or certificate')
       }
@@ -271,7 +236,7 @@ export class Updater {
         success: false,
         data: error instanceof UpdaterError
           ? error
-          : new UpdaterError(ErrorInfo.downlaod, (error as any).toString()),
+          : new UpdaterError(ErrorInfo.download, (error as any).toString()),
       }
     }
   }
@@ -279,7 +244,7 @@ export class Updater {
   /**
    * quit App and install
    */
-  public quitAndInstall() {
+  public quitAndInstall(): void {
     this.logger?.info('quit and install')
     restartApp()
   }

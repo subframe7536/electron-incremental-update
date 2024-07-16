@@ -23,12 +23,18 @@
     "./utils": {
       "import": "./dist/utils.js",
       "require": "./dist/utils.cjs"
+    },
+    "./provider": {
+      "import": "./dist/provider.js",
+      "require": "./dist/provider.cjs"
     }
   },
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "files": [
     "dist",
+    "provider.d.ts",
+    "provider.js",
     "utils.d.ts",
     "utils.js",
     "vite.d.ts",

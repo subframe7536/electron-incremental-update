@@ -2,8 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { type Plugin, type ResolvedConfig, createFilter, normalizePath } from 'vite'
 import MagicString from 'magic-string'
-import { bytecodeId } from '../constant'
-import { bytecodeLog } from '../log'
+import { bytecodeId, bytecodeLog } from '../constant'
 import {
   bytecodeModuleLoader,
   compileToBytecode,

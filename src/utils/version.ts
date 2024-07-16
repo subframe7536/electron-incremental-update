@@ -1,21 +1,4 @@
 /**
- * parse Github CDN URL for accelerating the speed of downloading
- *
- * {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34 some public CDN links}
- */
-export function parseGithubCdnURL(originRepoURL: string, cdnPrefix: string, relativeFilePath: string) {
-  if (!originRepoURL.startsWith('https://github.com/')) {
-    throw new Error('origin url must start with https://github.com/')
-  }
-
-  originRepoURL = originRepoURL.trim().replace(/\/?$/, '/').trim()
-  relativeFilePath = relativeFilePath.trim().replace(/^\/|\/?$/g, '').trim()
-  cdnPrefix = cdnPrefix.trim().replace(/^\/?|\/?$/g, '').trim()
-
-  return originRepoURL.replace('github.com', cdnPrefix) + relativeFilePath
-}
-
-/**
  * handle all unhandled error
  * @param callback callback function
  */
@@ -56,6 +39,33 @@ export function parseVersion(version: string): Version {
   return ret
 }
 
+export function isLowerVersionDefault(oldVer: string, newVer: string) {
+  const oldV = parseVersion(oldVer)
+  const newV = parseVersion(newVer)
+
+  function compareStrings(str1: string, str2: string): boolean {
+    if (str1 === '') {
+      return str2 !== ''
+    } else if (str2 === '') {
+      return true
+    }
+    return str1 < str2
+  }
+
+  for (let key of Object.keys(oldV) as Extract<keyof Version, string>[]) {
+    if (key === 'stage' && compareStrings(oldV[key], newV[key])) {
+      return true
+    } else if (oldV[key] !== newV[key]) {
+      return oldV[key] < newV[key]
+    }
+  }
+
+  return false
+}
+
+/**
+ * update info json
+ */
 export type UpdateInfo = {
   signature: string
   minimumVersion: string
@@ -63,6 +73,9 @@ export type UpdateInfo = {
   size: number
 }
 
+/**
+ * {@link UpdateInfo} with beta
+ */
 export type UpdateJSON = UpdateInfo & {
   beta: UpdateInfo
 }

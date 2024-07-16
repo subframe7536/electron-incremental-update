@@ -1,7 +1,7 @@
 import type { UpdateJSON } from '../utils'
 
 export const ErrorInfo = {
-  downlaod: 'Download failed',
+  download: 'Download failed',
   validate: 'Validate failed',
   param: 'Missing params',
   version: 'Unsatisfied version',
@@ -17,7 +17,10 @@ export type CheckResult<T extends UpdateJSON> = {
   success: true
   data: Omit<T, 'beta'>
 } | {
-  success: true
+  success: false
+  /**
+   * minimal version that can update
+   */
   data: string
 } | {
   success: false
@@ -31,72 +34,11 @@ export type DownloadResult = {
   data: UpdaterError
 }
 
-export interface DownloadingInfo {
-  /**
-   * downloaded percent, 0% - 100%
-   */
-  percent: `${number}%`
-  /**
-   * total size
-   */
-  total: number
-  /**
-   * downloaded size
-   */
-  current: number
-}
-
 export interface Logger {
   info: (msg: string) => void
   debug: (msg: string) => void
   warn: (msg: string) => void
   error: (msg: string, e?: unknown) => void
-}
-
-export interface UpdaterOverrideFunctions {
-  /**
-   * custom version compare function
-   * @param oldVer old version string
-   * @param newVer new version string
-   * @returns if version1 < version2
-   */
-  isLowerVersion?: (oldVer: string, newVer: string) => boolean | Promise<boolean>
-  /**
-   * custom verify signature function
-   * @param buffer file buffer
-   * @param signature signature
-   * @param cert certificate
-   * @returns if signature is valid, returns the version, otherwise returns `undefined`
-   */
-  verifySignaure?: (buffer: Buffer, signature: string, cert: string) => string | undefined | Promise<string | undefined>
-  /**
-   * custom download `UpdateJSON` function
-   * @param url download url
-   * @param header download header
-   * @returns `UpdateJSON`
-   */
-  downloadJSON?: (url: string, headers: Record<string, any>) => Promise<UpdateJSON>
-  /**
-   * custom download buffer function
-   * @param url download url
-   * @param headers download header
-   * @param total precaculated file total size
-   * @param onDownloading on downloading callback
-   * @returns `Buffer`
-   */
-  downloadBuffer?: (url: string, headers: Record<string, any>, total: number, onDownloading?: (progress: DownloadingInfo) => void) => Promise<Buffer>
-}
-
-export interface UpdaterDownloadConfig {
-  /**
-   * download user agent
-   * @default 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
-   */
-  userAgent?: string
-  /**
-   * extra download header, `accept` and `user-agent` is set by default
-   */
-  extraHeader?: Record<string, string>
 }
 
 export interface UpdaterOption {
@@ -106,31 +48,8 @@ export interface UpdaterOption {
    */
   SIGNATURE_CERT?: string
   /**
-   * repository url, e.g. `https://github.com/electron/electron`
-   *
-   * you can use the `repository` in `package.json`
-   *
-   * if `updateJsonURL` or `releaseAsarURL` are absent,
-   * `repository` will be used to determine the url
-   */
-  repository?: string
-  /**
-   * URL of version info json
-   * @default `${repository.replace('github.com', 'raw.githubusercontent.com')}/HEAD/version.json`
-   * @throws if `updateJsonURL` and `repository` are all not set
-   */
-  updateJsonURL?: string
-  /**
-   * URL of release asar.gz
-   * @default `${repository}/releases/download/v${version}/${app.name}-${version}.asar.gz`
-   * @throws if `releaseAsarURL` and `repository` are all not set
-   */
-  releaseAsarURL?: string
-  /**
    * whether to receive beta update
    */
   receiveBeta?: boolean
   logger?: Logger
-  overrideFunctions?: UpdaterOverrideFunctions
-  downloadConfig?: UpdaterDownloadConfig
 }

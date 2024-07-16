@@ -3,6 +3,7 @@ import { existsSync, renameSync } from 'node:fs'
 import { app } from 'electron'
 import { type Logger, Updater, type UpdaterOption } from './updater'
 import { getPathFromAppNameAsar, isDev } from './utils'
+import type { IProvider } from './provider'
 
 export * from './updater'
 
@@ -28,6 +29,10 @@ type Promisable<T> = T | Promise<T>
 type OnInstallFunction = (install: VoidFunction, tempAsarPath: string, appNameAsarPath: string, logger: Logger) => Promisable<void>
 
 export interface AppOption {
+  /**
+   * update provider
+   */
+  provider: IProvider
   /**
    * updater options
    */
@@ -92,9 +97,10 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
  * ```
  */
 export async function initApp(
-  appOptions: AppOption = {},
+  appOptions: AppOption,
 ): Promise<void> {
   const {
+    provider,
     updater,
     onInstall = defaultOnInstall,
     beforeStart,
@@ -103,7 +109,7 @@ export async function initApp(
 
   let updaterInstance
   if (typeof updater === 'object' || !updater) {
-    updaterInstance = new Updater(updater)
+    updaterInstance = new Updater(provider, updater)
   } else {
     updaterInstance = await updater()
   }
@@ -119,7 +125,18 @@ export async function initApp(
       await onInstall(() => renameSync(tempAsarPath, appNameAsarPath), tempAsarPath, appNameAsarPath, logger)
     }
 
-    const mainFilePath = join(isDev ? __EIU_MAIN_DEV_DIR__ : appNameAsarPath, __EIU_MAIN_FILE__)
+    // logger.debug(`app.getAppPath(): ${app.getAppPath()}`)
+    // logger.debug(`appNameAsar: ${appNameAsarPath}`)
+    // logger.debug(`__EIU_MAIN_FILE__: ${__EIU_MAIN_FILE__}`)
+    // logger.debug(`__EIU_MAIN_DEV_DIR__: ${__EIU_MAIN_DEV_DIR__}`)
+    // logger.debug(`mainFilePath: ${mainFilePath}`)
+    const mainFilePath = join(
+      isDev
+        ? join(app.getAppPath(), __EIU_MAIN_DEV_DIR__)
+        : appNameAsarPath,
+      'main',
+      __EIU_MAIN_FILE__,
+    )
     await beforeStart?.(mainFilePath, logger)
     // eslint-disable-next-line ts/no-require-imports, ts/no-var-requires
     require(mainFilePath)(updaterInstance)

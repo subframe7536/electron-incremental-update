@@ -4,3 +4,5 @@ vite.d.ts
 vite.js
 utils.d.ts
 utils.js
+provider.d.ts
+provider.js
