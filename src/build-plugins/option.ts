@@ -239,12 +239,27 @@ export interface ElectronUpdaterOptions {
   }
 }
 
+type ParseOptionReturn = {
+  buildAsarOption: BuildAsarOption
+  buildEntryOption: Required<Omit<BuildEntryOption, 'postBuild'>>
+  buildVersionOption: BuildVersionOption
+  postBuild: ((args: {
+    getPathFromEntryOutputDir: (...paths: string[]) => string
+    copyToEntryOutputDir: (options: {
+      from: string
+      to?: string
+      skipIfExist?: boolean
+    }) => void
+  }) => Promisable<void>) | undefined
+  cert: string
+}
+
 export function parseOptions(
   pkg: PKG,
   sourcemap = false,
   minify = false,
   options: ElectronUpdaterOptions = {},
-) {
+): ParseOptionReturn {
   const {
     minimumVersion = '0.0.0',
     entry: {

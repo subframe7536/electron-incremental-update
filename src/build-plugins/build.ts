@@ -22,7 +22,7 @@ export async function buildAsar({
   gzipPath,
   electronDistPath,
   rendererDistPath,
-}: BuildAsarOption) {
+}: BuildAsarOption): Promise<void> {
   renameSync(rendererDistPath, join(electronDistPath, 'renderer'))
   writeFileSync(join(electronDistPath, 'version'), version)
   await Asar.createPackage(electronDistPath, asarOutputPath)
@@ -38,7 +38,7 @@ export async function buildVersion({
   minimumVersion,
   generateSignature,
   generateVersionJson,
-}: BuildVersionOption) {
+}: BuildVersionOption): Promise<void> {
   let _json: UpdateJSON = {
     beta: {
       minimumVersion: version,
@@ -59,7 +59,7 @@ export async function buildVersion({
       } else {
         log.warn('old version json is invalid, ignore it')
       }
-    } catch (error) {}
+    } catch {}
   }
 
   const buffer = readFileSync(gzipPath)
@@ -100,7 +100,7 @@ export async function buildEntry(
   }: Required<Omit<BuildEntryOption, 'postBuild'>>,
   define: Record<string, string>,
   protectedStrings?: string[],
-) {
+): Promise<void> {
   const option: BuildOptions = mergeConfig(
     {
       entryPoints: {
@@ -159,7 +159,7 @@ export async function buildEntry(
   bytecodeLog.info(`${filePaths.length} bundles compiled into bytecode`, { timestamp: true })
 }
 
-function getCert(code: string) {
+function getCert(code: string): string[] {
   const cert = code.match(/-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n/)?.[0]
   return cert ? [cert] : []
 }

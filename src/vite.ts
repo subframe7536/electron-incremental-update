@@ -1,6 +1,6 @@
 import { basename, join, resolve } from 'node:path'
 import { cpSync, existsSync, rmSync } from 'node:fs'
-import type { BuildOptions, InlineConfig, Plugin } from 'vite'
+import type { BuildOptions, InlineConfig, Plugin, PluginOption } from 'vite'
 import { mergeConfig, normalizePath } from 'vite'
 import ElectronSimple from 'vite-plugin-electron/simple'
 import { startup } from 'vite-plugin-electron'
@@ -41,14 +41,16 @@ type MakeRequiredAndReplaceKey<
 export function debugStartup(args: {
   startup: (argv?: string[]) => Promise<void>
   reload: () => void
-}) {
-  process.env.VSCODE_DEBUG
+}): void {
+  if (process.env.VSCODE_DEBUG) {
     // For `.vscode/.debug.script.mjs`
-    ? console.log('[startup] Electron App')
-    : args.startup()
+    console.log('[startup] Electron App')
+  } else {
+    args.startup()
+  }
 }
 
-function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files']) {
+function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files']): string {
   let mainFilePath
   if (typeof options === 'string') {
     mainFilePath = basename(options)
@@ -64,7 +66,7 @@ function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files']) {
   return mainFilePath.replace(/\.[cm]?ts$/, '.js')
 }
 
-function parseVersionPath(versionPath: string) {
+function parseVersionPath(versionPath: string): string {
   versionPath = normalizePath(versionPath)
   if (!versionPath.startsWith('./')) {
     versionPath = './' + versionPath
@@ -197,7 +199,9 @@ export interface ElectronWithUpdaterOptions {
  *   }
  * })
  */
-export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
+export async function electronWithUpdater(
+  options: ElectronWithUpdaterOptions,
+): Promise<PluginOption[] | undefined> {
   let {
     isBuild,
     pkg = await loadPackageJSON() as PKG,
@@ -212,11 +216,11 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   } = options
   if (!pkg) {
     log.error(`package.json not found`, { timestamp: true })
-    return null
+    return undefined
   }
   if (!pkg.version || !pkg.name || !pkg.main) {
     log.error(`package.json not valid`, { timestamp: true })
-    return null
+    return undefined
   }
   const _options = parseOptions(pkg, sourcemap, minify, updater)
   const bytecodeOptions = typeof bytecode === 'object'
@@ -230,7 +234,7 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
   try {
     rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
     rmSync(_options.buildEntryOption.entryOutputDirPath, { recursive: true, force: true })
-  } catch (ignore) { }
+  } catch { }
   log.info(`remove old files`, { timestamp: true })
 
   const { buildAsarOption, buildEntryOption, buildVersionOption, postBuild, cert } = _options
@@ -254,7 +258,7 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
     __EUI_VERSION_PATH__: JSON.stringify(parseVersionPath(buildVersionOption.versionPath)),
   }
 
-  const _buildEntry = async () => {
+  const _buildEntry = async (): Promise<void> => {
     await buildEntry(
       buildEntryOption,
       define,
@@ -298,7 +302,11 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
           await _buildEntry()
           await _postBuild()
         }
-        _main.onstart ? _main.onstart(args) : args.startup()
+        if (_main.onstart) {
+          _main.onstart(args)
+        } else {
+          args.startup()
+        }
       },
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
@@ -355,17 +363,19 @@ export async function electronWithUpdater(options: ElectronWithUpdaterOptions) {
     },
   }
 
-  logParsedOptions && log.info(
-    JSON.stringify(
-      {
-        ...electronPluginOptions,
-        updater: { buildAsarOption, buildEntryOption, buildVersionOption },
-      },
-      (key, value) => (((key === 'privateKey' || key === 'cert') && !(typeof logParsedOptions === 'object' && logParsedOptions.showKeys === true)) ? '***' : value),
-      2,
-    ),
-    { timestamp: true },
-  )
+  if (logParsedOptions) {
+    log.info(
+      JSON.stringify(
+        {
+          ...electronPluginOptions,
+          updater: { buildAsarOption, buildEntryOption, buildVersionOption },
+        },
+        (key, value) => (((key === 'privateKey' || key === 'cert') && !(typeof logParsedOptions === 'object' && logParsedOptions.showKeys === true)) ? '***' : value),
+        2,
+      ),
+      { timestamp: true },
+    )
+  }
 
   let extraHmrPlugin: Plugin | undefined
 

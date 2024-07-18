@@ -44,7 +44,7 @@ export function toRelativePath(filename: string, importer: string): string {
 }
 export function compileToBytecode(code: string): Promise<Buffer> {
   let data = Buffer.from([])
-  const logErr = (...args: any[]) => log.error(args.join(' '), { timestamp: true })
+  const logErr = (...args: any[]): void => log.error(args.join(' '), { timestamp: true })
 
   const electronPath = getElectronPath()
   const bytecodePath = getBytecodeCompilerPath()

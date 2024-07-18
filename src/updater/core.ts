@@ -48,7 +48,7 @@ export class Updater extends EventEmitter<{
   /**
    * whether receive beta version
    */
-  get receiveBeta() {
+  get receiveBeta(): boolean {
     return !!this.options.receiveBeta
   }
 
@@ -100,7 +100,7 @@ export class Updater extends EventEmitter<{
    */
   private async fetch(format: 'json', data?: UpdateJSON): Promise<UpdateJSON | undefined>
   private async fetch(format: 'buffer', data?: Buffer): Promise<Buffer | undefined>
-  private async fetch(format: 'json' | 'buffer', data?: Uint8Array | UpdateJSON) {
+  private async fetch(format: 'json' | 'buffer', data?: Uint8Array | UpdateJSON): Promise<any> {
     if (existsSync(this.tmpFilePath)) {
       this.logger?.warn(`remove tmp file: ${this.tmpFilePath}`)
       rmSync(this.tmpFilePath)

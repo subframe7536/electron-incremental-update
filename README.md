@@ -181,7 +181,7 @@ initApp({
 in `electron/main/index.ts`
 
 ```ts
-import { startupWithUpdater, UpdaterError } from 'electron-incremental-update'
+import { UpdaterError, startupWithUpdater } from 'electron-incremental-update'
 import { getPathFromAppNameAsar, getVersions } from 'electron-incremental-update/utils'
 import { app } from 'electron'
 
@@ -199,7 +199,7 @@ export default startupWithUpdater((updater) => {
   }
   updater.logger = console
   updater.receiveBeta = true
-  
+
   updater.checkUpdate().then(async (result) => {
     if (result === undefined) {
       console.log('Update Unavailable')
@@ -276,7 +276,7 @@ import Database from 'better-sqlite3'
 
 const db = new Database(':memory:', { nativeBinding: './better_sqlite3.node' })
 
-export function test() {
+export function test(): void {
   db.exec(
     'DROP TABLE IF EXISTS employees; '
     + 'CREATE TABLE IF NOT EXISTS employees (name TEXT, salary INTEGER)',

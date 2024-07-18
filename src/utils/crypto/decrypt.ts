@@ -1,5 +1,4 @@
 import { createDecipheriv, createVerify } from 'node:crypto'
-import type { Promisable } from '@subframe7536/type-utils'
 import { hashString } from './utils'
 
 export function decrypt(encryptedText: string, key: Buffer, iv: Buffer): string {

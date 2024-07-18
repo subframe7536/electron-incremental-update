@@ -64,7 +64,9 @@ export interface AppOption {
  *   updater.checkUpdate()
  * })
  */
-export function startupWithUpdater(fn: (updater: Updater) => Promisable<void>) {
+export function startupWithUpdater(
+  fn: (updater: Updater) => Promisable<void>,
+): (updater: Updater) => Promisable<void> {
   return fn
 }
 

@@ -4,7 +4,13 @@ import { generate } from 'selfsigned'
 import { log } from './constant'
 import type { CertSubject, DistinguishedName } from './option'
 
-export function generateKeyPair(keyLength: number, subject: CertSubject, days: number, privateKeyPath: string, certPath: string) {
+export function generateKeyPair(
+  keyLength: number,
+  subject: CertSubject,
+  days: number,
+  privateKeyPath: string,
+  certPath: string,
+): void {
   const privateKeyDir = dirname(privateKeyPath)
   if (!existsSync(privateKeyDir)) {
     mkdirSync(privateKeyDir, { recursive: true })
@@ -41,7 +47,9 @@ export function parseKeys({
   days,
 }: GetKeysOption): { privateKey: string, cert: string } {
   const keysDir = dirname(privateKeyPath)
-  !existsSync(keysDir) && mkdirSync(keysDir)
+  if (!existsSync(keysDir)) {
+    mkdirSync(keysDir)
+  }
 
   if (!existsSync(privateKeyPath) || !existsSync(certPath)) {
     log.warn('no key pair found, generate new key pair')

@@ -2,7 +2,7 @@
  * handle all unhandled error
  * @param callback callback function
  */
-export function handleUnexpectedErrors(callback: (err: unknown) => void) {
+export function handleUnexpectedErrors(callback: (err: unknown) => void): void {
   process.on('uncaughtException', callback)
   process.on('unhandledRejection', callback)
 }
@@ -39,7 +39,7 @@ export function parseVersion(version: string): Version {
   return ret
 }
 
-export function isLowerVersionDefault(oldVer: string, newVer: string) {
+export function isLowerVersionDefault(oldVer: string, newVer: string): boolean {
   const oldV = parseVersion(oldVer)
   const newV = parseVersion(newVer)
 
@@ -81,6 +81,6 @@ export type UpdateJSON = UpdateInfo & {
 }
 
 export function isUpdateJSON(json: any): json is UpdateJSON {
-  const is = (j: any) => !!(j && j.minimumVersion && j.signature && j.size && j.version)
+  const is = (j: any): boolean => !!(j && j.minimumVersion && j.signature && j.size && j.version)
   return is(json) && is(json?.beta)
 }

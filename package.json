@@ -65,7 +65,7 @@
     "selfsigned": "^2.4.1"
   },
   "devDependencies": {
-    "@subframe7536/eslint-config": "^0.7.1",
+    "@subframe7536/eslint-config": "^0.7.2",
     "@types/babel__core": "^7.20.5",
     "@types/node": "^20.14.11",
     "bumpp": "^9.4.1",

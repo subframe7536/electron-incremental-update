@@ -1,5 +1,4 @@
-import type { DownloadingInfo } from '../provider'
-import type { UpdateInfo, UpdateJSON } from '../utils'
+import type { UpdateJSON } from '../utils'
 
 export const ErrorInfo = {
   download: 'Download failed',

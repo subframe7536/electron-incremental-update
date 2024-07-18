@@ -32,21 +32,21 @@ export const isLinux = process.platform === 'linux'
  *
  * if is in dev, **always** return `'DEV.asar'`
  */
-export function getPathFromAppNameAsar(...path: string[]) {
+export function getPathFromAppNameAsar(...path: string[]): string {
   return isDev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${app.name}.asar`, ...path)
 }
 
 /**
  * get app version, if is in dev, return `getEntryVersion()`
  */
-export function getAppVersion() {
+export function getAppVersion(): string {
   return isDev ? getEntryVersion() : readFileSync(getPathFromAppNameAsar('version'), 'utf-8')
 }
 
 /**
  * get entry version
  */
-export function getEntryVersion() {
+export function getEntryVersion(): string {
   return app.getVersion()
 }
 
@@ -62,7 +62,7 @@ export function requireNative<T = any>(moduleName: string): T {
 /**
  * Restarts the Electron app.
  */
-export function restartApp() {
+export function restartApp(): void {
   app.relaunch()
   app.quit()
 }
@@ -71,15 +71,17 @@ export function restartApp() {
  * fix app use model id, only for Windows
  * @param id app id, default is `org.${electron.app.name}`
  */
-export function setAppUserModelId(id?: string) {
-  isWin && app.setAppUserModelId(id ?? `org.${app.name}`)
+export function setAppUserModelId(id?: string): void {
+  if (isWin) {
+    app.setAppUserModelId(id ?? `org.${app.name}`)
+  }
 }
 
 /**
  * disable hardware acceleration for Windows 7
  */
-export function disableHWAccForWin7() {
-  // eslint-disable-next-line ts/no-var-requires, ts/no-require-imports
+export function disableHWAccForWin7(): void {
+  // eslint-disable-next-line ts/no-require-imports
   if (require('node:os').release().startsWith('6.1')) {
     app.disableHardwareAcceleration()
   }
@@ -90,10 +92,10 @@ export function disableHWAccForWin7() {
  * @param window brwoser window to show
  * @returns `false` if the app is running
  */
-export function singleInstance(window?: BrowserWindow) {
+export function singleInstance(window?: BrowserWindow): boolean {
   const result = app.requestSingleInstanceLock()
-  result
-    ? app.on('second-instance', () => {
+  if (result) {
+    app.on('second-instance', () => {
       if (window) {
         window.show()
         if (window.isMinimized()) {
@@ -102,7 +104,9 @@ export function singleInstance(window?: BrowserWindow) {
         window.focus()
       }
     })
-    : app.quit()
+  } else {
+    app.quit()
+  }
 
   return result
 }
@@ -113,7 +117,7 @@ export function singleInstance(window?: BrowserWindow) {
  * useful for portable Windows app
  * @param dirName dir name, default to `data`
  */
-export function setPortableAppDataPath(dirName = 'data') {
+export function setPortableAppDataPath(dirName = 'data'): void {
   const portablePath = join(dirname(app.getPath('exe')), dirName)
 
   if (!existsSync(portablePath)) {
@@ -147,10 +151,12 @@ export function waitAppReady(timeout = 1000): Promise<void> {
  * @param win window
  * @param htmlFilePath html file path, default is `index.html`
  */
-export function loadPage(win: BrowserWindow, htmlFilePath = 'index.html') {
-  isDev
-    ? win.loadURL(process.env.VITE_DEV_SERVER_URL! + htmlFilePath)
-    : win.loadFile(getPathFromAppNameAsar('renderer', htmlFilePath))
+export function loadPage(win: BrowserWindow, htmlFilePath = 'index.html'): void {
+  if (isDev) {
+    win.loadURL(process.env.VITE_DEV_SERVER_URL! + htmlFilePath)
+  } else {
+    win.loadFile(getPathFromAppNameAsar('renderer', htmlFilePath))
+  }
 }
 
 export function getPathFromPreload(...paths: string[]): string {
