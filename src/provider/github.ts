@@ -53,7 +53,11 @@ export class GitHubProvider implements IProvider {
     )
   }
 
-  public async downloadBuffer(name: string, { version, size }: UpdateInfo, onDownloading?: (info: DownloadingInfo) => void): Promise<Buffer> {
+  public async downloadAsar(
+    name: string,
+    { version, size }: UpdateInfo,
+    onDownloading?: (info: DownloadingInfo) => void,
+  ): Promise<Buffer> {
     return await downloadAsarBufferDefault(
       this.parseURL(true, `releases/download/v${version}/${name}-${version}.asar.gz`),
       { userAgent: this.ua, accept: 'application/octet-stream', ...this.extraHeaders },

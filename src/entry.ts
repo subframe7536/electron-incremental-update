@@ -138,7 +138,7 @@ export async function initApp(
       __EIU_MAIN_FILE__,
     )
     await beforeStart?.(mainFilePath, logger)
-    // eslint-disable-next-line ts/no-require-imports, ts/no-var-requires
+    // eslint-disable-next-line ts/no-require-imports
     require(mainFilePath)(updaterInstance)
   } catch (error) {
     logger.error('startup error', error)

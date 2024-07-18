@@ -33,7 +33,7 @@ export async function downloadUpdateJSONDefault(url: string, headers: Record<str
         } else {
           throw Error
         }
-      } catch (ignore) {
+      } catch {
         reject(new Error('invalid update json'))
       }
     })
@@ -45,13 +45,22 @@ export async function downloadAsarBufferDefault(
   headers: Record<string, any>,
   total: number,
   onDownloading?: OnDownloading,
-) {
-  let current = 0
+): Promise<Buffer> {
+  let transferred = 0
+  let time = Date.now()
   return await downlaodFn<Buffer>(url, headers, (resp, resolve) => {
-    let data: any[] = []
+    let data: Buffer[] = []
     resp.on('data', (chunk) => {
-      current += chunk.length
-      onDownloading?.({ percent: `${+(current / total).toFixed(2) * 100}%`, total, current })
+      transferred += chunk.length
+      const current = Date.now()
+      onDownloading?.({
+        percent: +(transferred / total).toFixed(2) * 100,
+        total,
+        transferred,
+        delta: chunk.length,
+        bps: chunk.length / ((current - time) * 1e3),
+      })
+      time = current
       data.push(chunk)
     })
     resp.on('end', () => resolve(Buffer.concat(data)))

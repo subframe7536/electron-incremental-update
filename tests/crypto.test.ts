@@ -5,18 +5,20 @@ import { generateKeyPair } from '../src/build-plugins/key'
 import { decrypt, encrypt, hashString, signature, verifySignatureDefault } from '../src/utils/crypto'
 
 let plain = ''
-for (let i = 0; i < 1_000; i++) {
+
+for (let i = 0; i < 1e3; i++) {
   plain += 'hello+world'
 }
-describe('test aes', async () => {
+
+describe('test aes', () => {
   const k = hashString(Buffer.from(plain, 'utf-8'), 32)
   const iv = hashString(Buffer.from(plain, 'utf-8'), 16)
-  it('test', async () => {
+  it('test', () => {
     const e = encrypt(plain, k, iv)
     expect(decrypt(e, k, iv)).toBe(plain)
   })
 })
-describe('test verify', async () => {
+describe('test verify', () => {
   const buffer = Buffer.from(plain, 'utf-8')
   const dir = join(__dirname.replace(/\\/g, '/'), '/keys')
   const privateKeyPath = join(dir, '/keys/key.pem')
@@ -25,7 +27,7 @@ describe('test verify', async () => {
   const privateKey = readFileSync(privateKeyPath, { encoding: 'utf-8' })
   const cert = readFileSync(certPath, { encoding: 'utf-8' })
   const version = '0.0.0-alpha1'
-  const sig = await signature(buffer, privateKey, cert, version)
+  const sig = signature(buffer, privateKey, cert, version)
   it('verify passed', () => {
     expect(verifySignatureDefault(buffer, sig, cert)).toBe(version)
   })

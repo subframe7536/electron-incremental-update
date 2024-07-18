@@ -1,15 +1,17 @@
-import type { UpdateJSON } from '../utils'
+import type { DownloadingInfo } from '../provider'
+import type { UpdateInfo, UpdateJSON } from '../utils'
 
 export const ErrorInfo = {
   download: 'Download failed',
   validate: 'Validate failed',
   param: 'Missing params',
-  version: 'Unsatisfied version',
 } as const
 
 export class UpdaterError extends Error {
-  constructor(msg: typeof ErrorInfo[keyof typeof ErrorInfo], info: string) {
-    super(msg + ': ' + info)
+  public code: keyof typeof ErrorInfo
+  constructor(msg: keyof typeof ErrorInfo, info: string) {
+    super(ErrorInfo[msg] + ': ' + info)
+    this.code = msg
   }
 }
 

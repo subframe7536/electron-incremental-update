@@ -6,9 +6,13 @@ export type OnDownloading = (progress: DownloadingInfo) => void
 
 export interface DownloadingInfo {
   /**
-   * downloaded percent, 0% - 100%
+   * download delta
    */
-  percent: `${number}%`
+  delta: number
+  /**
+   * downloaded percent, 0 ~ 100
+   */
+  percent: number
   /**
    * total size
    */
@@ -16,7 +20,11 @@ export interface DownloadingInfo {
   /**
    * downloaded size
    */
-  current: number
+  transferred: number
+  /**
+   * download speed, bytes per second
+   */
+  bps: number
 }
 
 export interface IProvider {
@@ -42,7 +50,7 @@ export interface IProvider {
    * @param updateInfo existing update info
    * @param onDownloading hook for on downloading
    */
-  downloadBuffer: (
+  downloadAsar: (
     name: string,
     updateInfo: UpdateInfo,
     onDownloading?: (info: DownloadingInfo) => void
@@ -53,7 +61,7 @@ export interface IProvider {
    * @param newVer new version string
    * @returns if version1 < version2
    */
-  isLowerVersion: (oldVer: string, newVer: string) => Promisable<boolean>
+  isLowerVersion: (oldVer: string, newVer: string) => boolean
   /**
    * verify asar signature
    * @param buffer file buffer
