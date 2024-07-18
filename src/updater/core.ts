@@ -27,7 +27,6 @@ export class Updater extends EventEmitter<{
 }> {
   private CERT = __EIU_SIGNATURE_CERT__
   private info?: UpdateInfo
-  private options: UpdaterOption
   private asarPath: string
   private gzipPath: string
   private tmpFilePath: string
@@ -44,18 +43,14 @@ export class Updater extends EventEmitter<{
    * @param isDownloadAsar whether is download asar
    */
   public handleURL?: URLHandler
-
   /**
-   * whether receive beta version
+   * whether to receive beta update
    */
-  get receiveBeta(): boolean {
-    return !!this.options.receiveBeta
-  }
-
-  set receiveBeta(receiveBeta: boolean) {
-    this.options.receiveBeta = receiveBeta
-  }
-
+  public receiveBeta?: boolean
+  /**
+   * whether force update in DEV
+   */
+  public forceUpdate?: boolean
   /**
    * initialize incremental updater
    * @param provider update provider
@@ -64,10 +59,12 @@ export class Updater extends EventEmitter<{
   constructor(provider: IProvider, option: UpdaterOption = {}) {
     super()
     this.provider = provider
-    this.options = option
+    this.receiveBeta = option.receiveBeta
+
     if (option.SIGNATURE_CERT) {
       this.CERT = option.SIGNATURE_CERT
     }
+
     if (option.logger) {
       this.logger = option.logger
     }
@@ -154,14 +151,14 @@ export class Updater extends EventEmitter<{
    */
   public async checkUpdate(data: UpdateJSON): Promise<boolean>
   public async checkUpdate(data?: UpdateJSON): Promise<boolean> {
-    const emitUnavailable = (msg: string): void => {
+    const emitUnavailable = (msg: string): false => {
       this.logger?.info(msg)
       this.emit('update-unavailable', msg)
+      return false
     }
     const _data = await this.fetch('json', data)
     if (!_data) {
-      emitUnavailable('failed to get update info')
-      return false
+      return emitUnavailable('failed to get update info')
     }
     let { signature, size, version, minimumVersion, beta } = _data
     if (this.receiveBeta) {
@@ -172,24 +169,21 @@ export class Updater extends EventEmitter<{
     }
     this.logger?.debug(`checked update, version: ${version}, size: ${size}, signature: ${signature}`)
 
-    if (isDev) {
-      emitUnavailable('in dev mode, skip check update')
-      return false
+    if (isDev && !this.forceUpdate && !data) {
+      return emitUnavailable('skip check update in dev mode, to force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON')
     }
     const isLowerVersion = this.provider.isLowerVersion
     const entryVersion = getEntryVersion()
     const appVersion = getAppVersion()
 
     if (isLowerVersion(entryVersion, minimumVersion)) {
-      emitUnavailable(`entry version (${entryVersion}) < minimumVersion (${minimumVersion})`)
-      return false
+      return emitUnavailable(`entry version (${entryVersion}) < minimumVersion (${minimumVersion})`)
     }
 
     this.logger?.info(`check update: current version is ${appVersion}, new version is ${version}`)
 
     if (!isLowerVersion(appVersion, version)) {
-      emitUnavailable(`current version (${appVersion}) < new version (${version})`)
-      return false
+      return emitUnavailable(`current version (${appVersion}) < new version (${version})`)
     }
     this.logger?.info(`update available: ${version}`)
     this.info = { signature, minimumVersion, version, size }
@@ -208,11 +202,12 @@ export class Updater extends EventEmitter<{
    */
   public async download(data: Uint8Array, sig: string): Promise<boolean>
   public async download(data?: Uint8Array, sig?: string): Promise<boolean> {
-    if (!this.info) {
-      this.err('download failed', 'param', 'no update info, call `checkUpdate` first')
+    const _sig = sig ?? this.info?.signature
+
+    if (!_sig) {
+      this.err('download failed', 'param', 'no update signature, please call `checkUpdate` first')
       return false
     }
-    const _sig = sig ?? this.info.signature
 
     // if typeof data is Buffer, the version will not be used
     const buffer = await this.fetch('buffer', data ? Buffer.from(data) : undefined)
@@ -226,7 +221,7 @@ export class Updater extends EventEmitter<{
     this.logger?.debug('verify start')
     const _ver = await this.provider.verifySignaure(buffer, _sig, this.CERT)
     if (!_ver) {
-      this.err('verify failed', 'validate', 'invalid signature / certificate pair')
+      this.err('download failed', 'validate', 'invalid signature / certificate pair')
       return false
     }
     this.logger?.debug('verify success')
@@ -244,7 +239,7 @@ export class Updater extends EventEmitter<{
       this.emit('update-downloaded')
       return true
     } catch (error) {
-      this.err('unwrap asar failed', 'download', `fail to unwrap asar file, ${error}`)
+      this.err('download failed', 'download', `fail to unwrap asar file, ${error}`)
       return false
     }
   }
