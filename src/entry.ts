@@ -26,7 +26,7 @@ type Promisable<T> = T | Promise<T>
  * @param logger logger
  * @default install(); logger.info(`update success!`)
  */
-type OnInstallFunction = (install: VoidFunction, tempAsarPath: string, appNameAsarPath: string, logger: Logger) => Promisable<void>
+type OnInstallFunction = (install: VoidFunction, tempAsarPath: string, appNameAsarPath: string, logger?: Logger) => Promisable<void>
 
 export interface AppOption {
   /**
@@ -46,13 +46,13 @@ export interface AppOption {
    * @param mainFilePath main file path of `${app.name}.asar`
    * @param logger logger
    */
-  beforeStart?: (mainFilePath: string, logger: Logger) => Promisable<void>
+  beforeStart?: (mainFilePath: string, logger?: Logger) => Promisable<void>
   /**
    * hooks on app start up error
    * @param err installing or startup error
    * @param logger logger
    */
-  onStartError?: (err: unknown, logger: Logger) => void
+  onStartError?: (err: unknown, logger?: Logger) => void
 }
 
 /**
@@ -72,7 +72,7 @@ export function startupWithUpdater(
 
 const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
   install()
-  logger.info(`update success!`)
+  logger?.info(`update success!`)
 }
 
 /**
@@ -116,14 +116,22 @@ export async function initApp(
     updaterInstance = await updater()
   }
 
-  const logger = updaterInstance.logger || console
+  let logger = updaterInstance.logger
+  if (isDev && !logger) {
+    logger = {
+      info: (...args) => console.log('[EIU-INFO ]', ...args),
+      debug: (...args) => console.log('[EIU-DEBUG]', ...args),
+      warn: (...args) => console.log('[EIU-WARN ]', ...args),
+      error: (...args) => console.error('[EIU-ERROR]', ...args),
+    }
+  }
   try {
     const appNameAsarPath = getPathFromAppNameAsar()
 
     // do update: replace the old asar with new asar
     const tempAsarPath = `${appNameAsarPath}.tmp`
     if (existsSync(tempAsarPath)) {
-      logger.info(`installing new asar: ${tempAsarPath}`)
+      logger?.info(`installing new asar: ${tempAsarPath}`)
       await onInstall(() => renameSync(tempAsarPath, appNameAsarPath), tempAsarPath, appNameAsarPath, logger)
     }
 
@@ -143,7 +151,7 @@ export async function initApp(
     // eslint-disable-next-line ts/no-require-imports
     require(mainFilePath)(updaterInstance)
   } catch (error) {
-    logger.error('startup error', error)
+    logger?.error('startup error', error)
     onStartError?.(error, logger)
     app.quit()
   }
