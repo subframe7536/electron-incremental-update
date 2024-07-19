@@ -3,7 +3,7 @@ import { type UpdateJSON, isUpdateJSON } from '../utils/version'
 import { waitAppReady } from '../utils/electron'
 import type { OnDownloading } from './types'
 
-async function downlaodFn<T>(
+async function downloadFn<T>(
   url: string,
   headers: Record<string, any>,
   onResponse: (resp: IncomingMessage, resolve: (data: T) => void, reject: (e: any) => void) => void,
@@ -21,8 +21,8 @@ async function downlaodFn<T>(
     request.end()
   })
 }
-export async function downloadUpdateJSONDefault(url: string, headers: Record<string, any>): Promise<UpdateJSON> {
-  return await downlaodFn<UpdateJSON>(url, headers, (resp, resolve, reject) => {
+export async function defaultDownloadUpdateJSON(url: string, headers: Record<string, any>): Promise<UpdateJSON> {
+  return await downloadFn<UpdateJSON>(url, headers, (resp, resolve, reject) => {
     let data = ''
     resp.on('data', chunk => (data += chunk))
     resp.on('end', () => {
@@ -40,7 +40,7 @@ export async function downloadUpdateJSONDefault(url: string, headers: Record<str
   })
 }
 
-export async function downloadAsarBufferDefault(
+export async function defaultDownloadAsar(
   url: string,
   headers: Record<string, any>,
   total: number,
@@ -48,7 +48,7 @@ export async function downloadAsarBufferDefault(
 ): Promise<Buffer> {
   let transferred = 0
   let time = Date.now()
-  return await downlaodFn<Buffer>(url, headers, (resp, resolve) => {
+  return await downloadFn<Buffer>(url, headers, (resp, resolve) => {
     let data: Buffer[] = []
     resp.on('data', (chunk) => {
       transferred += chunk.length

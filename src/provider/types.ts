@@ -1,7 +1,7 @@
 import type { Promisable } from '@subframe7536/type-utils'
 import type { UpdateInfo, UpdateJSON } from '../utils'
 
-export type URLHandler = (url: string, isDownloadAsar: boolean) => string
+export type URLHandler = (url: URL, isDownloadAsar: boolean) => Promisable<URL | string | undefined | null>
 export type OnDownloading = (progress: DownloadingInfo) => void
 
 export interface DownloadingInfo {
@@ -62,6 +62,12 @@ export interface IProvider {
    * @returns if version1 < version2
    */
   isLowerVersion: (oldVer: string, newVer: string) => boolean
+  /**
+   * unzip file
+   * @param buffer source buffer
+   * @param targetFilePath target file path
+   */
+  unzipFile: (buffer: Buffer, targetFilePath: string) => Promise<void>
   /**
    * verify asar signature
    * @param buffer file buffer
