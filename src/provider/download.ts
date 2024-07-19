@@ -1,6 +1,5 @@
-import { type IncomingMessage, net } from 'electron'
+import { type IncomingMessage, app, net } from 'electron'
 import { type UpdateJSON, isUpdateJSON } from '../utils/version'
-import { waitAppReady } from '../utils/electron'
 import type { OnDownloading } from './types'
 
 async function downloadFn<T>(
@@ -8,7 +7,7 @@ async function downloadFn<T>(
   headers: Record<string, any>,
   onResponse: (resp: IncomingMessage, resolve: (data: T) => void, reject: (e: any) => void) => void,
 ): Promise<T> {
-  await waitAppReady()
+  await app.whenReady()
   return new Promise((resolve, reject) => {
     const request = net.request({ url, method: 'GET', redirect: 'follow' })
     Object.keys(headers).forEach(key => request.setHeader(key, headers[key]))

@@ -1,5 +1,6 @@
-import type { UpdateInfo, UpdateJSON } from '../utils'
-import { defaultIsLowerVersion, defaultUnzipFile, defaultVerify } from '../utils'
+import { defaultVerify } from '../utils/crypto'
+import { defaultUnzipFile } from '../utils/unzip'
+import { type UpdateInfo, type UpdateJSON, defaultIsLowerVersion } from '../utils/version'
 import type { DownloadingInfo, IProvider } from './types'
 
 export abstract class BaseProvider implements IProvider {

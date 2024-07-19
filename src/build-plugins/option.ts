@@ -1,6 +1,8 @@
 import type { Promisable } from '@subframe7536/type-utils'
 import type { BuildOptions } from 'esbuild'
-import { type UpdateJSON, defaultSignature, defaultVersionJsonGenerator, defaultZipFile } from '../utils'
+import { type UpdateJSON, defaultVersionJsonGenerator } from '../utils/version'
+import { defaultZipFile } from '../utils/zip'
+import { defaultSignature } from '../utils/crypto'
 import { parseKeys } from './key'
 
 export interface PKG {

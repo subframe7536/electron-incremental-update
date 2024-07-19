@@ -10,6 +10,7 @@ export default defineConfig([
     format: ['esm', 'cjs'],
     clean: true,
     dts: true,
+    treeshake: true,
     external: ['electron', 'esbuild', 'vite'],
   },
   {
@@ -18,6 +19,7 @@ export default defineConfig([
     },
     format: 'esm',
     dts: true,
+    treeshake: true,
     external: ['electron', 'esbuild', 'vite'],
   },
 ])

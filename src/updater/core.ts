@@ -1,5 +1,5 @@
 import { existsSync, rmSync } from 'node:fs'
-import { EventEmitter } from 'node:stream'
+import { EventEmitter } from 'node:events'
 import { app } from 'electron'
 import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
 import type { DownloadingInfo, IProvider, URLHandler } from '../provider'
@@ -184,8 +184,8 @@ export class Updater extends EventEmitter<{
    * @param data existing `asar.gz` buffer
    * @param sig signature
    */
-  public async download(data: Uint8Array, sig: string): Promise<boolean>
-  public async download(data?: Uint8Array, sig?: string): Promise<boolean> {
+  public async download(data: Uint8Array | Buffer, sig: string): Promise<boolean>
+  public async download(data?: Uint8Array | Buffer, sig?: string): Promise<boolean> {
     const _sig = sig ?? this.info?.signature
 
     if (!_sig) {

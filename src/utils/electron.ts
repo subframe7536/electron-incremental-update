@@ -128,25 +128,6 @@ export function setPortableAppDataPath(dirName = 'data'): void {
 }
 
 /**
- * ensure app is ready.
- * @param timeout wait timeout, @default 1000
- */
-export function waitAppReady(timeout = 1000): Promise<void> {
-  return app.isReady()
-    ? Promise.resolve()
-    : new Promise((resolve, reject) => {
-      const _ = setTimeout(() => {
-        reject(new Error('app is not ready'))
-      }, timeout)
-
-      app.whenReady().then(() => {
-        clearTimeout(_)
-        resolve()
-      })
-    })
-}
-
-/**
  * load `process.env.VITE_DEV_SERVER_URL` when dev, else load html file
  * @param win window
  * @param htmlFilePath html file path, default is `index.html`

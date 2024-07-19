@@ -2,8 +2,8 @@ import { join } from 'node:path'
 import { existsSync, renameSync } from 'node:fs'
 import { app } from 'electron'
 import { type Logger, Updater, type UpdaterOption } from './updater'
-import { getPathFromAppNameAsar, isDev } from './utils'
 import type { IProvider } from './provider'
+import { getPathFromAppNameAsar, isDev } from './utils/electron'
 
 export * from './updater'
 

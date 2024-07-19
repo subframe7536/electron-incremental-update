@@ -52,17 +52,17 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
-    "@babel/core": "^7.24.7",
-    "@babel/plugin-transform-arrow-functions": "^7.24.7",
     "@electron/asar": "*",
     "esbuild": "*",
-    "magic-string": "*",
-    "vite-plugin-electron": "^0.15.6 || ^0.28"
+    "magic-string": "*"
   },
   "dependencies": {
+    "@babel/core": "^7.24.7",
+    "@babel/plugin-transform-arrow-functions": "^7.24.7",
     "@subframe7536/type-utils": "^0.1.6",
     "local-pkg": "^0.5.0",
-    "selfsigned": "^2.4.1"
+    "selfsigned": "^2.4.1",
+    "vite-plugin-electron": "^0.28.7"
   },
   "devDependencies": {
     "@subframe7536/eslint-config": "^0.7.2",

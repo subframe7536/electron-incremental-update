@@ -1,4 +1,4 @@
-import type { UpdateInfo, UpdateJSON } from '../utils'
+import type { UpdateInfo, UpdateJSON } from '../utils/version'
 import type { DownloadingInfo, URLHandler } from './types'
 import { defaultDownloadAsar, defaultDownloadUpdateJSON } from './download'
 import { BaseProvider } from './base'
@@ -16,13 +16,14 @@ export interface GitHubProviderOptions {
   /**
    * custom url handler
    *
-   * for Github, there are some {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34 public CDN links}
+   * for Github, there are some {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L40 public CDN links}
    * @example
-   * urlHandler: (url, isDownloadAsar) => {
+   * (url, isDownloadAsar) => {
    *   if (isDownloadAsar) {
-   *     return url.replace('github.com', 'raw.githubusercontent.com')
+   *     url.hostname = 'mirror.ghproxy.com'
+   *     url.pathname = 'https://github.com' + url.pathname
+   *     return url
    *   }
-   *   return url
    * }
    */
   urlHandler?: URLHandler

@@ -1,5 +1,5 @@
 import type { Promisable } from '@subframe7536/type-utils'
-import type { UpdateInfo, UpdateJSON } from '../utils'
+import type { UpdateInfo, UpdateJSON } from '../utils/version'
 
 export type URLHandler = (url: URL, isDownloadAsar: boolean) => Promisable<URL | string | undefined | null>
 export type OnDownloading = (progress: DownloadingInfo) => void
