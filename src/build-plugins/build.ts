@@ -3,9 +3,7 @@ import { basename, join } from 'node:path'
 import Asar from '@electron/asar'
 import { type BuildOptions, build } from 'esbuild'
 import { mergeConfig } from 'vite'
-import { type UpdateJSON, isUpdateJSON, parseVersion } from '../utils/version'
-import { zipFile } from '../utils/zip'
-import { signature } from '../utils/crypto'
+import { type UpdateJSON, isUpdateJSON } from '../utils/version'
 import { bytecodeLog, log } from './constant'
 import { bytecodeModuleLoaderCode } from './bytecode/code'
 import {
@@ -22,11 +20,12 @@ export async function buildAsar({
   gzipPath,
   electronDistPath,
   rendererDistPath,
+  generateGzipFile,
 }: BuildAsarOption): Promise<void> {
   renameSync(rendererDistPath, join(electronDistPath, 'renderer'))
   writeFileSync(join(electronDistPath, 'version'), version)
   await Asar.createPackage(electronDistPath, asarOutputPath)
-  await zipFile(asarOutputPath, gzipPath)
+  await generateGzipFile(readFileSync(asarOutputPath), gzipPath)
 }
 
 export async function buildVersion({
@@ -64,26 +63,11 @@ export async function buildVersion({
 
   const buffer = readFileSync(gzipPath)
 
-  const sig = await (generateSignature ?? signature)(buffer, privateKey, cert, version)
+  const sig = await generateSignature(buffer, privateKey, cert, version)
 
-  if (generateVersionJson) {
-    _json = await generateVersionJson(_json, buffer, sig, version, minimumVersion)
-    if (!isUpdateJSON(_json)) {
-      throw new Error('invalid version info')
-    }
-  } else {
-    _json.beta = {
-      version,
-      minimumVersion,
-      signature: sig,
-      size: buffer.length,
-    }
-    if (!parseVersion(version).stage) {
-      _json.version = version
-      _json.minimumVersion = minimumVersion
-      _json.signature = sig
-      _json.size = buffer.length
-    }
+  _json = await generateVersionJson(_json, buffer, sig, version, minimumVersion)
+  if (!isUpdateJSON(_json)) {
+    throw new Error('invalid version info')
   }
 
   writeFileSync(versionPath, JSON.stringify(_json, null, 2))

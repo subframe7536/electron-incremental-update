@@ -1,10 +1,9 @@
-import { existsSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, rmSync } from 'node:fs'
 import { EventEmitter } from 'node:stream'
 import { app } from 'electron'
 import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
 import type { DownloadingInfo, IProvider, URLHandler } from '../provider'
 import { getAppVersion, getEntryVersion, getPathFromAppNameAsar, isDev, restartApp } from '../utils/electron'
-import { unzipFile } from '../utils/unzip'
 import type { ErrorInfo, Logger, UpdaterOption } from './types'
 import { UpdaterError } from './types'
 
@@ -28,21 +27,12 @@ export class Updater extends EventEmitter<{
   private CERT = __EIU_SIGNATURE_CERT__
   private info?: UpdateInfo
   private asarPath: string
-  private gzipPath: string
   private tmpFilePath: string
   private provider: IProvider
   /**
    * updater logger
    */
   public logger?: Logger
-  /**
-   * URL handler hook
-   *
-   * for Github, there are some {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34 public CDNs}
-   * @param url source url
-   * @param isDownloadAsar whether is download asar
-   */
-  public handleURL?: URLHandler
   /**
    * whether to receive beta update
    */
@@ -80,7 +70,6 @@ export class Updater extends EventEmitter<{
     }
 
     this.asarPath = getPathFromAppNameAsar()
-    this.gzipPath = `${this.asarPath}.gz`
     this.tmpFilePath = `${this.asarPath}.tmp`
   }
 
@@ -103,11 +92,6 @@ export class Updater extends EventEmitter<{
       rmSync(this.tmpFilePath)
     }
 
-    if (existsSync(this.gzipPath)) {
-      this.logger?.warn(`remove .gz file: ${this.gzipPath}`)
-      rmSync(this.gzipPath)
-    }
-
     if (typeof data === 'object') {
       if ((format === 'json' && isUpdateJSON(data)) || (format === 'buffer' && Buffer.isBuffer(data))) {
         return data
@@ -128,7 +112,7 @@ export class Updater extends EventEmitter<{
 
       return result
     } catch (e) {
-      this.err(`download ${format} failed`, 'download', `download ${format} failed: ${e}`)
+      this.err(`fetch ${format} failed`, 'network', `download ${format} failed: ${e}`)
     }
   }
 
@@ -227,12 +211,9 @@ export class Updater extends EventEmitter<{
     this.logger?.debug('verify success')
 
     try {
-      // write file
-      this.logger?.debug(`write to ${this.gzipPath}`)
-      writeFileSync(this.gzipPath, buffer)
       // extract file to tmp path
       this.logger?.debug(`extract to ${this.tmpFilePath}`)
-      await unzipFile(this.gzipPath, this.tmpFilePath)
+      await this.provider.unzipFile(buffer, this.tmpFilePath)
 
       this.logger?.info(`download success, version: ${_ver}`)
       this.info = undefined
@@ -250,5 +231,19 @@ export class Updater extends EventEmitter<{
   public quitAndInstall(): void {
     this.logger?.info('quit and install')
     restartApp()
+  }
+
+  /**
+   * setup provider URL handler
+   *
+   * @example
+   * updater.setURLHandler((url, isDownloadingAsar) => {
+   *   if (isDownloadingAsar) {
+   *     return url.replace('https://raw.githubusercontent.com', 'https://cdn.jsdelivr.net/gh')
+   *   }
+   * })
+   */
+  public setURLHandler(handler: URLHandler): void {
+    this.provider.urlHandler = handler
   }
 }

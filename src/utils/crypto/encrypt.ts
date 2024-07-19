@@ -8,7 +8,7 @@ export function encrypt(plainText: string, key: Buffer, iv: Buffer): string {
   return encrypted
 }
 
-export function signature(buffer: Buffer, privateKey: string, cert: string, version: string): string {
+export function defaultSignature(buffer: Buffer, privateKey: string, cert: string, version: string): string {
   const sig = createSign('RSA-SHA256')
     .update(buffer)
     .sign(createPrivateKey(privateKey), 'base64')

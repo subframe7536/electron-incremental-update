@@ -39,7 +39,7 @@ export function parseVersion(version: string): Version {
   return ret
 }
 
-export function isLowerVersionDefault(oldVer: string, newVer: string): boolean {
+export function defaultIsLowerVersion(oldVer: string, newVer: string): boolean {
   const oldV = parseVersion(oldVer)
   const newV = parseVersion(newVer)
 
@@ -83,4 +83,21 @@ export type UpdateJSON = UpdateInfo & {
 export function isUpdateJSON(json: any): json is UpdateJSON {
   const is = (j: any): boolean => !!(j && j.minimumVersion && j.signature && j.size && j.version)
   return is(json) && is(json?.beta)
+}
+
+export function defaultVersionJsonGenerator(existingJson: UpdateJSON, buffer: Buffer, signature: string, version: string, minimumVersion: string): UpdateJSON {
+  existingJson.beta = {
+    version,
+    minimumVersion,
+    signature,
+    size: buffer.length,
+  }
+  if (!parseVersion(version).stage) {
+    existingJson.version = version
+    existingJson.minimumVersion = minimumVersion
+    existingJson.signature = signature
+    existingJson.size = buffer.length
+  }
+
+  return existingJson
 }

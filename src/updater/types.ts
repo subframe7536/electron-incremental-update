@@ -4,6 +4,7 @@ export const ErrorInfo = {
   download: 'Download failed',
   validate: 'Validate failed',
   param: 'Missing params',
+  network: 'Network error',
 } as const
 
 export class UpdaterError extends Error {

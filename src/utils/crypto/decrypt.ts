@@ -8,7 +8,7 @@ export function decrypt(encryptedText: string, key: Buffer, iv: Buffer): string 
   return decrypted
 }
 
-export function verifySignatureDefault(buffer: Buffer, signature: string, cert: string): string | undefined {
+export function defaultVerify(buffer: Buffer, signature: string, cert: string): string | undefined {
   try {
     const [sig, version] = decrypt(signature, hashString(cert, 32), hashString(buffer, 16)).split('%')
     const result = createVerify('RSA-SHA256')

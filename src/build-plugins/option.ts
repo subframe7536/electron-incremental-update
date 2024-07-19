@@ -1,6 +1,6 @@
 import type { Promisable } from '@subframe7536/type-utils'
 import type { BuildOptions } from 'esbuild'
-import type { UpdateJSON } from '../utils'
+import { type UpdateJSON, defaultSignature, defaultVersionJsonGenerator, defaultZipFile } from '../utils'
 import { parseKeys } from './key'
 
 export interface PKG {
@@ -33,6 +33,7 @@ export interface BuildAsarOption {
   gzipPath: string
   electronDistPath: string
   rendererDistPath: string
+  generateGzipFile: Exclude<GeneratorOverrideFunctions['generateGzipFile'], undefined>
 }
 
 export interface BuildVersionOption {
@@ -42,8 +43,8 @@ export interface BuildVersionOption {
   privateKey: string
   cert: string
   versionPath: string
-  generateSignature?: GeneratorOverrideFunctions['generateSignature']
-  generateVersionJson?: GeneratorOverrideFunctions['generateVersionJson']
+  generateSignature: Exclude<GeneratorOverrideFunctions['generateSignature'], undefined>
+  generateVersionJson: Exclude<GeneratorOverrideFunctions['generateVersionJson'], undefined>
 }
 
 export interface BuildEntryOption {
@@ -138,7 +139,12 @@ export interface GeneratorOverrideFunctions {
    * @param cert certificate string, **EOL must be '\n'**
    * @param version current version
    */
-  generateSignature?: (buffer: Buffer, privateKey: string, cert: string, version: string) => string | Promise<string>
+  generateSignature?: (
+    buffer: Buffer,
+    privateKey: string,
+    cert: string,
+    version: string
+  ) => string | Promise<string>
   /**
    * custom generate version json function
    * @param existingJson The existing JSON object.
@@ -148,7 +154,19 @@ export interface GeneratorOverrideFunctions {
    * @param minVersion The minimum version
    * @returns The updated version json
    */
-  generateVersionJson?: (existingJson: UpdateJSON, buffer: Buffer, signature: string, version: string, minVersion: string) => UpdateJSON | Promise<UpdateJSON>
+  generateVersionJson?: (
+    existingJson: UpdateJSON,
+    buffer: Buffer,
+    signature: string,
+    version: string,
+    minVersion: string
+  ) => UpdateJSON | Promise<UpdateJSON>
+  /**
+   * custom generate zip file
+   * @param buffer source buffer
+   * @param targetFilePath target file path
+   */
+  generateGzipFile?: (buffer: Buffer, targetFilePath: string) => Promise<void>
 }
 
 export interface ElectronUpdaterOptions {
@@ -235,8 +253,8 @@ export interface ElectronUpdaterOptions {
        */
       days?: number
     }
-    overrideGenerator?: GeneratorOverrideFunctions
   }
+  overrideGenerator?: GeneratorOverrideFunctions
 }
 
 type ParseOptionReturn = {
@@ -283,10 +301,13 @@ export function parseOptions(
       certPath = 'keys/cert.pem',
       keyLength = 2048,
       certInfo = {},
-      overrideGenerator = {},
+    } = {},
+    overrideGenerator: {
+      generateGzipFile = defaultZipFile,
+      generateSignature = defaultSignature,
+      generateVersionJson = defaultVersionJsonGenerator,
     } = {},
   } = options
-  const { generateSignature, generateVersionJson } = overrideGenerator
   let {
     subject = {
       commonName: pkg.name,
@@ -300,6 +321,7 @@ export function parseOptions(
     gzipPath,
     electronDistPath,
     rendererDistPath,
+    generateGzipFile,
   }
   const buildEntryOption: Required<Omit<BuildEntryOption, 'postBuild'>> = {
     minify: entryMinify ?? minify,

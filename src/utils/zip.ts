@@ -1,11 +1,7 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import { brotliCompress } from 'node:zlib'
 
-export async function zipFile(filePath: string, targetFilePath = `${filePath}.gz`): Promise<void> {
-  if (!existsSync(filePath)) {
-    throw new Error(`path to be zipped not exist: ${filePath}`)
-  }
-  const buffer = readFileSync(filePath)
+export async function defaultZipFile(buffer: Buffer, targetFilePath: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     brotliCompress(buffer, (err, buffer) => {
       if (err) {
