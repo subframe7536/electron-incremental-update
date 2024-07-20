@@ -168,14 +168,14 @@ export class Updater extends EventEmitter<{
   /**
    * download update using default options
    */
-  public async download(): Promise<boolean>
+  public async downloadUpdate(): Promise<boolean>
   /**
    * download update using existing `asar.gz` buffer and signature
    * @param data existing `asar.gz` buffer
    * @param sig signature
    */
-  public async download(data: Uint8Array | Buffer, sig: string): Promise<boolean>
-  public async download(data?: Uint8Array | Buffer, sig?: string): Promise<boolean> {
+  public async downloadUpdate(data: Uint8Array | Buffer, sig: string): Promise<boolean>
+  public async downloadUpdate(data?: Uint8Array | Buffer, sig?: string): Promise<boolean> {
     const _sig = sig ?? this.info?.signature
 
     if (!_sig) {
