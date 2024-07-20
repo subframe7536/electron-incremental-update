@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import { type Plugin, type ResolvedConfig, createFilter, normalizePath } from 'vite'
 import MagicString from 'magic-string'
 import { bytecodeId, bytecodeLog } from '../constant'
+import { readableSize } from '../utils'
 import {
   bytecodeModuleLoader,
   compileToBytecode,
@@ -175,9 +176,8 @@ export function bytecodePlugin(
     closeBundle() {
       const outDir = `${normalizePath(path.relative(config.root, path.resolve(config.root, config.build.outDir)))}/`
       bytecodeFiles.forEach((file) => {
-        const kbs = file.size / 1000
         bytecodeLog.info(
-          `${outDir}${file.name} => ${kbs.toFixed(2)} kB`,
+          `${outDir}${file.name} => ${readableSize(file.size)}`,
           { timestamp: true },
         )
       })

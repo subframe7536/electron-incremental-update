@@ -1,4 +1,7 @@
+import { rmSync } from 'node:fs'
 import { defineConfig } from 'tsup'
+
+rmSync('./dist', { recursive: true, force: true })
 
 export default defineConfig([
   {
@@ -8,7 +11,6 @@ export default defineConfig([
       provider: './src/provider/index.ts',
     },
     format: ['esm', 'cjs'],
-    clean: true,
     dts: true,
     treeshake: true,
     external: ['electron', 'esbuild', 'vite'],

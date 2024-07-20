@@ -21,23 +21,27 @@ export async function buildAsar({
   electronDistPath,
   rendererDistPath,
   generateGzipFile,
-}: BuildAsarOption): Promise<void> {
+}: BuildAsarOption): Promise<Buffer> {
   renameSync(rendererDistPath, join(electronDistPath, 'renderer'))
   writeFileSync(join(electronDistPath, 'version'), version)
   await Asar.createPackage(electronDistPath, asarOutputPath)
-  await generateGzipFile(readFileSync(asarOutputPath), gzipPath)
+  const buf = await generateGzipFile(readFileSync(asarOutputPath))
+  writeFileSync(gzipPath, buf)
+  return buf
 }
 
-export async function buildVersion({
-  gzipPath,
-  versionPath,
-  privateKey,
-  cert,
-  version,
-  minimumVersion,
-  generateSignature,
-  generateVersionJson,
-}: BuildVersionOption): Promise<void> {
+export async function buildVersion(
+  {
+    versionPath,
+    privateKey,
+    cert,
+    version,
+    minimumVersion,
+    generateSignature,
+    generateVersionJson,
+  }: BuildVersionOption,
+  asarBuffer: Buffer,
+): Promise<void> {
   let _json: UpdateJSON = {
     beta: {
       minimumVersion: version,
@@ -61,11 +65,9 @@ export async function buildVersion({
     } catch {}
   }
 
-  const buffer = readFileSync(gzipPath)
+  const sig = await generateSignature(asarBuffer, privateKey, cert, version)
 
-  const sig = await generateSignature(buffer, privateKey, cert, version)
-
-  _json = await generateVersionJson(_json, buffer, sig, version, minimumVersion)
+  _json = await generateVersionJson(_json, asarBuffer, sig, version, minimumVersion)
   if (!isUpdateJSON(_json)) {
     throw new Error('invalid version info')
   }

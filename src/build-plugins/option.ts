@@ -39,7 +39,6 @@ export interface BuildAsarOption {
 }
 
 export interface BuildVersionOption {
-  gzipPath: string
   version: string
   minimumVersion: string
   privateKey: string
@@ -164,11 +163,10 @@ export interface GeneratorOverrideFunctions {
     minVersion: string
   ) => UpdateJSON | Promise<UpdateJSON>
   /**
-   * custom generate zip file
+   * custom generate zip file buffer
    * @param buffer source buffer
-   * @param targetFilePath target file path
    */
-  generateGzipFile?: (buffer: Buffer, targetFilePath: string) => Promise<void>
+  generateGzipFile?: (buffer: Buffer) => Promise<Buffer>
 }
 
 export interface ElectronUpdaterOptions {
@@ -302,7 +300,13 @@ export function parseOptions(
       privateKeyPath = 'keys/private.pem',
       certPath = 'keys/cert.pem',
       keyLength = 2048,
-      certInfo = {},
+      certInfo: {
+        subject = {
+          commonName: pkg.name,
+          organizationName: `org.${pkg.name}`,
+        },
+        days = 3650,
+      } = {},
     } = {},
     overrideGenerator: {
       generateGzipFile = defaultZipFile,
@@ -310,13 +314,6 @@ export function parseOptions(
       generateVersionJson = defaultVersionJsonGenerator,
     } = {},
   } = options
-  let {
-    subject = {
-      commonName: pkg.name,
-      organizationName: `org.${pkg.name}`,
-    },
-    days = 3650,
-  } = certInfo
   const buildAsarOption: BuildAsarOption = {
     version: pkg.version,
     asarOutputPath,
@@ -344,7 +341,6 @@ export function parseOptions(
   const buildVersionOption: BuildVersionOption = {
     version: pkg.version,
     minimumVersion,
-    gzipPath,
     privateKey,
     cert,
     versionPath,

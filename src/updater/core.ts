@@ -1,4 +1,4 @@
-import { existsSync, rmSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import { EventEmitter } from 'node:events'
 import { app } from 'electron'
 import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
@@ -26,8 +26,6 @@ export class Updater extends EventEmitter<{
 }> {
   private CERT = __EIU_SIGNATURE_CERT__
   private info?: UpdateInfo
-  private asarPath: string
-  private tmpFilePath: string
   private provider: IProvider
   /**
    * updater logger
@@ -68,9 +66,6 @@ export class Updater extends EventEmitter<{
       }
       this.logger.info('no logger set, enable dev-only logger')
     }
-
-    this.asarPath = getPathFromAppNameAsar()
-    this.tmpFilePath = `${this.asarPath}.tmp`
   }
 
   /**
@@ -87,11 +82,6 @@ export class Updater extends EventEmitter<{
   private async fetch(format: 'json', data?: UpdateJSON): Promise<UpdateJSON | undefined>
   private async fetch(format: 'buffer', data?: Buffer): Promise<Buffer | undefined>
   private async fetch(format: 'json' | 'buffer', data?: Uint8Array | UpdateJSON): Promise<any> {
-    if (existsSync(this.tmpFilePath)) {
-      this.logger?.warn(`remove tmp file: ${this.tmpFilePath}`)
-      rmSync(this.tmpFilePath)
-    }
-
     if (typeof data === 'object') {
       if ((format === 'json' && isUpdateJSON(data)) || (format === 'buffer' && Buffer.isBuffer(data))) {
         return data
@@ -211,9 +201,10 @@ export class Updater extends EventEmitter<{
     this.logger?.debug('verify success')
 
     try {
-      // extract file to tmp path
-      this.logger?.debug(`extract to ${this.tmpFilePath}`)
-      await this.provider.unzipFile(buffer, this.tmpFilePath)
+      const tmpFilePath = getPathFromAppNameAsar() + '.tmp'
+      // write file to tmp path
+      this.logger?.debug(`install to ${tmpFilePath}`)
+      writeFileSync(tmpFilePath, await this.provider.unzipFile(buffer))
 
       this.logger?.info(`download success, version: ${_ver}`)
       this.info = undefined
@@ -239,7 +230,8 @@ export class Updater extends EventEmitter<{
    * @example
    * updater.setURLHandler((url, isDownloadingAsar) => {
    *   if (isDownloadingAsar) {
-   *     return url.replace('https://raw.githubusercontent.com', 'https://cdn.jsdelivr.net/gh')
+   *     url.hostname = 'https://cdn.jsdelivr.net/gh'
+   *     return url
    *   }
    * })
    */

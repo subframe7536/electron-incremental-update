@@ -12,6 +12,7 @@ import type { ElectronUpdaterOptions, PKG } from './build-plugins/option'
 import { parseOptions } from './build-plugins/option'
 import { id, log } from './build-plugins/constant'
 import { type BytecodeOptions, bytecodePlugin } from './build-plugins/bytecode'
+import { readableSize } from './build-plugins/utils'
 
 type MakeRequired<T, K extends keyof T> = Exclude<T, undefined> & { [P in K]-?: T[P] }
 type ReplaceKey<
@@ -342,10 +343,10 @@ export async function electronWithUpdater(
                 await _buildEntry()
                 await _postBuild()
 
-                await buildAsar(buildAsarOption)
-                log.info(`build asar to '${buildAsarOption.asarOutputPath}'`, { timestamp: true })
+                const buffer = await buildAsar(buildAsarOption)
+                log.info(`build update asar to '${buildAsarOption.gzipPath}' => ${readableSize(buffer.length)}`, { timestamp: true })
 
-                await buildVersion(buildVersionOption)
+                await buildVersion(buildVersionOption, buffer)
                 log.info(`build version info to '${buildVersionOption.versionPath}'`, { timestamp: true })
               },
             },
