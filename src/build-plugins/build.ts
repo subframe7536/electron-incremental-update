@@ -60,7 +60,7 @@ export async function buildVersion(
       if (isUpdateJSON(oldVersionJson)) {
         _json = oldVersionJson
       } else {
-        log.warn('old version json is invalid, ignore it')
+        log.warn('old version json is invalid, ignore it', { timestamp: true })
       }
     } catch {}
   }

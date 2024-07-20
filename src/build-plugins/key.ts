@@ -47,17 +47,25 @@ export function parseKeys({
   days,
 }: GetKeysOption): { privateKey: string, cert: string } {
   const keysDir = dirname(privateKeyPath)
+  let privateKey = process.env.UPDATER_PK
+  let cert = process.env.UPDATER_CERT
+
+  if (privateKey && cert) {
+    log.info('use UPDATER_PK and UPDATER_CERT from environment variables', { timestamp: true })
+    return { privateKey, cert }
+  }
+
   if (!existsSync(keysDir)) {
     mkdirSync(keysDir)
   }
 
   if (!existsSync(privateKeyPath) || !existsSync(certPath)) {
-    log.warn('no key pair found, generate new key pair')
+    log.info('no key pair found, generate new key pair', { timestamp: true })
     generateKeyPair(keyLength, parseSubjects(subject), days, privateKeyPath, certPath)
   }
 
-  const privateKey = process.env.UPDATER_PK || readFileSync(privateKeyPath, 'utf-8')
-  const cert = process.env.UPDATER_CERT || readFileSync(certPath, 'utf-8')
+  privateKey = readFileSync(privateKeyPath, 'utf-8')
+  cert = readFileSync(certPath, 'utf-8')
 
   return { privateKey, cert }
 }
