@@ -63,11 +63,10 @@ export interface IProvider {
    */
   isLowerVersion: (oldVer: string, newVer: string) => boolean
   /**
-   * unzip file
+   * unzip file buffer
    * @param buffer source buffer
-   * @param targetFilePath target file path
    */
-  unzipFile: (buffer: Buffer, targetFilePath: string) => Promise<void>
+  unzipFile: (buffer: Buffer) => Promise<Buffer>
   /**
    * verify asar signature
    * @param buffer file buffer

@@ -1,3 +1,4 @@
+import { URL } from 'node:url'
 import type { UpdateInfo, UpdateJSON } from '../utils/version'
 import type { DownloadingInfo, URLHandler } from './types'
 import { defaultDownloadAsar, defaultDownloadUpdateJSON } from './download'
@@ -5,10 +6,13 @@ import { BaseProvider } from './base'
 
 export interface GitHubProviderOptions {
   /**
-   * github repo root url
-   * @example 'https://github.com/electron/electron/'
+   * github user name
    */
-  url: string
+  username: string
+  /**
+   * github repo name
+   */
+  repo: string
   /**
    * extra headers
    */
@@ -30,11 +34,8 @@ export interface GitHubProviderOptions {
 }
 
 export class GitHubProvider extends BaseProvider {
-  private ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
   public name = 'GithubProvider'
-  public urlHandler?: URLHandler
-  private url: string
-  private extraHeaders?: Record<string, string>
+  private options: GitHubProviderOptions
   /**
    * Update Provider for Github repo
    * - download update json from `https://raw.githubusercontent.com/{user}/{repo}/HEAD/{versionPath}`
@@ -45,30 +46,29 @@ export class GitHubProvider extends BaseProvider {
    */
   constructor(options: GitHubProviderOptions) {
     super()
-    this.extraHeaders = options.extraHeaders
-    this.urlHandler = options.urlHandler
+    this.options = options
+  }
 
-    if (!options.url.startsWith('https://github.com')) {
-      throw new Error(`${this.name}: invalid github url: ${options.url}`)
-    }
+  get urlHandler(): URLHandler | undefined {
+    return this.options.urlHandler
+  }
 
-    this.url = options.url
-    if (!this.url.endsWith('/')) {
-      this.url += '/'
-    }
+  set urlHandler(handler: URLHandler) {
+    this.options.urlHandler = handler
   }
 
   private async parseURL(isDownloadAsar: boolean, extraPath: string): Promise<string> {
-    const _url = new URL(this.url)
-    _url.hostname = isDownloadAsar ? 'github.com' : 'raw.githubusercontent.com'
-    _url.pathname += extraPath
-    return (await this.urlHandler?.(_url, isDownloadAsar) || _url).toString()
+    const url = new URL(
+      `/${this.options.username}/${this.options.repo}/${extraPath}`,
+      'https://' + (isDownloadAsar ? 'github.com' : 'raw.githubusercontent.com'),
+    )
+    return (await this.urlHandler?.(url, isDownloadAsar) || url).toString()
   }
 
   public async downloadJSON(versionPath: string): Promise<UpdateJSON> {
     return await defaultDownloadUpdateJSON(
       await this.parseURL(false, `HEAD/${versionPath}`),
-      { userAgent: this.ua, accept: 'application/json', ...this.extraHeaders },
+      { accept: 'application/json', ...this.options.extraHeaders },
     )
   }
 
@@ -79,7 +79,7 @@ export class GitHubProvider extends BaseProvider {
   ): Promise<Buffer> {
     return await defaultDownloadAsar(
       await this.parseURL(true, `releases/download/v${version}/${name}-${version}.asar.gz`),
-      { userAgent: this.ua, accept: 'application/octet-stream', ...this.extraHeaders },
+      { accept: 'application/octet-stream', ...this.options.extraHeaders },
       size,
       onDownloading,
     )

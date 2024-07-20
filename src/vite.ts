@@ -255,7 +255,7 @@ export async function electronWithUpdater(
     __EIU_MAIN_DEV_DIR__: JSON.stringify(buildAsarOption.electronDistPath),
     __EIU_MAIN_FILE__: JSON.stringify(getMainFilePath(_main.files)),
     __EIU_SIGNATURE_CERT__: JSON.stringify(cert),
-    __EUI_VERSION_PATH__: JSON.stringify(parseVersionPath(buildVersionOption.versionPath)),
+    __EIU_VERSION_PATH__: JSON.stringify(parseVersionPath(buildVersionOption.versionPath)),
   }
 
   const _buildEntry = async (): Promise<void> => {

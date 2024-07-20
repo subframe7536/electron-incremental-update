@@ -1,14 +1,25 @@
-import { writeFileSync } from 'node:fs'
-import { brotliCompress } from 'node:zlib'
+import { brotliCompress, brotliDecompress } from 'node:zlib'
 
-export async function defaultZipFile(buffer: Buffer, targetFilePath: string): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
+export async function defaultZipFile(buffer: Buffer): Promise<Buffer> {
+  return new Promise<Buffer>((resolve, reject) => {
     brotliCompress(buffer, (err, buffer) => {
       if (err) {
         reject(err)
+      } else {
+        resolve(buffer)
       }
-      writeFileSync(targetFilePath, buffer)
-      resolve()
+    })
+  })
+}
+
+export async function defaultUnzipFile(buffer: Buffer): Promise<Buffer> {
+  return new Promise<Buffer>((resolve, reject) => {
+    brotliDecompress(buffer, (err, buffer) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(buffer)
+      }
     })
   })
 }
