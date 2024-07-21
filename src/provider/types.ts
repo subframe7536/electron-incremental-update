@@ -74,9 +74,10 @@ export interface IProvider {
   /**
    * verify asar signature
    * @param buffer file buffer
+   * @param version target version
    * @param signature signature
    * @param cert certificate
    * @returns if signature is valid, returns the version, otherwise returns `undefined`
    */
-  verifySignaure: (buffer: Buffer, signature: string, cert: string) => Promisable<string | undefined>
+  verifySignaure: (buffer: Buffer, version: string, signature: string, cert: string) => Promisable<boolean>
 }

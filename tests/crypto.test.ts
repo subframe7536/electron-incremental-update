@@ -2,7 +2,7 @@ import { join } from 'node:path/posix'
 import { readFileSync, rmSync } from 'node:fs'
 import { afterAll, describe, expect, it } from 'vitest'
 import { generateKeyPair } from '../src/build-plugins/key'
-import { aesDecrypt, aesEncrypt, defaultSignature, defaultVerify, hashBuffer } from '../src/utils/crypto'
+import { aesDecrypt, aesEncrypt, defaultSignature, defaultVerifySignature, hashBuffer } from '../src/utils/crypto'
 
 let plain = ''
 
@@ -29,16 +29,16 @@ describe('test verify', () => {
   const version = '0.0.0-alpha1'
   const sig = defaultSignature(buffer, privateKey, cert, version)
   it('verify passed', () => {
-    expect(defaultVerify(buffer, sig, cert)).toBe(version)
+    expect(defaultVerifySignature(buffer, version, sig, cert)).toBeTruthy()
   })
   it('different buffer will fail to verify', () => {
-    expect(defaultVerify(buffer.subarray(1), sig, cert)).toBe(undefined)
+    expect(defaultVerifySignature(buffer.subarray(1), version, sig, cert)).toBeFalsy()
   })
   it('different signature will fail to verify', () => {
-    expect(defaultVerify(buffer, `${sig}a`, cert)).toBe(undefined)
+    expect(defaultVerifySignature(buffer, version, `${sig}a`, cert)).toBeFalsy()
   })
   it('different publicKey will fail to verify', () => {
-    expect(defaultVerify(buffer, sig, `${cert}a`)).toBe(undefined)
+    expect(defaultVerifySignature(buffer, version, sig, `${cert}a`)).toBeFalsy()
   })
   // test('cert variable', async () => {
   //   const filePath = './tests/test-cert.ts'

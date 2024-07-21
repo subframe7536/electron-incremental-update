@@ -30,14 +30,16 @@ export function aesDecrypt(encryptedText: string, key: Buffer, iv: Buffer): stri
   return decipher.update(encryptedText, 'base64url', 'utf8') + decipher.final('utf8')
 }
 
-export function defaultVerify(buffer: Buffer, signature: string, cert: string): string | undefined {
+export function defaultVerifySignature(buffer: Buffer, version: string, signature: string, cert: string): boolean {
   try {
-    const [sig, version] = aesDecrypt(signature, hashBuffer(cert, 32), hashBuffer(buffer, 16)).split('%')
-    const result = createVerify('RSA-SHA256')
+    const [sig, ver] = aesDecrypt(signature, hashBuffer(cert, 32), hashBuffer(buffer, 16)).split('%')
+    if (ver !== version) {
+      return false
+    }
+    return createVerify('RSA-SHA256')
       .update(buffer)
       .verify(cert, sig, 'base64')
-    return result ? version : undefined
   } catch {
-    return undefined
+    return false
   }
 }

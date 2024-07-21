@@ -171,14 +171,15 @@ export class Updater extends EventEmitter<{
   /**
    * download update using existing `asar.gz` buffer and signature
    * @param data existing `asar.gz` buffer
-   * @param sig signature
+   * @param info update info
    */
-  public async downloadUpdate(data: Uint8Array | Buffer, sig: string): Promise<boolean>
-  public async downloadUpdate(data?: Uint8Array | Buffer, sig?: string): Promise<boolean> {
-    const _sig = sig ?? this.info?.signature
+  public async downloadUpdate(data: Uint8Array, info: Omit<UpdateInfo, 'minimumVersion'>): Promise<boolean>
+  public async downloadUpdate(data?: Uint8Array, info?: Omit<UpdateInfo, 'minimumVersion'>): Promise<boolean> {
+    const _sig = info?.signature ?? this.info?.signature
+    const _version = info?.version ?? this.info?.version
 
-    if (!_sig) {
-      this.err('download failed', 'param', 'no update signature, please call `checkUpdate` first')
+    if (!_sig || !_version) {
+      this.err('download failed', 'param', 'no update signature, please call `checkUpdate` first or manually setup params')
       return false
     }
 
@@ -192,8 +193,7 @@ export class Updater extends EventEmitter<{
 
     // verify update file
     this.logger?.debug('verify start')
-    const _ver = await this.provider.verifySignaure(buffer, _sig, this.CERT)
-    if (!_ver) {
+    if (!await this.provider.verifySignaure(buffer, _version, _sig, this.CERT)) {
       this.err('download failed', 'validate', 'invalid signature / certificate pair')
       return false
     }
@@ -205,7 +205,7 @@ export class Updater extends EventEmitter<{
       this.logger?.debug(`install to ${tmpFilePath}`)
       writeFileSync(tmpFilePath, await this.provider.unzipFile(buffer))
 
-      this.logger?.info(`download success, version: ${_ver}`)
+      this.logger?.info(`download success, version: ${_version}`)
       this.info = undefined
       this.emit('update-downloaded')
       return true
