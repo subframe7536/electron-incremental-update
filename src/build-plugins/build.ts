@@ -139,7 +139,7 @@ export async function buildEntry(
       `${isEntry ? bytecodeModuleLoaderCode : useStrict}${isEntry ? '' : 'module.exports = '}require("./${fileName}c")`,
     )
     bytecodeLog.info(
-      `${filePath} => ${(buffer.byteLength / 1000).toFixed(2)} kB`,
+      `${filePath} [${(buffer.byteLength / 1000).toFixed(2)} kB]`,
       { timestamp: true },
     )
   }
