@@ -300,6 +300,7 @@ export async function electronWithUpdater(
 
   const rollupOptions: BuildOptions['rollupOptions'] = {
     external: src => src.startsWith('node:') || Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}).includes(src),
+    treeshake: true,
   }
 
   const electronPluginOptions: ElectronSimpleOptions = {

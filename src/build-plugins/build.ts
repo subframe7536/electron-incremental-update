@@ -103,6 +103,7 @@ export async function buildEntry(
       entryNames: '[dir]/[name]',
       assetNames: '[dir]/[name]',
       external: ['electron', 'original-fs'],
+      treeShaking: true,
       loader: {
         '.node': 'empty',
       },
