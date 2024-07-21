@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process'
 import * as babel from '@babel/core'
 import MagicString from 'magic-string'
 import { getPackageInfoSync } from 'local-pkg'
-import { log } from '../constant'
+import { bytecodeLog } from '../constant'
 import { bytecodeGeneratorScript } from './code'
 
 const electronModulePath = getPackageInfoSync('electron')?.rootPath
@@ -44,7 +44,7 @@ export function toRelativePath(filename: string, importer: string): string {
 }
 export function compileToBytecode(code: string): Promise<Buffer> {
   let data = Buffer.from([])
-  const logErr = (...args: any[]): void => log.error(args.join(' '), { timestamp: true })
+  const logErr = (...args: any[]): void => bytecodeLog.error(args.join(' '), { timestamp: true })
 
   const electronPath = getElectronPath()
   const bytecodePath = getBytecodeCompilerPath()

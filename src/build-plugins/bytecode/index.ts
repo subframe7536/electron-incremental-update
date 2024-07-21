@@ -29,11 +29,11 @@ export interface BytecodeOptions {
  * Compile to v8 bytecode to protect source code.
  */
 export function bytecodePlugin(
-  isBuild: boolean,
+  enable: boolean,
   env: 'preload' | 'main',
   options: BytecodeOptions = {},
 ): Plugin | null {
-  if (!isBuild) {
+  if (!enable) {
     return null
   }
 
