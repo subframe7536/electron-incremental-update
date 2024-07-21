@@ -14,6 +14,11 @@ export interface GitHubProviderOptions {
    */
   repo: string
   /**
+   * github branch name that fetch version
+   * @default 'HEAD'
+   */
+  branch?: string
+  /**
    * extra headers
    */
   extraHeaders?: Record<string, string>
@@ -67,7 +72,7 @@ export class GitHubProvider extends BaseProvider {
 
   public async downloadJSON(versionPath: string): Promise<UpdateJSON> {
     return await defaultDownloadUpdateJSON(
-      await this.parseURL(false, `HEAD/${versionPath}`),
+      await this.parseURL(false, `${this.options.branch ?? 'HEAD'}/${versionPath}`),
       { accept: 'application/json', ...this.options.extraHeaders },
     )
   }

@@ -30,6 +30,10 @@ async function downloadFn<T>(
     request.end()
   })
 }
+
+/**
+ * download json and parse UpdateJson
+ */
 export async function defaultDownloadUpdateJSON(url: string, headers: Record<string, any>): Promise<UpdateJSON> {
   return await downloadFn<UpdateJSON>(url, headers, (resp, resolve, reject) => {
     let data = ''
@@ -49,6 +53,9 @@ export async function defaultDownloadUpdateJSON(url: string, headers: Record<str
   })
 }
 
+/**
+ * download asar buffer, get total size from `Content-Length` header
+ */
 export async function defaultDownloadAsar(
   url: string,
   headers: Record<string, any>,
@@ -60,14 +67,15 @@ export async function defaultDownloadAsar(
     const total = getHeader(resp.headers, 'content-length') || -1
     let data: Buffer[] = []
     resp.on('data', (chunk) => {
-      transferred += chunk.length
+      const delta = chunk.length
+      transferred += delta
       const current = Date.now()
       onDownloading?.({
         percent: +(transferred / total).toFixed(2) * 100,
         total,
         transferred,
-        delta: chunk.length,
-        bps: chunk.length / ((current - time) * 1e3),
+        delta,
+        bps: delta / ((current - time) * 1e3),
       })
       time = current
       data.push(chunk)
