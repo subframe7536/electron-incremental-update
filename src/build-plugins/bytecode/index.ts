@@ -177,7 +177,7 @@ export function bytecodePlugin(
       const outDir = `${normalizePath(path.relative(config.root, path.resolve(config.root, config.build.outDir)))}/`
       bytecodeFiles.forEach((file) => {
         bytecodeLog.info(
-          `${outDir}${file.name} => ${readableSize(file.size)}`,
+          `${outDir}${file.name} [${readableSize(file.size)}]`,
           { timestamp: true },
         )
       })

@@ -28,7 +28,7 @@ export async function buildAsar({
   await Asar.createPackage(electronDistPath, asarOutputPath)
   const buf = await generateGzipFile(readFileSync(asarOutputPath))
   writeFileSync(gzipPath, buf)
-  log.info(`build update asar to '${gzipPath}' => ${readableSize(buf.length)}`, { timestamp: true })
+  log.info(`build update asar to '${gzipPath}' [${readableSize(buf.length)}]`, { timestamp: true })
   return buf
 }
 
@@ -143,7 +143,7 @@ export async function buildEntry(
       { timestamp: true },
     )
   }
-  bytecodeLog.info(`${filePaths.length} bundles compiled into bytecode`, { timestamp: true })
+  bytecodeLog.info(`${filePaths.length} file${filePaths.length > 1 ? 's' : ''} compiled into bytecode`, { timestamp: true })
 }
 
 function getCert(code: string): string[] {
