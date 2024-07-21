@@ -215,7 +215,7 @@ export async function electronWithUpdater(
     preload: _preload,
     sourcemap = !isBuild,
     minify = isBuild,
-    buildVersionJson = isCI,
+    buildVersionJson,
     updater,
     bytecode,
     useNotBundle = true,
@@ -349,7 +349,9 @@ export async function electronWithUpdater(
                 await _buildEntry()
                 await _postBuild()
                 const buffer = await buildAsar(buildAsarOption)
-                if (buildVersionJson) {
+                if (!buildVersionJson && !isCI) {
+                  log.warn('no `buildVersionJson` setup, skip build version json. Will build in CI by default', { timestamp: true })
+                } else {
                   await buildVersion(buildVersionOption, buffer)
                 }
               },

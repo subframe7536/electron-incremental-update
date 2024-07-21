@@ -113,10 +113,9 @@ export function convertString(
     : { code }
 }
 
-function obfuscateString(input: string): string {
-  const offset = Math.floor(Math.random() * 2 << 4) + 1
-  const hexArray = Array.from(input).map(c => '0x' + (c.charCodeAt(0) + offset).toString(16))
-  const decodeFn = `function(a,b){return String.fromCharCode.apply(null,a.map(x=>+x-b))}`
-
-  return `(${decodeFn})([${hexArray.join(',')}],${offset})`
+const decodeFn = 'function(a,b){return String.fromCharCode.apply(0,a.map(function(x){return x-b}))}'
+export function obfuscateString(input: string): string {
+  const offset = (Math.random() << 4) | 0
+  const hexArray = input.split('').map(c => '0x' + (c.charCodeAt(0) + offset).toString(16))
+  return `(${decodeFn})(${JSON.stringify(hexArray)},${offset})`
 }
