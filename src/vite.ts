@@ -14,6 +14,8 @@ import { parseOptions } from './build-plugins/option'
 import { id, log } from './build-plugins/constant'
 import { type BytecodeOptions, bytecodePlugin } from './build-plugins/bytecode'
 
+export { isCI } from 'ci-info'
+
 type MakeRequired<T, K extends keyof T> = Exclude<T, undefined> & { [P in K]-?: T[P] }
 type ReplaceKey<
   T,
@@ -319,7 +321,7 @@ export async function electronWithUpdater(
         {
           plugins: [
             !isBuild && useNotBundle ? notBundle() : undefined,
-            bytecodeOptions && bytecodePlugin(isBuild, 'main', bytecodeOptions),
+            bytecodeOptions && bytecodePlugin(!!bytecode, 'main', bytecodeOptions),
           ],
           build: {
             sourcemap,
@@ -338,7 +340,7 @@ export async function electronWithUpdater(
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
           plugins: [
-            bytecodeOptions && bytecodePlugin(isBuild, 'preload', bytecodeOptions),
+            bytecodeOptions && bytecodePlugin(!!bytecode, 'preload', bytecodeOptions),
             {
               name: `${id}-build`,
               enforce: 'post',
