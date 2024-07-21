@@ -134,14 +134,13 @@ export class Updater extends EventEmitter<{
     if (!_data) {
       return emitUnavailable('failed to get update info')
     }
-    let { signature, size, version, minimumVersion, beta } = _data
+    let { signature, version, minimumVersion, beta } = _data
     if (this.receiveBeta) {
       version = beta.version
       signature = beta.signature
       minimumVersion = beta.minimumVersion
-      size = beta.size
     }
-    this.logger?.debug(`checked update, version: ${version}, size: ${size}, signature: ${signature}`)
+    this.logger?.debug(`checked update, version: ${version}, signature: ${signature}`)
 
     if (isDev && !this.forceUpdate && !data) {
       return emitUnavailable('skip check update in dev mode, to force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON')
@@ -160,7 +159,7 @@ export class Updater extends EventEmitter<{
       return emitUnavailable(`current version (${appVersion}) < new version (${version})`)
     }
     this.logger?.info(`update available: ${version}`)
-    this.info = { signature, minimumVersion, version, size }
+    this.info = { signature, minimumVersion, version }
     this.emit('update-available', this.info)
     return true
   }

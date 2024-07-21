@@ -7,12 +7,12 @@ import { startup } from 'vite-plugin-electron'
 import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
 import { notBundle } from 'vite-plugin-electron/plugin'
 import { loadPackageJSON } from 'local-pkg'
+import { isCI } from 'ci-info'
 import { buildAsar, buildEntry, buildVersion } from './build-plugins/build'
 import type { ElectronUpdaterOptions, PKG } from './build-plugins/option'
 import { parseOptions } from './build-plugins/option'
 import { id, log } from './build-plugins/constant'
 import { type BytecodeOptions, bytecodePlugin } from './build-plugins/bytecode'
-import { readableSize } from './build-plugins/utils'
 
 type MakeRequired<T, K extends keyof T> = Exclude<T, undefined> & { [P in K]-?: T[P] }
 type ReplaceKey<
@@ -129,6 +129,11 @@ export interface ElectronWithUpdaterOptions {
    */
   useNotBundle?: boolean
   /**
+   * whether to generate version json
+   * @default isCI
+   */
+  buildVersionJson?: boolean
+  /**
    * Whether to log parsed options
    *
    * to show certificate and private keys, set `logParsedOptions: { showKeys: true }`
@@ -210,6 +215,7 @@ export async function electronWithUpdater(
     preload: _preload,
     sourcemap = !isBuild,
     minify = isBuild,
+    buildVersionJson = isCI,
     updater,
     bytecode,
     useNotBundle = true,
@@ -342,12 +348,10 @@ export async function electronWithUpdater(
               async closeBundle() {
                 await _buildEntry()
                 await _postBuild()
-
                 const buffer = await buildAsar(buildAsarOption)
-                log.info(`build update asar to '${buildAsarOption.gzipPath}' => ${readableSize(buffer.length)}`, { timestamp: true })
-
-                await buildVersion(buildVersionOption, buffer)
-                log.info(`build version info to '${buildVersionOption.versionPath}'`, { timestamp: true })
+                if (buildVersionJson) {
+                  await buildVersion(buildVersionOption, buffer)
+                }
               },
             },
           ],

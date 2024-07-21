@@ -157,7 +157,6 @@ export interface GeneratorOverrideFunctions {
    */
   generateVersionJson?: (
     existingJson: UpdateJSON,
-    buffer: Buffer,
     signature: string,
     version: string,
     minVersion: string

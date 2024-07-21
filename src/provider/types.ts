@@ -11,10 +11,14 @@ export interface DownloadingInfo {
   delta: number
   /**
    * downloaded percent, 0 ~ 100
+   *
+   * If not `Content-Length` header, will be nagative
    */
   percent: number
   /**
    * total size
+   *
+   * If not `Content-Length` header, will be -1
    */
   total: number
   /**

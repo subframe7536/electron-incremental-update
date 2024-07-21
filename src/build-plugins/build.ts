@@ -13,6 +13,7 @@ import {
   useStrict,
 } from './bytecode/utils'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
+import { readableSize } from './utils'
 
 export async function buildAsar({
   version,
@@ -27,6 +28,7 @@ export async function buildAsar({
   await Asar.createPackage(electronDistPath, asarOutputPath)
   const buf = await generateGzipFile(readFileSync(asarOutputPath))
   writeFileSync(gzipPath, buf)
+  log.info(`build update asar to '${gzipPath}' => ${readableSize(buf.length)}`, { timestamp: true })
   return buf
 }
 
@@ -46,12 +48,10 @@ export async function buildVersion(
     beta: {
       minimumVersion: version,
       signature: '',
-      size: 0,
       version,
     },
     minimumVersion: version,
     signature: '',
-    size: 0,
     version,
   }
   if (existsSync(versionPath)) {
@@ -67,12 +67,13 @@ export async function buildVersion(
 
   const sig = await generateSignature(asarBuffer, privateKey, cert, version)
 
-  _json = await generateVersionJson(_json, asarBuffer, sig, version, minimumVersion)
+  _json = await generateVersionJson(_json, sig, version, minimumVersion)
   if (!isUpdateJSON(_json)) {
     throw new Error('invalid version info')
   }
 
   writeFileSync(versionPath, JSON.stringify(_json, null, 2))
+  log.info(`build version info to '${versionPath}'`, { timestamp: true })
 }
 
 export async function buildEntry(

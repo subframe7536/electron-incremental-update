@@ -155,3 +155,12 @@ export function getPathFromPublic(...paths: string[]): string {
 export function getPathFromEntryAsar(...paths: string[]): string {
   return join(app.getAppPath(), __EIU_ENTRY_DIST_PATH__, ...paths)
 }
+
+/**
+ * handle all unhandled error
+ * @param callback callback function
+ */
+export function handleUnexpectedErrors(callback: (err: unknown) => void): void {
+  process.on('uncaughtException', callback)
+  process.on('unhandledRejection', callback)
+}

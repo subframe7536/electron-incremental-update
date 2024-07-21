@@ -74,13 +74,12 @@ export class GitHubProvider extends BaseProvider {
 
   public async downloadAsar(
     name: string,
-    { version, size }: UpdateInfo,
+    info: UpdateInfo,
     onDownloading?: (info: DownloadingInfo) => void,
   ): Promise<Buffer> {
     return await defaultDownloadAsar(
-      await this.parseURL(true, `releases/download/v${version}/${name}-${version}.asar.gz`),
+      await this.parseURL(true, `releases/download/v${info.version}/${name}-${info.version}.asar.gz`),
       { accept: 'application/octet-stream', ...this.options.extraHeaders },
-      size,
       onDownloading,
     )
   }

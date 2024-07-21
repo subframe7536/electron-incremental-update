@@ -1,6 +1,16 @@
 import { type IncomingMessage, app, net } from 'electron'
+import type { Arrayable } from '@subframe7536/type-utils'
 import { type UpdateJSON, isUpdateJSON } from '../utils/version'
 import type { OnDownloading } from './types'
+
+export function getHeader(response: Record<string, Arrayable<string>>, headerKey: any): any {
+  const value = response.headers[headerKey]
+  if (Array.isArray(value)) {
+    return value.length === 0 ? null : value[value.length - 1]
+  } else {
+    return value
+  }
+}
 
 async function downloadFn<T>(
   url: string,
@@ -42,12 +52,12 @@ export async function defaultDownloadUpdateJSON(url: string, headers: Record<str
 export async function defaultDownloadAsar(
   url: string,
   headers: Record<string, any>,
-  total: number,
   onDownloading?: OnDownloading,
 ): Promise<Buffer> {
   let transferred = 0
   let time = Date.now()
   return await downloadFn<Buffer>(url, headers, (resp, resolve) => {
+    const total = getHeader(resp.headers, 'content-length') || -1
     let data: Buffer[] = []
     resp.on('data', (chunk) => {
       transferred += chunk.length
