@@ -1,5 +1,5 @@
-import { basename, join, resolve } from 'node:path'
-import { cpSync, existsSync, rmSync } from 'node:fs'
+import path from 'node:path'
+import fs from 'node:fs'
 import type { BuildOptions, InlineConfig, Plugin, PluginOption } from 'vite'
 import { mergeConfig, normalizePath } from 'vite'
 import ElectronSimple from 'vite-plugin-electron/simple'
@@ -56,9 +56,9 @@ export function debugStartup(args: {
 function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files']): string {
   let mainFilePath
   if (typeof options === 'string') {
-    mainFilePath = basename(options)
+    mainFilePath = path.basename(options)
   } else if (Array.isArray(options)) {
-    mainFilePath = basename(options[0])
+    mainFilePath = path.basename(options[0])
   } else {
     const name = options?.index ?? options?.main
     if (!name) {
@@ -241,8 +241,8 @@ export async function electronWithUpdater(
     minify = false
   }
   try {
-    rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
-    rmSync(_options.buildEntryOption.entryOutputDirPath, { recursive: true, force: true })
+    fs.rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
+    fs.rmSync(_options.buildEntryOption.entryOutputDirPath, { recursive: true, force: true })
   } catch { }
   log.info(`remove old files`, { timestamp: true })
 
@@ -251,8 +251,8 @@ export async function electronWithUpdater(
 
   sourcemap ??= (isBuild || !!process.env.VSCODE_DEBUG)
 
-  const _appPath = normalizePath(join(entryOutputDirPath, 'entry.js'))
-  if (resolve(normalizePath(pkg.main)) !== resolve(_appPath)) {
+  const _appPath = normalizePath(path.join(entryOutputDirPath, 'entry.js'))
+  if (path.resolve(normalizePath(pkg.main)) !== path.resolve(_appPath)) {
     throw new Error(`wrong "main" field in package.json: "${pkg.main}", it should be "${_appPath}"`)
   }
 
@@ -279,14 +279,14 @@ export async function electronWithUpdater(
   const _postBuild = postBuild
     ? async () => await postBuild({
       getPathFromEntryOutputDir(...paths) {
-        return join(entryOutputDirPath, ...paths)
+        return path.join(entryOutputDirPath, ...paths)
       },
       copyToEntryOutputDir({ from, to, skipIfExist = true }) {
-        if (existsSync(from)) {
-          const target = join(entryOutputDirPath, to ?? basename(from))
-          if (!skipIfExist || !existsSync(target)) {
+        if (fs.existsSync(from)) {
+          const target = path.join(entryOutputDirPath, to ?? path.basename(from))
+          if (!skipIfExist || !fs.existsSync(target)) {
             try {
-              cpSync(from, target)
+              fs.cpSync(from, target)
             } catch (error) {
               log.warn(`copy failed: ${error}`)
             }

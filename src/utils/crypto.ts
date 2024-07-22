@@ -1,32 +1,25 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  createHash,
-  createPrivateKey,
-  createSign,
-  createVerify,
-} from 'node:crypto'
+import crypto from 'node:crypto'
 
 export function hashBuffer(data: string | Buffer, length: number): Buffer {
-  const hash = createHash('SHA256').update(data).digest('binary')
+  const hash = crypto.createHash('SHA256').update(data).digest('binary')
   return Buffer.from(hash).subarray(0, length)
 }
 
 export function aesEncrypt(plainText: string, key: Buffer, iv: Buffer): string {
-  const cipher = createCipheriv('aes-256-cbc', key, iv)
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
   return cipher.update(plainText, 'utf8', 'base64url') + cipher.final('base64url')
 }
 
 export function defaultSignature(buffer: Buffer, privateKey: string, cert: string, version: string): string {
-  const sig = createSign('RSA-SHA256')
+  const sig = crypto.createSign('RSA-SHA256')
     .update(buffer)
-    .sign(createPrivateKey(privateKey), 'base64')
+    .sign(crypto.createPrivateKey(privateKey), 'base64')
 
   return aesEncrypt(`${sig}%${version}`, hashBuffer(cert, 32), hashBuffer(buffer, 16))
 }
 
 export function aesDecrypt(encryptedText: string, key: Buffer, iv: Buffer): string {
-  const decipher = createDecipheriv('aes-256-cbc', key, iv)
+  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
   return decipher.update(encryptedText, 'base64url', 'utf8') + decipher.final('utf8')
 }
 
@@ -36,7 +29,7 @@ export function defaultVerifySignature(buffer: Buffer, version: string, signatur
     if (ver !== version) {
       return false
     }
-    return createVerify('RSA-SHA256')
+    return crypto.createVerify('RSA-SHA256')
       .update(buffer)
       .verify(cert, sig, 'base64')
   } catch {

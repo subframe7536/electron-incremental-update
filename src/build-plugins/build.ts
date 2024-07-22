@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import fs from 'node:fs'
+import path from 'node:path'
 import Asar from '@electron/asar'
 import { type BuildOptions, build } from 'esbuild'
 import { mergeConfig } from 'vite'
@@ -23,11 +23,11 @@ export async function buildAsar({
   rendererDistPath,
   generateGzipFile,
 }: BuildAsarOption): Promise<Buffer> {
-  renameSync(rendererDistPath, join(electronDistPath, 'renderer'))
-  writeFileSync(join(electronDistPath, 'version'), version)
+  fs.renameSync(rendererDistPath, path.join(electronDistPath, 'renderer'))
+  fs.writeFileSync(path.join(electronDistPath, 'version'), version)
   await Asar.createPackage(electronDistPath, asarOutputPath)
-  const buf = await generateGzipFile(readFileSync(asarOutputPath))
-  writeFileSync(gzipPath, buf)
+  const buf = await generateGzipFile(fs.readFileSync(asarOutputPath))
+  fs.writeFileSync(gzipPath, buf)
   log.info(`build update asar to '${gzipPath}' [${readableSize(buf.length)}]`, { timestamp: true })
   return buf
 }
@@ -54,9 +54,9 @@ export async function buildVersion(
     signature: '',
     version,
   }
-  if (existsSync(versionPath)) {
+  if (fs.existsSync(versionPath)) {
     try {
-      const oldVersionJson = JSON.parse(readFileSync(versionPath, 'utf-8'))
+      const oldVersionJson = JSON.parse(fs.readFileSync(versionPath, 'utf-8'))
       if (isUpdateJSON(oldVersionJson)) {
         _json = oldVersionJson
       } else {
@@ -72,7 +72,7 @@ export async function buildVersion(
     throw new Error('invalid version info')
   }
 
-  writeFileSync(versionPath, JSON.stringify(_json, null, 2))
+  fs.writeFileSync(versionPath, JSON.stringify(_json, null, 2))
   log.info(`build version info to '${versionPath}'`, { timestamp: true })
 }
 
@@ -118,8 +118,8 @@ export async function buildEntry(
   }
   const filePaths = Object.keys(metafile?.outputs ?? [])
   for (const filePath of filePaths) {
-    let code = readFileSync(filePath, 'utf-8')
-    const fileName = basename(filePath)
+    let code = fs.readFileSync(filePath, 'utf-8')
+    const fileName = path.basename(filePath)
     const isEntry = fileName.endsWith('entry.js')
 
     if (isEntry) {
@@ -134,11 +134,11 @@ export async function buildEntry(
       [...protectedStrings, ...(isEntry ? getCert(code) : [])],
     ).code
     const buffer = await compileToBytecode(transformedCode)
-    writeFileSync(`${filePath}c`, buffer)
-    writeFileSync(
+    fs.writeFileSync(
       filePath,
       `${isEntry ? bytecodeModuleLoaderCode : useStrict}${isEntry ? '' : 'module.exports = '}require("./${fileName}c")`,
     )
+    fs.writeFileSync(`${filePath}c`, buffer)
     bytecodeLog.info(
       `${filePath} [${(buffer.byteLength / 1000).toFixed(2)} kB]`,
       { timestamp: true },

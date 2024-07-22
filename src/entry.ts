@@ -1,5 +1,5 @@
-import { join } from 'node:path'
-import { existsSync, renameSync } from 'node:fs'
+import path from 'node:path'
+import fs from 'node:fs'
 import { app } from 'electron'
 import { type Logger, Updater, type UpdaterOption } from './updater'
 import type { IProvider } from './provider'
@@ -130,9 +130,9 @@ export async function initApp(
 
     // do update: replace the old asar with new asar
     const tempAsarPath = `${appNameAsarPath}.tmp`
-    if (existsSync(tempAsarPath)) {
+    if (fs.existsSync(tempAsarPath)) {
       logger?.info(`installing new asar: ${tempAsarPath}`)
-      await onInstall(() => renameSync(tempAsarPath, appNameAsarPath), tempAsarPath, appNameAsarPath, logger)
+      await onInstall(() => fs.renameSync(tempAsarPath, appNameAsarPath), tempAsarPath, appNameAsarPath, logger)
     }
 
     // logger.debug(`app.getAppPath(): ${app.getAppPath()}`)
@@ -140,9 +140,9 @@ export async function initApp(
     // logger.debug(`__EIU_MAIN_FILE__: ${__EIU_MAIN_FILE__}`)
     // logger.debug(`__EIU_MAIN_DEV_DIR__: ${__EIU_MAIN_DEV_DIR__}`)
     // logger.debug(`mainFilePath: ${mainFilePath}`)
-    const mainFilePath = join(
+    const mainFilePath = path.join(
       isDev
-        ? join(app.getAppPath(), __EIU_MAIN_DEV_DIR__)
+        ? path.join(app.getAppPath(), __EIU_MAIN_DEV_DIR__)
         : appNameAsarPath,
       'main',
       __EIU_MAIN_FILE__,

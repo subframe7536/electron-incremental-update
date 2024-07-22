@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import fs from 'node:fs'
+import path from 'node:path'
 import type { BrowserWindow } from 'electron'
 import { app } from 'electron'
 
@@ -32,15 +32,15 @@ export const isLinux = process.platform === 'linux'
  *
  * if is in dev, **always** return `'DEV.asar'`
  */
-export function getPathFromAppNameAsar(...path: string[]): string {
-  return isDev ? 'DEV.asar' : join(dirname(app.getAppPath()), `${app.name}.asar`, ...path)
+export function getPathFromAppNameAsar(...paths: string[]): string {
+  return isDev ? 'DEV.asar' : path.join(path.dirname(app.getAppPath()), `${app.name}.asar`, ...paths)
 }
 
 /**
  * get app version, if is in dev, return `getEntryVersion()`
  */
 export function getAppVersion(): string {
-  return isDev ? getEntryVersion() : readFileSync(getPathFromAppNameAsar('version'), 'utf-8')
+  return isDev ? getEntryVersion() : fs.readFileSync(getPathFromAppNameAsar('version'), 'utf-8')
 }
 
 /**
@@ -56,7 +56,7 @@ export function getEntryVersion(): string {
  */
 export function requireNative<T = any>(moduleName: string): T {
   // eslint-disable-next-line ts/no-require-imports
-  return require(join(app.getAppPath(), __EIU_ENTRY_DIST_PATH__, moduleName))
+  return require(path.join(app.getAppPath(), __EIU_ENTRY_DIST_PATH__, moduleName))
 }
 
 /**
@@ -118,10 +118,10 @@ export function singleInstance(window?: BrowserWindow): boolean {
  * @param dirName dir name, default to `data`
  */
 export function setPortableAppDataPath(dirName = 'data'): void {
-  const portablePath = join(dirname(app.getPath('exe')), dirName)
+  const portablePath = path.join(path.dirname(app.getPath('exe')), dirName)
 
-  if (!existsSync(portablePath)) {
-    mkdirSync(portablePath)
+  if (!fs.existsSync(portablePath)) {
+    fs.mkdirSync(portablePath)
   }
 
   app.setPath('appData', portablePath)
@@ -142,18 +142,18 @@ export function loadPage(win: BrowserWindow, htmlFilePath = 'index.html'): void 
 
 export function getPathFromPreload(...paths: string[]): string {
   return isDev
-    ? join(app.getAppPath(), __EIU_ELECTRON_DIST_PATH__, 'preload', ...paths)
+    ? path.join(app.getAppPath(), __EIU_ELECTRON_DIST_PATH__, 'preload', ...paths)
     : getPathFromAppNameAsar('preload', ...paths)
 }
 
 export function getPathFromPublic(...paths: string[]): string {
   return isDev
-    ? join(app.getAppPath(), 'public', ...paths)
+    ? path.join(app.getAppPath(), 'public', ...paths)
     : getPathFromAppNameAsar('renderer', ...paths)
 }
 
 export function getPathFromEntryAsar(...paths: string[]): string {
-  return join(app.getAppPath(), __EIU_ENTRY_DIST_PATH__, ...paths)
+  return path.join(app.getAppPath(), __EIU_ENTRY_DIST_PATH__, ...paths)
 }
 
 /**

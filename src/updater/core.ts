@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs'
+import fs from 'node:fs'
 import { EventEmitter } from 'node:events'
 import { app } from 'electron'
 import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
@@ -203,7 +203,7 @@ export class Updater extends EventEmitter<{
       const tmpFilePath = getPathFromAppNameAsar() + '.tmp'
       // write file to tmp path
       this.logger?.debug(`install to ${tmpFilePath}`)
-      writeFileSync(tmpFilePath, await this.provider.unzipFile(buffer))
+      fs.writeFileSync(tmpFilePath, await this.provider.unzipFile(buffer))
 
       this.logger?.info(`download success, version: ${_version}`)
       this.info = undefined

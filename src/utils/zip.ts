@@ -1,8 +1,8 @@
-import { brotliCompress, brotliDecompress } from 'node:zlib'
+import zlib from 'node:zlib'
 
 export async function defaultZipFile(buffer: Buffer): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
-    brotliCompress(buffer, (err, buffer) => {
+    zlib.brotliCompress(buffer, (err, buffer) => {
       if (err) {
         reject(err)
       } else {
@@ -14,7 +14,7 @@ export async function defaultZipFile(buffer: Buffer): Promise<Buffer> {
 
 export async function defaultUnzipFile(buffer: Buffer): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
-    brotliDecompress(buffer, (err, buffer) => {
+    zlib.brotliDecompress(buffer, (err, buffer) => {
       if (err) {
         reject(err)
       } else {

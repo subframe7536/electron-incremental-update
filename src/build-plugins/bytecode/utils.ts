@@ -1,6 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
-import { spawn } from 'node:child_process'
+import cp from 'node:child_process'
 import * as babel from '@babel/core'
 import MagicString from 'magic-string'
 import { getPackageInfoSync } from 'local-pkg'
@@ -49,7 +49,7 @@ export function compileToBytecode(code: string): Promise<Buffer> {
   const electronPath = getElectronPath()
   const bytecodePath = getBytecodeCompilerPath()
   return new Promise((resolve, reject) => {
-    const proc = spawn(electronPath, [bytecodePath], {
+    const proc = cp.spawn(electronPath, [bytecodePath], {
       env: { ELECTRON_RUN_AS_NODE: '1' } as any,
       stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
     })
