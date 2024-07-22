@@ -235,11 +235,9 @@ export async function electronWithUpdater(
   const bytecodeOptions = typeof bytecode === 'object'
     ? bytecode
     : bytecode === true
-      ? { protectedStrings: [] }
+      ? { enable: true }
       : undefined
-  if (bytecodeOptions) {
-    minify = false
-  }
+
   try {
     fs.rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
     fs.rmSync(_options.buildEntryOption.entryOutputDirPath, { recursive: true, force: true })
@@ -271,7 +269,7 @@ export async function electronWithUpdater(
     await buildEntry(
       buildEntryOption,
       define,
-      isBuild ? bytecodeOptions?.protectedStrings : undefined,
+      bytecodeOptions,
     )
     log.info(`vite build entry to '${entryOutputDirPath}'`, { timestamp: true })
   }
@@ -299,7 +297,7 @@ export async function electronWithUpdater(
   let isInit = false
 
   const rollupOptions: BuildOptions['rollupOptions'] = {
-    external: src => src.startsWith('node:') || Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}).includes(src),
+    external: src => src.startsWith('node:') || Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}).includes(src) || src === 'original-fs',
     treeshake: true,
   }
 
@@ -322,7 +320,7 @@ export async function electronWithUpdater(
         {
           plugins: [
             !isBuild && useNotBundle ? notBundle() : undefined,
-            bytecodeOptions && bytecodePlugin(!!bytecode, 'main', bytecodeOptions),
+            bytecodeOptions && bytecodePlugin('main', bytecodeOptions),
           ],
           build: {
             sourcemap,
@@ -341,7 +339,7 @@ export async function electronWithUpdater(
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
           plugins: [
-            bytecodeOptions && bytecodePlugin(!!bytecode, 'preload', bytecodeOptions),
+            bytecodeOptions && bytecodePlugin('preload', bytecodeOptions),
             {
               name: `${id}-build`,
               enforce: 'post',
@@ -390,7 +388,10 @@ export async function electronWithUpdater(
   let extraHmrPlugin: Plugin | undefined
 
   if (nativeModuleEntryMap) {
-    const files = [...Object.values(nativeModuleEntryMap), appEntryPath].map(file => resolve(normalizePath(file)))
+    const files = [
+      ...Object.values(nativeModuleEntryMap),
+      appEntryPath,
+    ].map(file => path.resolve(normalizePath(file)))
 
     extraHmrPlugin = {
       name: `${id}-dev`,

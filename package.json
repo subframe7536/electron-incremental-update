@@ -45,6 +45,7 @@
     "build": "tsup && esno fix-module.cjs",
     "release": "pnpm test && pnpm run build && bumpp --all && npm publish",
     "test": "vitest --run",
+    "test:dev": "vitest",
     "format": "eslint . --fix"
   },
   "publishConfig": {
@@ -53,27 +54,28 @@
   },
   "peerDependencies": {
     "@electron/asar": "*",
-    "esbuild": "*",
-    "magic-string": "*"
+    "esbuild": "*"
   },
   "dependencies": {
-    "@babel/core": "^7.24.7",
+    "@babel/core": "^7.24.9",
     "@babel/plugin-transform-arrow-functions": "^7.24.7",
+    "@babel/plugin-transform-template-literals": "^7.24.7",
     "@subframe7536/type-utils": "^0.1.6",
     "ci-info": "^4.0.0",
     "local-pkg": "^0.5.0",
+    "magic-string": "^0.30.10",
     "selfsigned": "^2.4.1",
     "vite-plugin-electron": "^0.28.7"
   },
   "devDependencies": {
-    "@subframe7536/eslint-config": "^0.7.2",
+    "@subframe7536/eslint-config": "^0.7.3",
     "@types/babel__core": "^7.20.5",
     "@types/node": "^20.14.11",
     "bumpp": "^9.4.1",
     "electron": "28.2.10",
     "eslint": "^9.7.0",
     "esno": "^4.7.0",
-    "tsup": "^8.1.0",
+    "tsup": "^8.2.1",
     "typescript": "^5.5.3",
     "vite": "^5.3.4",
     "vite-plugin-electron": "^0.28.7",

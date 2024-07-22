@@ -79,7 +79,7 @@ export function compileToBytecode(code: string): Promise<Buffer> {
 
 export function convertArrowToFunction(code: string): { code: string, map: any } {
   const result = babel.transform(code, {
-    plugins: ['@babel/plugin-transform-arrow-functions'],
+    plugins: ['@babel/plugin-transform-arrow-functions', '@babel/plugin-transform-template-literals'],
   })
   return {
     code: result?.code || code,
@@ -93,29 +93,91 @@ function escapeRegExpString(str: string): string {
     .replace(/[|{}()[\]^$+*?.]/g, '\\$&')
 }
 
+export const decodeFn = ';function _0xstr_(a,b){return String.fromCharCode.apply(0,a.map(function(x){return x-b}))};'
+export function obfuscateString(input: string, offset = ~~(Math.random() * 16) + 1): string {
+  const hexArray = input.split('').map(c => '0x' + (c.charCodeAt(0) + offset).toString(16))
+  return `_0xstr_([${hexArray.join(',')}],${offset})`
+}
+
 export function convertString(
   code: string,
   strings: string[],
   sourcemap?: boolean,
 ): { code: string, map?: any } {
-  let s: MagicString | null = null
+  const s = new MagicString(code)
 
-  for (const str of strings.filter(Boolean)) {
-    const regex = new RegExp(`["']${escapeRegExpString(str)}["']`, 'g')
-    s ||= new MagicString(code).replace(regex, match => obfuscateString(match.slice(1, -1)))
+  const _strings = strings.filter(Boolean)
+  if (_strings.length) {
+    for (const str of _strings) {
+      const regex = new RegExp(`["']${escapeRegExpString(str)}["']`, 'g')
+      s.replace(regex, match => obfuscateString(match.slice(1, -1)))
+    }
+    s.append(decodeFn)
   }
-
-  return s
-    ? {
-        code: s.toString(),
-        map: sourcemap ? s.generateMap({ hires: 'boundary' }) : null,
-      }
-    : { code }
+  return {
+    code: s.toString(),
+    map: sourcemap ? s.generateMap({ hires: 'boundary' }) : undefined,
+  }
 }
 
-const decodeFn = 'function(a,b){return String.fromCharCode.apply(0,a.map(function(x){return x-b}))}'
-export function obfuscateString(input: string): string {
-  const offset = (Math.random() << 4) | 0
-  const hexArray = input.split('').map(c => '0x' + (c.charCodeAt(0) + offset).toString(16))
-  return `(${decodeFn})(${JSON.stringify(hexArray)},${offset})`
+export function convertLiteral(code: string, sourcemap?: boolean, offset?: number): { code: string, map?: any } {
+  const s = new MagicString(code)
+  let hasTransformed = false
+  const ast = babel.parse(code, { ast: true })
+  if (!ast) {
+    throw new Error('cannot parse code')
+  }
+  babel.traverse(ast, {
+    StringLiteral(path) {
+      const parent = path.parent
+      const node = path.node
+
+      if (parent.type === 'CallExpression') {
+        if (parent.callee.type === 'Identifier' && parent.callee.name === 'require') {
+          return
+        }
+        if (parent.callee.type === 'Import') {
+          return
+        }
+      }
+
+      if (parent.type.startsWith('Export')) {
+        return
+      }
+
+      if (parent.type.startsWith('Import')) {
+        return
+      }
+
+      if (parent.type === 'ObjectProperty' && parent.key === node) {
+        const result = `[${obfuscateString(node.value, offset)}]`
+        const start = node.start
+        const end = node.end
+        if (start && end) {
+          s.overwrite(start, end, result)
+          hasTransformed = true
+        }
+        return
+      }
+      if (!node.value.trim()) {
+        return
+      }
+      const result = obfuscateString(node.value, offset)
+      const start = node.start
+      const end = node.end
+      if (start && end) {
+        s.overwrite(start, end, result)
+        hasTransformed = true
+      }
+    },
+  })
+
+  if (hasTransformed) {
+    s.append('\n').append(decodeFn)
+  }
+
+  return {
+    code: s.toString(),
+    map: sourcemap ? s.generateMap({ hires: true }) : undefined,
+  }
 }

@@ -194,7 +194,7 @@ export class Updater extends EventEmitter<{
     // verify update file
     this.logger?.debug('verify start')
     if (!await this.provider.verifySignaure(buffer, _version, _sig, this.CERT)) {
-      this.err('download failed', 'validate', 'invalid signature / certificate pair')
+      this.err('download failed', 'validate', 'invalid update asar file')
       return false
     }
     this.logger?.debug('verify success')

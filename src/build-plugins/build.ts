@@ -9,11 +9,13 @@ import { bytecodeModuleLoaderCode } from './bytecode/code'
 import {
   compileToBytecode,
   convertArrowToFunction,
-  convertString,
+  convertLiteral,
+  // convertString,
   useStrict,
 } from './bytecode/utils'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 import { readableSize } from './utils'
+import type { BytecodeOptions } from './bytecode'
 
 export async function buildAsar({
   version,
@@ -86,7 +88,7 @@ export async function buildEntry(
     overrideEsbuildOptions,
   }: Required<Omit<BuildEntryOption, 'postBuild'>>,
   define: Record<string, string>,
-  protectedStrings?: string[],
+  bytecodeOptions: BytecodeOptions | undefined,
 ): Promise<void> {
   const option: BuildOptions = mergeConfig(
     {
@@ -113,7 +115,7 @@ export async function buildEntry(
   )
   const { metafile } = await build(option)
 
-  if (protectedStrings === undefined) {
+  if (!bytecodeOptions || !bytecodeOptions.enable) {
     return
   }
   const filePaths = Object.keys(metafile?.outputs ?? [])
@@ -129,10 +131,17 @@ export async function buildEntry(
       )
     }
 
-    const transformedCode = convertString(
-      convertArrowToFunction(code).code,
-      [...protectedStrings, ...(isEntry ? getCert(code) : [])],
-    ).code
+    // const transformedCode = convertString(
+    //   convertArrowToFunction(code).code,
+    //   [...protectedStrings, ...(isEntry ? getCert(code) : [])],
+    // ).code
+    let transformedCode = convertLiteral(convertArrowToFunction(code).code).code
+    if (bytecodeOptions.beforeCompile) {
+      const result = await bytecodeOptions.beforeCompile(transformedCode, filePath)
+      if (result) {
+        transformedCode = result
+      }
+    }
     const buffer = await compileToBytecode(transformedCode)
     fs.writeFileSync(
       filePath,
@@ -147,7 +156,7 @@ export async function buildEntry(
   bytecodeLog.info(`${filePaths.length} file${filePaths.length > 1 ? 's' : ''} compiled into bytecode`, { timestamp: true })
 }
 
-function getCert(code: string): string[] {
-  const cert = code.match(/-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n/)?.[0]
-  return cert ? [cert] : []
-}
+// function getCert(code: string): string[] {
+//   const cert = code.match(/-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n/)?.[0]
+//   return cert ? [cert] : []
+// }

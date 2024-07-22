@@ -2,47 +2,52 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { type Plugin, type ResolvedConfig, createFilter, normalizePath } from 'vite'
 import MagicString from 'magic-string'
+import type { Promisable } from '@subframe7536/type-utils'
 import { bytecodeId, bytecodeLog } from '../constant'
 import { readableSize } from '../utils'
 import {
   bytecodeModuleLoader,
   compileToBytecode,
   convertArrowToFunction,
-  convertString,
+  // convertString,
+  convertLiteral,
   toRelativePath,
   useStrict,
 } from './utils'
 import { bytecodeModuleLoaderCode } from './code'
 
 export interface BytecodeOptions {
-  /**
-   * strings that should be transformed
-   */
-  protectedStrings?: string[]
+  enable: boolean
   /**
    * Remember to set `sandbox: false` when creating window
    */
-  enablePreload?: boolean
+  preload?: boolean
+  /**
+   * before transformed code compile callback, if return `null` or `undefined`, it will be ignored
+   * @param code transformed code
+   * @param id file path
+   */
+  beforeCompile?: (code: string, id: string) => Promisable<string | null | undefined>
 }
 
 /**
  * Compile to v8 bytecode to protect source code.
  */
 export function bytecodePlugin(
-  enable: boolean,
   env: 'preload' | 'main',
-  options: BytecodeOptions = {},
+  options: BytecodeOptions,
 ): Plugin | null {
+  const {
+    enable,
+    preload = false,
+    beforeCompile,
+  } = options
+
   if (!enable) {
     return null
   }
 
-  const {
-    protectedStrings = [],
-    enablePreload = false,
-  } = options
-
-  if (!enablePreload && env === 'preload') {
+  if (!preload && env === 'preload') {
     bytecodeLog.warn('bytecodePlugin is skiped in preload. To enable in preload, please manually set the "enablePreload" option to true and set `sandbox: false` when creating the window', { timestamp: true })
     return null
   }
@@ -61,10 +66,13 @@ export function bytecodePlugin(
       config = resolvedConfig
     },
     transform(code, id) {
-      if (protectedStrings.length === 0 || !filter(id)) {
-        return
+      // if (protectedStrings.length === 0 || !filter(id)) {
+      //   return
+      // }
+      // return convertString(code, protectedStrings, !!config.build.sourcemap)
+      if (!filter(id)) {
+        return convertLiteral(code, !!config.build.sourcemap)
       }
-      return convertString(code, protectedStrings, !!config.build.sourcemap)
     },
     generateBundle(options): void {
       if (options.format !== 'es' && bytecodeRequired) {
@@ -118,6 +126,14 @@ export function bytecodePlugin(
           const chunk = output[name]
           if (chunk.type === 'chunk') {
             let _code = chunk.code
+
+            if (beforeCompile) {
+              const cbResult = await beforeCompile(_code, chunk.fileName)
+              if (cbResult) {
+                _code = cbResult
+              }
+            }
+
             if (bytecodeRE && _code.match(bytecodeRE)) {
               let match: RegExpExecArray | null
               const s = new MagicString(_code)
@@ -131,10 +147,13 @@ export function bytecodePlugin(
               }
               _code = s.toString()
             }
+
             const chunkFilePath = path.resolve(outDir, name)
+
             if (bytecodeChunks.includes(name)) {
               const bytecodeBuffer = await compileToBytecode(_code)
-              fs.writeFileSync(path.resolve(outDir, name + 'c'), bytecodeBuffer)
+              fs.writeFileSync(chunkFilePath + 'c', bytecodeBuffer)
+
               if (chunk.isEntry) {
                 const bytecodeLoaderBlock = getBytecodeLoaderBlock(chunk.fileName)
                 const bytecodeModuleBlock = `require("./${path.basename(name) + 'c'}");`
@@ -143,11 +162,13 @@ export function bytecodePlugin(
               } else {
                 fs.unlinkSync(chunkFilePath)
               }
+
               bytecodeFiles.push({ name: name + 'c', size: bytecodeBuffer.length })
             } else {
               if (chunk.isEntry) {
                 let hasBytecodeMoudle = false
                 const idsToHandle = new Set([...chunk.imports, ...chunk.dynamicImports])
+
                 for (const moduleId of idsToHandle) {
                   if (bytecodeChunks.includes(moduleId)) {
                     hasBytecodeMoudle = true
@@ -164,6 +185,7 @@ export function bytecodePlugin(
                     }
                   }
                 }
+
                 const bytecodeLoaderBlock = getBytecodeLoaderBlock(chunk.fileName)
                 _code = hasBytecodeMoudle ? _code.replace(useStrict, `${useStrict}\n${bytecodeLoaderBlock}`) : _code
               }
