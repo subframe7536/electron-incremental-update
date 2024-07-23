@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import { EventEmitter } from 'node:events'
 import { app } from 'electron'
 import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
-import type { DownloadingInfo, IProvider, URLHandler } from '../provider'
+import type { DownloadingInfo, IProvider } from '../provider'
 import { getAppVersion, getEntryVersion, getPathFromAppNameAsar, isDev, restartApp } from '../utils/electron'
 import type { ErrorInfo, Logger, UpdaterOption } from './types'
 import { UpdaterError } from './types'
@@ -26,7 +26,7 @@ export class Updater extends EventEmitter<{
 }> {
   private CERT = __EIU_SIGNATURE_CERT__
   private info?: UpdateInfo
-  private provider: IProvider
+  public provider?: IProvider
   /**
    * updater logger
    */
@@ -41,21 +41,14 @@ export class Updater extends EventEmitter<{
   public forceUpdate?: boolean
   /**
    * initialize incremental updater
-   * @param provider update provider
-   * @param option UpdaterOption
+   * @param options UpdaterOption
    */
-  constructor(provider: IProvider, option: UpdaterOption = {}) {
+  constructor(options: UpdaterOption = {}) {
     super()
-    this.provider = provider
-    this.receiveBeta = option.receiveBeta
-
-    if (option.SIGNATURE_CERT) {
-      this.CERT = option.SIGNATURE_CERT
-    }
-
-    if (option.logger) {
-      this.logger = option.logger
-    }
+    this.provider = options.provider
+    this.receiveBeta = options.receiveBeta
+    this.CERT = options.SIGNATURE_CERT || __EIU_SIGNATURE_CERT__
+    this.logger = options.logger
 
     if (isDev && !this.logger) {
       this.logger = {
@@ -65,6 +58,16 @@ export class Updater extends EventEmitter<{
         error: (...args) => console.error('[EIU-ERROR]', ...args),
       }
       this.logger.info('no logger set, enable dev-only logger')
+    }
+
+    if (!this.provider) {
+      this.logger?.debug('No update provider, please setup provider before checking update')
+    }
+  }
+
+  private checkProvider(): void {
+    if (!this.provider) {
+      throw new UpdaterError('param', 'missing update provider')
     }
   }
 
@@ -92,11 +95,11 @@ export class Updater extends EventEmitter<{
     }
 
     // fetch data from remote
-    this.logger?.debug(`download from ${this.provider.name}`)
+    this.logger?.debug(`download from ${this.provider!.name}`)
     try {
       const result = format === 'json'
-        ? await this.provider.downloadJSON(data ?? __EIU_VERSION_PATH__)
-        : await this.provider.downloadAsar(app.name, this.info!, data => this.emit('download-progress', data))
+        ? await this.provider!.downloadJSON(data ?? __EIU_VERSION_PATH__)
+        : await this.provider!.downloadAsar(app.name, this.info!, data => this.emit('download-progress', data))
 
       this.logger?.debug(`download ${format} success${format === 'buffer' ? `, file size: ${(result as Buffer).length}` : ''}`)
 
@@ -125,6 +128,7 @@ export class Updater extends EventEmitter<{
    */
   public async checkUpdate(data: UpdateJSON): Promise<boolean>
   public async checkUpdate(data?: UpdateJSON): Promise<boolean> {
+    this.checkProvider()
     const emitUnavailable = (msg: string): false => {
       this.logger?.info(msg)
       this.emit('update-unavailable', msg)
@@ -145,7 +149,7 @@ export class Updater extends EventEmitter<{
     if (isDev && !this.forceUpdate && !data) {
       return emitUnavailable('skip check update in dev mode, to force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON')
     }
-    const isLowerVersion = this.provider.isLowerVersion
+    const isLowerVersion = this.provider!.isLowerVersion
     const entryVersion = getEntryVersion()
     const appVersion = getAppVersion()
 
@@ -175,6 +179,7 @@ export class Updater extends EventEmitter<{
    */
   public async downloadUpdate(data: Uint8Array, info: Omit<UpdateInfo, 'minimumVersion'>): Promise<boolean>
   public async downloadUpdate(data?: Uint8Array, info?: Omit<UpdateInfo, 'minimumVersion'>): Promise<boolean> {
+    this.checkProvider()
     const _sig = info?.signature ?? this.info?.signature
     const _version = info?.version ?? this.info?.version
 
@@ -193,7 +198,7 @@ export class Updater extends EventEmitter<{
 
     // verify update file
     this.logger?.debug('verify start')
-    if (!await this.provider.verifySignaure(buffer, _version, _sig, this.CERT)) {
+    if (!await this.provider!.verifySignaure(buffer, _version, _sig, this.CERT)) {
       this.err('download failed', 'validate', 'invalid update asar file')
       return false
     }
@@ -203,7 +208,7 @@ export class Updater extends EventEmitter<{
       const tmpFilePath = getPathFromAppNameAsar() + '.tmp'
       // write file to tmp path
       this.logger?.debug(`install to ${tmpFilePath}`)
-      fs.writeFileSync(tmpFilePath, await this.provider.unzipFile(buffer))
+      fs.writeFileSync(tmpFilePath, await this.provider!.unzipFile(buffer))
 
       this.logger?.info(`download success, version: ${_version}`)
       this.info = undefined
@@ -221,21 +226,6 @@ export class Updater extends EventEmitter<{
   public quitAndInstall(): void {
     this.logger?.info('quit and install')
     restartApp()
-  }
-
-  /**
-   * setup provider URL handler
-   *
-   * @example
-   * updater.setURLHandler((url, isDownloadingAsar) => {
-   *   if (isDownloadingAsar) {
-   *     url.hostname = 'https://cdn.jsdelivr.net/gh'
-   *     return url
-   *   }
-   * })
-   */
-  public setURLHandler(handler: URLHandler): void {
-    this.provider.urlHandler = handler
   }
 }
 

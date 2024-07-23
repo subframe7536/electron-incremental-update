@@ -52,6 +52,9 @@ export class GitHubProvider extends BaseProvider {
   constructor(options: GitHubProviderOptions) {
     super()
     this.options = options
+    if (!options.branch) {
+      this.options.branch = 'HEAD'
+    }
   }
 
   get urlHandler(): URLHandler | undefined {
@@ -72,8 +75,8 @@ export class GitHubProvider extends BaseProvider {
 
   public async downloadJSON(versionPath: string): Promise<UpdateJSON> {
     return await defaultDownloadUpdateJSON(
-      await this.parseURL(false, `${this.options.branch ?? 'HEAD'}/${versionPath}`),
-      { accept: 'application/json', ...this.options.extraHeaders },
+      await this.parseURL(false, `${this.options.branch}/${versionPath}`),
+      { Accept: 'application/json', ...this.options.extraHeaders },
     )
   }
 
@@ -84,7 +87,7 @@ export class GitHubProvider extends BaseProvider {
   ): Promise<Buffer> {
     return await defaultDownloadAsar(
       await this.parseURL(true, `releases/download/v${info.version}/${name}-${info.version}.asar.gz`),
-      { accept: 'application/octet-stream', ...this.options.extraHeaders },
+      { Accept: 'application/octet-stream', ...this.options.extraHeaders },
       onDownloading,
     )
   }

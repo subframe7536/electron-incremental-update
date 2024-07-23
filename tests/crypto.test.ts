@@ -1,7 +1,7 @@
 import { join } from 'node:path/posix'
 import { readFileSync, rmSync } from 'node:fs'
 import { afterAll, describe, expect, it } from 'vitest'
-import { generateKeyPair } from '../src/build-plugins/key'
+import { generateKeyPair } from '../src/vite/key'
 import { aesDecrypt, aesEncrypt, defaultSignature, defaultVerifySignature, hashBuffer } from '../src/utils/crypto'
 
 let plain = ''

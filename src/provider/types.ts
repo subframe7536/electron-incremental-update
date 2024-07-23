@@ -45,7 +45,7 @@ export interface IProvider {
   onDownloading?: OnDownloading
   /**
    * download update json
-   * @param versionPath parsed version path
+   * @param versionPath parsed version path in project
    */
   downloadJSON: (versionPath: string) => Promise<UpdateJSON>
   /**

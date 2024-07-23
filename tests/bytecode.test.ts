@@ -1,7 +1,7 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-eval */
 import { describe, expect, it } from 'vitest'
-import { convertArrowFunctionAndTemplate, convertLiteral, decodeFn, obfuscateString } from '../src/build-plugins/bytecode/utils'
+import { convertArrowFunctionAndTemplate, convertLiteral, decodeFn, obfuscateString } from '../src/vite/bytecode/utils'
 
 describe('obfuscate', () => {
   function testObfuscate(str: string) {

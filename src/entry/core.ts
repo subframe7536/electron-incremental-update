@@ -2,7 +2,6 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { app } from 'electron'
 import { getPathFromAppNameAsar, isDev } from '../utils/electron'
-import type { IProvider } from '../provider'
 import type { Logger, UpdaterOption } from './types'
 import { Updater } from './updater'
 
@@ -28,10 +27,6 @@ type Promisable<T> = T | Promise<T>
 type OnInstallFunction = (install: VoidFunction, tempAsarPath: string, appNameAsarPath: string, logger?: Logger) => Promisable<void>
 
 export interface AppOption {
-  /**
-   * update provider
-   */
-  provider: IProvider
   /**
    * updater options
    */
@@ -101,7 +96,6 @@ export async function initApp(
   appOptions: AppOption,
 ): Promise<void> {
   const {
-    provider,
     updater,
     onInstall = defaultOnInstall,
     beforeStart,
@@ -110,20 +104,12 @@ export async function initApp(
 
   let updaterInstance
   if (typeof updater === 'object' || !updater) {
-    updaterInstance = new Updater(provider, updater)
+    updaterInstance = new Updater(updater)
   } else {
     updaterInstance = await updater()
   }
 
-  let logger = updaterInstance.logger
-  if (isDev && !logger) {
-    logger = {
-      info: (...args) => console.log('[EIU-INFO ]', ...args),
-      debug: (...args) => console.log('[EIU-DEBUG]', ...args),
-      warn: (...args) => console.log('[EIU-WARN ]', ...args),
-      error: (...args) => console.error('[EIU-ERROR]', ...args),
-    }
-  }
+  const logger = updaterInstance.logger
   try {
     const appNameAsarPath = getPathFromAppNameAsar()
 

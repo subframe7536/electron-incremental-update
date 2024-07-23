@@ -19,8 +19,7 @@ async function downloadFn<T>(
 ): Promise<T> {
   await app.whenReady()
   return new Promise((resolve, reject) => {
-    const request = net.request({ url, method: 'GET', redirect: 'follow' })
-    Object.keys(headers).forEach(key => request.setHeader(key, headers[key]))
+    const request = net.request({ url, method: 'GET', redirect: 'follow', headers })
     request.on('response', (resp) => {
       resp.on('aborted', () => reject(new Error('aborted')))
       resp.on('error', () => reject(new Error('download error')))
