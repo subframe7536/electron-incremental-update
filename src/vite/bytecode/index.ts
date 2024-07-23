@@ -9,7 +9,6 @@ import {
   bytecodeModuleLoader,
   compileToBytecode,
   convertArrowFunctionAndTemplate,
-  // convertString,
   convertLiteral,
   toRelativePath,
   useStrict,
@@ -19,11 +18,11 @@ import { bytecodeModuleLoaderCode } from './code'
 export interface BytecodeOptions {
   enable: boolean
   /**
-   * Remember to set `sandbox: false` when creating window
+   * Enable in preload script. Remember to set `sandbox: false` when creating window
    */
   preload?: boolean
   /**
-   * before transformed code compile callback, if return `null` or `undefined`, it will be ignored
+   * Before transformed code compile function. If return `Falsy` value, it will be ignored
    * @param code transformed code
    * @param id file path
    */
@@ -48,7 +47,7 @@ export function bytecodePlugin(
   }
 
   if (!preload && env === 'preload') {
-    bytecodeLog.warn('bytecodePlugin is skiped in preload. To enable in preload, please manually set the "enablePreload" option to true and set `sandbox: false` when creating the window', { timestamp: true })
+    bytecodeLog.warn('`bytecodePlugin` is skiped in preload. To enable in preload, please manually set the "enablePreload" option to true and set `sandbox: false` when creating the window', { timestamp: true })
     return null
   }
 
@@ -66,10 +65,6 @@ export function bytecodePlugin(
       config = resolvedConfig
     },
     transform(code, id) {
-      // if (protectedStrings.length === 0 || !filter(id)) {
-      //   return
-      // }
-      // return convertString(code, protectedStrings, !!config.build.sourcemap)
       if (!filter(id)) {
         return convertLiteral(code, !!config.build.sourcemap)
       }
@@ -87,7 +82,7 @@ export function bytecodePlugin(
     renderChunk(code, chunk, options) {
       if (options.format === 'es') {
         bytecodeLog.warn(
-          'bytecodePlugin does not support ES module, please remove "type": "module" in package.json or set the "build.rollupOptions.output.format" option to "cjs".',
+          '`bytecodePlugin` does not support ES module, please remove "type": "module" in package.json or set the "build.rollupOptions.output.format" option to "cjs".',
           { timestamp: true },
         )
         return null

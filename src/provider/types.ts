@@ -6,50 +6,50 @@ export type OnDownloading = (progress: DownloadingInfo) => void
 
 export interface DownloadingInfo {
   /**
-   * download delta
+   * Download buffer delta
    */
   delta: number
   /**
-   * downloaded percent, 0 ~ 100
+   * Downloaded percent, 0 ~ 100
    *
-   * If not `Content-Length` header, will be nagative
+   * If no `Content-Length` header, will be nagative
    */
   percent: number
   /**
-   * total size
+   * Total size
    *
    * If not `Content-Length` header, will be -1
    */
   total: number
   /**
-   * downloaded size
+   * Downloaded size
    */
   transferred: number
   /**
-   * download speed, bytes per second
+   * Download speed, bytes per second
    */
   bps: number
 }
 
 export interface IProvider {
   /**
-   * provider name
+   * Provider name
    */
   name: string
   /**
-   * custom url handler
+   * Custom url handler
    *
    * for Github, there are some {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34 public CDN links}
    */
   urlHandler?: URLHandler
   onDownloading?: OnDownloading
   /**
-   * download update json
+   * Download update json
    * @param versionPath parsed version path in project
    */
   downloadJSON: (versionPath: string) => Promise<UpdateJSON>
   /**
-   * download update asar
+   * Download update asar
    * @param name app name
    * @param updateInfo existing update info
    * @param onDownloading hook for on downloading
@@ -60,24 +60,23 @@ export interface IProvider {
     onDownloading?: (info: DownloadingInfo) => void
   ) => Promise<Buffer>
   /**
-   * compare version
+   * Check the old version is less than new version
    * @param oldVer old version string
    * @param newVer new version string
-   * @returns if version1 < version2
    */
   isLowerVersion: (oldVer: string, newVer: string) => boolean
   /**
-   * unzip file buffer
-   * @param buffer source buffer
+   * Function to decompress file using brotli
+   * @param buffer compressed file buffer
    */
   unzipFile: (buffer: Buffer) => Promise<Buffer>
   /**
-   * verify asar signature
+   * Verify asar signature,
+   * if signature is valid, returns the version, otherwise returns `undefined`
    * @param buffer file buffer
    * @param version target version
    * @param signature signature
    * @param cert certificate
-   * @returns if signature is valid, returns the version, otherwise returns `undefined`
    */
   verifySignaure: (buffer: Buffer, version: string, signature: string, cert: string) => Promisable<boolean>
 }

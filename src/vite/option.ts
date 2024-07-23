@@ -50,27 +50,26 @@ export interface BuildVersionOption {
 
 export interface BuildEntryOption {
   /**
-   * whether to minify
+   * Override to minify on entry
    * @default isBuild
    */
   minify?: boolean
   /**
-   * whether to generate sourcemap
-   * @default isBuild
+   * Override to generate sourcemap on entry
    */
   sourcemap?: boolean
   /**
-   * path to app entry output file
+   * Path to app entry output file
    * @default 'dist-entry'
    */
   entryOutputDirPath?: string
   /**
-   * path to app entry file
+   * Path to app entry file
    * @default 'electron/entry.ts'
    */
   appEntryPath?: string
   /**
-   * esbuild path map of native modules in entry directory
+   * Esbuild path map of native modules in entry directory
    *
    * @default {}
    * @example
@@ -78,7 +77,7 @@ export interface BuildEntryOption {
    */
   nativeModuleEntryMap?: Record<string, string>
   /**
-   * custom options for esbuild
+   * Custom options for esbuild
    * ```ts
    * // default options
    * const options = {
@@ -105,26 +104,26 @@ export interface BuildEntryOption {
    */
   overrideEsbuildOptions?: BuildOptions
   /**
-   * resolve extra files on startup, such as `.node`
+   * Resolve extra files on startup, such as `.node`
    * @remark won't trigger will reload
    */
   postBuild?: (args: {
     /**
-     * get path from `entryOutputDirPath`
+     * Get path from `entryOutputDirPath`
      */
     getPathFromEntryOutputDir: (...paths: string[]) => string
     /**
-     * check exist and copy file to `entryOutputDirPath`
+     * Check exist and copy file to `entryOutputDirPath`
      *
-     * if `to` absent, set to `basename(from)`
+     * If `to` absent, set to `basename(from)`
      *
-     * if `skipIfExist` absent, skip copy if `to` exist
+     * If `skipIfExist` absent, skip copy if `to` exist
      */
     copyToEntryOutputDir: (options: {
       from: string
       to?: string
       /**
-       * skip copy if `to` exist
+       * Skip copy if `to` exist
        * @default true
        */
       skipIfExist?: boolean
@@ -134,7 +133,7 @@ export interface BuildEntryOption {
 
 export interface GeneratorOverrideFunctions {
   /**
-   * custom signature generate function
+   * Custom signature generate function
    * @param buffer file buffer
    * @param privateKey private key
    * @param cert certificate string, **EOL must be '\n'**
@@ -145,9 +144,9 @@ export interface GeneratorOverrideFunctions {
     privateKey: string,
     cert: string,
     version: string
-  ) => string | Promise<string>
+  ) => Promisable<string>
   /**
-   * custom generate version json function
+   * Custom generate version json function
    * @param existingJson The existing JSON object.
    * @param buffer file buffer
    * @param signature generated signature
@@ -160,12 +159,12 @@ export interface GeneratorOverrideFunctions {
     signature: string,
     version: string,
     minVersion: string
-  ) => UpdateJSON | Promise<UpdateJSON>
+  ) => Promisable<UpdateJSON>
   /**
-   * custom generate zip file buffer
+   * Custom generate zip file buffer
    * @param buffer source buffer
    */
-  generateGzipFile?: (buffer: Buffer) => Promise<Buffer>
+  generateGzipFile?: (buffer: Buffer) => Promisable<Buffer>
 }
 
 export interface ElectronUpdaterOptions {

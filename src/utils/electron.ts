@@ -17,7 +17,7 @@ declare const __EIU_ELECTRON_DIST_PATH__: string
 declare const __EIU_IS_DEV__: boolean
 
 /**
- * compile time dev check
+ * Compile time dev check
  */
 export const isDev = __EIU_IS_DEV__
 
@@ -28,31 +28,33 @@ export const isMac = process.platform === 'darwin'
 export const isLinux = process.platform === 'linux'
 
 /**
- * get the absolute path of `${electron.app.name}.asar` (not `app.asar`)
+ * Get the absolute path of `${electron.app.name}.asar` (not `app.asar`)
  *
- * if is in dev, **always** return `'DEV.asar'`
+ * If is in dev, **always** return `'DEV.asar'`
  */
 export function getPathFromAppNameAsar(...paths: string[]): string {
   return isDev ? 'DEV.asar' : path.join(path.dirname(app.getAppPath()), `${app.name}.asar`, ...paths)
 }
 
 /**
- * get app version, if is in dev, return `getEntryVersion()`
+ * Get app version, if is in dev, return `getEntryVersion()`
  */
 export function getAppVersion(): string {
   return isDev ? getEntryVersion() : fs.readFileSync(getPathFromAppNameAsar('version'), 'utf-8')
 }
 
 /**
- * get entry version
+ * Get entry version
  */
 export function getEntryVersion(): string {
   return app.getVersion()
 }
 
 /**
- * use `require` to load native module from entry
+ * Use `require` to load native module from entry asar
  * @param moduleName file name in entry
+ * @example
+ * requireNative<typeof import('../native/db')>('db')
  */
 export function requireNative<T = any>(moduleName: string): T {
   // eslint-disable-next-line ts/no-require-imports
@@ -68,7 +70,7 @@ export function restartApp(): void {
 }
 
 /**
- * fix app use model id, only for Windows
+ * Fix app use model id, only for Windows
  * @param id app id, default is `org.${electron.app.name}`
  */
 export function setAppUserModelId(id?: string): void {
@@ -78,7 +80,7 @@ export function setAppUserModelId(id?: string): void {
 }
 
 /**
- * disable hardware acceleration for Windows 7
+ * Disable hardware acceleration for Windows 7
  */
 export function disableHWAccForWin7(): void {
   // eslint-disable-next-line ts/no-require-imports
@@ -88,7 +90,7 @@ export function disableHWAccForWin7(): void {
 }
 
 /**
- * keep single electron instance and auto restore window on `second-instance` event
+ * Keep single electron instance and auto restore window on `second-instance` event
  * @param window brwoser window to show
  * @returns `false` if the app is running
  */
@@ -112,9 +114,9 @@ export function singleInstance(window?: BrowserWindow): boolean {
 }
 
 /**
- * set `AppData` dir to the dir of .exe file
+ * Set `AppData` dir to the dir of .exe file
  *
- * useful for portable Windows app
+ * Useful for portable Windows app
  * @param dirName dir name, default to `data`
  */
 export function setPortableAppDataPath(dirName = 'data'): void {
@@ -128,7 +130,7 @@ export function setPortableAppDataPath(dirName = 'data'): void {
 }
 
 /**
- * load `process.env.VITE_DEV_SERVER_URL` when dev, else load html file
+ * Load `process.env.VITE_DEV_SERVER_URL` when dev, else load html file
  * @param win window
  * @param htmlFilePath html file path, default is `index.html`
  */
@@ -140,24 +142,36 @@ export function loadPage(win: BrowserWindow, htmlFilePath = 'index.html'): void 
   }
 }
 
+/**
+ * Get joined path from preload dir
+ * @param paths rest paths
+ */
 export function getPathFromPreload(...paths: string[]): string {
   return isDev
     ? path.join(app.getAppPath(), __EIU_ELECTRON_DIST_PATH__, 'preload', ...paths)
     : getPathFromAppNameAsar('preload', ...paths)
 }
 
+/**
+ * Get joined path from publich dir
+ * @param paths rest paths
+ */
 export function getPathFromPublic(...paths: string[]): string {
   return isDev
     ? path.join(app.getAppPath(), 'public', ...paths)
     : getPathFromAppNameAsar('renderer', ...paths)
 }
 
+/**
+ * Get joined path from entry asar
+ * @param paths rest paths
+ */
 export function getPathFromEntryAsar(...paths: string[]): string {
   return path.join(app.getAppPath(), __EIU_ENTRY_DIST_PATH__, ...paths)
 }
 
 /**
- * handle all unhandled error
+ * Handle all unhandled error
  * @param callback callback function
  */
 export function handleUnexpectedErrors(callback: (err: unknown) => void): void {

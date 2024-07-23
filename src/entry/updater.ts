@@ -28,19 +28,19 @@ export class Updater extends EventEmitter<{
   private info?: UpdateInfo
   public provider?: IProvider
   /**
-   * updater logger
+   * Updater logger
    */
   public logger?: Logger
   /**
-   * whether to receive beta update
+   * Whether to receive beta update
    */
   public receiveBeta?: boolean
   /**
-   * whether force update in DEV
+   * Whether force update in DEV
    */
   public forceUpdate?: boolean
   /**
-   * initialize incremental updater
+   * Initialize incremental updater
    * @param options UpdaterOption
    */
   constructor(options: UpdaterOption = {}) {
@@ -72,7 +72,7 @@ export class Updater extends EventEmitter<{
   }
 
   /**
-   * this function is used to parse download data.
+   * This function is used to parse download data.
    * - if format is `'json'`
    *   - if data is `UpdateJSON`, return it
    *   - if data is string or absent, download URL data and return it
@@ -110,7 +110,7 @@ export class Updater extends EventEmitter<{
   }
 
   /**
-   * handle error message and emit error event
+   * Handle error message and emit error event
    */
   private err(msg: string, code: keyof typeof ErrorInfo, errorInfo: string): void {
     const err = new UpdaterError(code, errorInfo)
@@ -119,11 +119,11 @@ export class Updater extends EventEmitter<{
   }
 
   /**
-   * check update info using default options
+   * Check update info using default options
    */
   public async checkUpdate(): Promise<boolean>
   /**
-   * check update info using existing update json
+   * Check update info using existing update json
    * @param data existing update json
    */
   public async checkUpdate(data: UpdateJSON): Promise<boolean>
@@ -152,28 +152,32 @@ export class Updater extends EventEmitter<{
     const isLowerVersion = this.provider!.isLowerVersion
     const entryVersion = getEntryVersion()
     const appVersion = getAppVersion()
+    try {
+      if (isLowerVersion(entryVersion, minimumVersion)) {
+        return emitUnavailable(`entry version (${entryVersion}) < minimumVersion (${minimumVersion})`)
+      }
 
-    if (isLowerVersion(entryVersion, minimumVersion)) {
-      return emitUnavailable(`entry version (${entryVersion}) < minimumVersion (${minimumVersion})`)
+      this.logger?.info(`check update: current version is ${appVersion}, new version is ${version}`)
+
+      if (!isLowerVersion(appVersion, version)) {
+        return emitUnavailable(`current version (${appVersion}) < new version (${version})`)
+      }
+      this.logger?.info(`update available: ${version}`)
+      this.info = { signature, minimumVersion, version }
+      this.emit('update-available', this.info)
+      return true
+    } catch {
+      this.err('Fail to parse version', 'validate', 'fail to parse version string')
+      return false
     }
-
-    this.logger?.info(`check update: current version is ${appVersion}, new version is ${version}`)
-
-    if (!isLowerVersion(appVersion, version)) {
-      return emitUnavailable(`current version (${appVersion}) < new version (${version})`)
-    }
-    this.logger?.info(`update available: ${version}`)
-    this.info = { signature, minimumVersion, version }
-    this.emit('update-available', this.info)
-    return true
   }
 
   /**
-   * download update using default options
+   * Download update using default options
    */
   public async downloadUpdate(): Promise<boolean>
   /**
-   * download update using existing `asar.gz` buffer and signature
+   * Download update using existing `asar.gz` buffer and signature
    * @param data existing `asar.gz` buffer
    * @param info update info
    */
@@ -230,7 +234,7 @@ export class Updater extends EventEmitter<{
 }
 
 /**
- * auto check update, download and install
+ * Auto check update, download and install
  */
 export async function autoUpdate(updater: Updater): Promise<void> {
   if (await updater.checkUpdate() && await updater.downloadUpdate()) {

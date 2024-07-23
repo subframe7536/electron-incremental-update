@@ -3,8 +3,13 @@ import type { Arrayable } from '@subframe7536/type-utils'
 import { type UpdateJSON, isUpdateJSON } from '../utils/version'
 import type { OnDownloading } from './types'
 
-export function getHeader(response: Record<string, Arrayable<string>>, headerKey: any): any {
-  const value = response.headers[headerKey]
+/**
+ * Safe get value from header
+ * @param headers response header
+ * @param key target header key
+ */
+export function getHeader(headers: Record<string, Arrayable<string>>, key: any): any {
+  const value = headers[key]
   if (Array.isArray(value)) {
     return value.length === 0 ? null : value[value.length - 1]
   } else {
@@ -31,7 +36,9 @@ async function downloadFn<T>(
 }
 
 /**
- * download json and parse UpdateJson
+ * Default function to download json and parse to UpdateJson
+ * @param url target url
+ * @param headers extra headers
  */
 export async function defaultDownloadUpdateJSON(url: string, headers: Record<string, any>): Promise<UpdateJSON> {
   return await downloadFn<UpdateJSON>(url, headers, (resp, resolve, reject) => {
@@ -53,7 +60,11 @@ export async function defaultDownloadUpdateJSON(url: string, headers: Record<str
 }
 
 /**
- * download asar buffer, get total size from `Content-Length` header
+ * Default function to download asar buffer,
+ * get total size from `Content-Length` header
+ * @param url target url
+ * @param headers extra headers
+ * @param onDownloading on downloading callback
  */
 export async function defaultDownloadAsar(
   url: string,

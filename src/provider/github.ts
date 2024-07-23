@@ -6,24 +6,24 @@ import { BaseProvider } from './base'
 
 export interface GitHubProviderOptions {
   /**
-   * github user name
+   * Github user name
    */
   username: string
   /**
-   * github repo name
+   * Github repo name
    */
   repo: string
   /**
-   * github branch name that fetch version
+   * Github branch name that fetch version
    * @default 'HEAD'
    */
   branch?: string
   /**
-   * extra headers
+   * Extra headers
    */
   extraHeaders?: Record<string, string>
   /**
-   * custom url handler
+   * Custom url handler
    *
    * for Github, there are some {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L40 public CDN links}
    * @example
@@ -73,6 +73,9 @@ export class GitHubProvider extends BaseProvider {
     return (await this.urlHandler?.(url, isDownloadAsar) || url).toString()
   }
 
+  /**
+   * @inheritdoc
+   */
   public async downloadJSON(versionPath: string): Promise<UpdateJSON> {
     return await defaultDownloadUpdateJSON(
       await this.parseURL(false, `${this.options.branch}/${versionPath}`),
@@ -80,6 +83,9 @@ export class GitHubProvider extends BaseProvider {
     )
   }
 
+  /**
+   * @inheritdoc
+   */
   public async downloadAsar(
     name: string,
     info: UpdateInfo,

@@ -51,7 +51,7 @@ export function parseKeys({
   let cert = process.env.UPDATER_CERT
 
   if (privateKey && cert) {
-    log.info('use UPDATER_PK and UPDATER_CERT from environment variables', { timestamp: true })
+    log.info('Use `UPDATER_PK` and `UPDATER_CERT` from environment variables', { timestamp: true })
     return { privateKey, cert }
   }
 
@@ -60,7 +60,7 @@ export function parseKeys({
   }
 
   if (!fs.existsSync(privateKeyPath) || !fs.existsSync(certPath)) {
-    log.info('no key pair found, generate new key pair', { timestamp: true })
+    log.info('No key pair found, generate new key pair', { timestamp: true })
     generateKeyPair(keyLength, parseSubjects(subject), days, privateKeyPath, certPath)
   }
 

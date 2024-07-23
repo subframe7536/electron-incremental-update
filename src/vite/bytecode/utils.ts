@@ -87,45 +87,18 @@ export function convertArrowFunctionAndTemplate(code: string): { code: string, m
   }
 }
 
-// function escapeRegExpString(str: string): string {
-//   return str
-//     .replace(/\\/g, '\\\\')
-//     .replace(/[|{}()[\]^$+*?.]/g, '\\$&')
-// }
-
 export const decodeFn = ';function _0xstr_(a,b){return String.fromCharCode.apply(0,a.map(function(x){return x-b}))};'
 export function obfuscateString(input: string, offset = ~~(Math.random() * 16) + 1): string {
   const hexArray = input.split('').map(c => '0x' + (c.charCodeAt(0) + offset).toString(16))
   return `_0xstr_([${hexArray.join(',')}],${offset})`
 }
 
-// export function convertString(
-//   code: string,
-//   strings: string[],
-//   sourcemap?: boolean,
-// ): { code: string, map?: any } {
-//   const s = new MagicString(code)
-
-//   const _strings = strings.filter(Boolean)
-//   if (_strings.length) {
-//     for (const str of _strings) {
-//       const regex = new RegExp(`["']${escapeRegExpString(str)}["']`, 'g')
-//       s.replace(regex, match => obfuscateString(match.slice(1, -1)))
-//     }
-//     s.append(decodeFn)
-//   }
-//   return {
-//     code: s.toString(),
-//     map: sourcemap ? s.generateMap({ hires: 'boundary' }) : undefined,
-//   }
-// }
-
 export function convertLiteral(code: string, sourcemap?: boolean, offset?: number): { code: string, map?: any } {
   const s = new MagicString(code)
   let hasTransformed = false
   const ast = babel.parse(code, { ast: true })
   if (!ast) {
-    throw new Error('cannot parse code')
+    throw new Error('Cannot parse code')
   }
   babel.traverse(ast, {
     StringLiteral(path) {

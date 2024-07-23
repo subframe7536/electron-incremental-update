@@ -92,7 +92,7 @@ type ExcludeOutputDirOptions = {
 
 export interface ElectronWithUpdaterOptions {
   /**
-   * whether is in build mode
+   * Whether is in build mode
    * ```ts
    * export default defineConfig(({ command }) => {
    *   const isBuild = command === 'build'
@@ -101,111 +101,77 @@ export interface ElectronWithUpdaterOptions {
    */
   isBuild: boolean
   /**
-   * manually setup package.json, read name, version and main
+   * Manually setup package.json, read name, version and main,
+   * use `local-pkg` of `loadPackageJSON()` to load package.json by default
    * ```ts
    * import pkg from './package.json'
    * ```
    */
   pkg?: PKG
   /**
-   * whether to generate sourcemap
+   * Whether to generate sourcemap
    * @default !isBuild
    */
   sourcemap?: boolean
   /**
-   * whether to minify the code
+   * Whether to minify the code
    * @default isBuild
    */
   minify?: boolean
   /**
-   * whether to generate bytecode
+   * Whether to generate bytecode
    *
-   * **only support commonjs**
+   * **Only support CommonJS**
    *
-   * only main process by default, if you want to use in preload script, please use `electronWithUpdater({ bytecode: { enablePreload: true } })` and set `sandbox: false` when creating window
+   * Only main process by default, if you want to use in preload script, please use `electronWithUpdater({ bytecode: { enablePreload: true } })` and set `sandbox: false` when creating window
    */
   bytecode?: boolean | BytecodeOptions
   /**
-   * use NotBundle() plugin in main
+   * Use `NotBundle()` plugin in main
    * @default true
    */
   useNotBundle?: boolean
   /**
-   * whether to generate version json
+   * Whether to generate version json
    * @default isCI
    */
   buildVersionJson?: boolean
   /**
    * Whether to log parsed options
    *
-   * to show certificate and private keys, set `logParsedOptions: { showKeys: true }`
+   * To show certificate and private keys, set `logParsedOptions: { showKeys: true }`
    */
   logParsedOptions?: boolean | { showKeys: boolean }
   /**
-   * main process options
+   * Main process options
    *
-   * to change output directories, use `options.updater.paths.electronDistPath` instead
+   * To change output directories, use `options.updater.paths.electronDistPath` instead
    */
   main: MakeRequiredAndReplaceKey<ElectronSimpleOptions['main'], 'entry', 'files'> & ExcludeOutputDirOptions
   /**
-   * preload process options
+   * Preload process options
    *
-   * to change output directories, use `options.updater.paths.electronDistPath` instead
+   * To change output directories, use `options.updater.paths.electronDistPath` instead
    */
   preload: MakeRequiredAndReplaceKey<Exclude<ElectronSimpleOptions['preload'], undefined>, 'input', 'files'> & ExcludeOutputDirOptions
   /**
-   * updater options
+   * Updater options
    */
   updater?: ElectronUpdaterOptions
 }
 
 /**
- * build options for `vite-plugin-electron/simple`
+ * Base on `vite-plugin-electron/simple`
  * - integrate with updater
- * - only contains `main` and `preload` configs
- * - remove old electron files
+ * - no `renderer` config
+ * - remove old output file
  * - externalize dependencies
  * - auto restart when entry file changes
  * - other configs in {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template}
- * - no `vite-plugin-electron-renderer` config
  *
- * you can override all the vite configs, except output directories (use `options.updater.paths.electronDistPath` instead)
+ * You can override all the vite configs, except output directories (use `options.updater.paths.electronDistPath` instead)
  *
  * @example
- * import { defineConfig } from 'vite'
- * import { debugStartup, electronWithUpdater } from 'electron-incremental-update/vite'
- * import pkg from './package.json'
- *
- * export default defineConfig(async ({ command }) => {
- *   const isBuild = command === 'build'
- *   return {
- *     plugins: [
- *       electronWithUpdater({
- *         pkg,
- *         isBuild,
- *         logParsedOptions: true,
- *         main: {
- *           files: ['./electron/main/index.ts', './electron/main/worker.ts'],
- *           // see https://github.com/electron-vite/electron-vite-vue/blob/85ed267c4851bf59f32888d766c0071661d4b94c/vite.config.ts#L22-L28
- *           onstart: debugStartup,
- *         },
- *         preload: {
- *           files: './electron/preload/index.ts',
- *         },
- *         updater: {
- *           // options
- *         }
- *       }),
- *     ],
- *     server: process.env.VSCODE_DEBUG && (() => {
- *       const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL)
- *       return {
- *         host: url.hostname,
- *         port: +url.port,
- *       }
- *     })(),
- *   }
- * })
  */
 export async function electronWithUpdater(
   options: ElectronWithUpdaterOptions,
@@ -242,7 +208,7 @@ export async function electronWithUpdater(
     fs.rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
     fs.rmSync(_options.buildEntryOption.entryOutputDirPath, { recursive: true, force: true })
   } catch { }
-  log.info(`remove old files`, { timestamp: true })
+  log.info(`Remove old files`, { timestamp: true })
 
   const { buildAsarOption, buildEntryOption, buildVersionOption, postBuild, cert } = _options
   const { entryOutputDirPath, nativeModuleEntryMap, appEntryPath } = buildEntryOption
@@ -251,7 +217,7 @@ export async function electronWithUpdater(
 
   const _appPath = normalizePath(path.join(entryOutputDirPath, 'entry.js'))
   if (path.resolve(normalizePath(pkg.main)) !== path.resolve(_appPath)) {
-    throw new Error(`wrong "main" field in package.json: "${pkg.main}", it should be "${_appPath}"`)
+    throw new Error(`Wrong "main" field in package.json: "${pkg.main}", it should be "${_appPath}"`)
   }
 
   /// keep-sorted
@@ -271,7 +237,7 @@ export async function electronWithUpdater(
       define,
       bytecodeOptions,
     )
-    log.info(`vite build entry to '${entryOutputDirPath}'`, { timestamp: true })
+    log.info(`Build entry to '${entryOutputDirPath}'`, { timestamp: true })
   }
 
   const _postBuild = postBuild
@@ -286,7 +252,7 @@ export async function electronWithUpdater(
             try {
               fs.cpSync(from, target)
             } catch (error) {
-              log.warn(`copy failed: ${error}`)
+              log.warn(`Copy failed: ${error}`, { timestamp: true })
             }
           }
         }
@@ -351,7 +317,7 @@ export async function electronWithUpdater(
                 await _postBuild()
                 const buffer = await buildAsar(buildAsarOption)
                 if (!buildVersionJson && !isCI) {
-                  log.warn('no `buildVersionJson` setup, skip build version json. Will build in CI by default', { timestamp: true })
+                  log.warn('No `buildVersionJson` setup, skip build version json. Will build in CI by default', { timestamp: true })
                 } else {
                   await buildVersion(buildVersionOption, buffer)
                 }
@@ -416,3 +382,5 @@ export async function electronWithUpdater(
 
   return [ElectronSimple(electronPluginOptions), extraHmrPlugin]
 }
+
+export default electronWithUpdater

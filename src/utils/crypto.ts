@@ -10,6 +10,13 @@ export function aesEncrypt(plainText: string, key: Buffer, iv: Buffer): string {
   return cipher.update(plainText, 'utf8', 'base64url') + cipher.final('base64url')
 }
 
+/**
+ * Default function to generate asar signature, returns generated signature
+ * @param buffer file buffer
+ * @param privateKey primary key
+ * @param cert certificate
+ * @param version target version
+ */
 export function defaultSignature(buffer: Buffer, privateKey: string, cert: string, version: string): string {
   const sig = crypto.createSign('RSA-SHA256')
     .update(buffer)
@@ -23,6 +30,14 @@ export function aesDecrypt(encryptedText: string, key: Buffer, iv: Buffer): stri
   return decipher.update(encryptedText, 'base64url', 'utf8') + decipher.final('utf8')
 }
 
+/**
+ * Default function to verify asar signature,
+ * if signature is valid, returns the version, otherwise returns `undefined`
+ * @param buffer file buffer
+ * @param version target version
+ * @param signature signature
+ * @param cert certificate
+ */
 export function defaultVerifySignature(buffer: Buffer, version: string, signature: string, cert: string): boolean {
   try {
     const [sig, ver] = aesDecrypt(signature, hashBuffer(cert, 32), hashBuffer(buffer, 16)).split('%')

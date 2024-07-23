@@ -10,7 +10,6 @@ import {
   compileToBytecode,
   convertArrowFunctionAndTemplate,
   convertLiteral,
-  // convertString,
   useStrict,
 } from './bytecode/utils'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
@@ -30,7 +29,7 @@ export async function buildAsar({
   await Asar.createPackage(electronDistPath, asarOutputPath)
   const buf = await generateGzipFile(fs.readFileSync(asarOutputPath))
   fs.writeFileSync(gzipPath, buf)
-  log.info(`build update asar to '${gzipPath}' [${readableSize(buf.length)}]`, { timestamp: true })
+  log.info(`Build update asar to '${gzipPath}' [${readableSize(buf.length)}]`, { timestamp: true })
   return buf
 }
 
@@ -62,7 +61,7 @@ export async function buildVersion(
       if (isUpdateJSON(oldVersionJson)) {
         _json = oldVersionJson
       } else {
-        log.warn('old version json is invalid, ignore it', { timestamp: true })
+        log.warn('Old version json is invalid, ignore it', { timestamp: true })
       }
     } catch {}
   }
@@ -71,7 +70,7 @@ export async function buildVersion(
 
   _json = await generateVersionJson(_json, sig, version, minimumVersion)
   if (!isUpdateJSON(_json)) {
-    throw new Error('invalid version info')
+    throw new Error('Invalid version info')
   }
 
   fs.writeFileSync(versionPath, JSON.stringify(_json, null, 2))
@@ -125,17 +124,6 @@ export async function buildEntry(
     const fileName = path.basename(filePath)
     const isEntry = fileName.endsWith('entry.js')
 
-    // if (isEntry) {
-    //   code = code.replace(
-    //     /(`-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\n`)/,
-    //     (_, cert: string) => `"${cert.slice(1, -1).replace(/\n/g, '\\n')}"`,
-    //   )
-    // }
-
-    // const transformedCode = convertString(
-    //   convertArrowToFunction(code).code,
-    //   [...protectedStrings, ...(isEntry ? getCert(code) : [])],
-    // ).code
     let transformedCode = convertLiteral(convertArrowFunctionAndTemplate(code).code).code
     if (bytecodeOptions.beforeCompile) {
       const result = await bytecodeOptions.beforeCompile(transformedCode, filePath)
@@ -156,8 +144,3 @@ export async function buildEntry(
   }
   bytecodeLog.info(`${filePaths.length} file${filePaths.length > 1 ? 's' : ''} compiled into bytecode`, { timestamp: true })
 }
-
-// function getCert(code: string): string[] {
-//   const cert = code.match(/-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\\n/)?.[0]
-//   return cert ? [cert] : []
-// }

@@ -17,7 +17,7 @@ declare const __EIU_MAIN_DEV_DIR__: string
 type Promisable<T> = T | Promise<T>
 
 /**
- * hooks on rename temp asar path to `${app.name}.asar`
+ * Hooks on rename temp asar path to `${app.name}.asar`
  * @param install `() => renameSync(tempAsarPath, appNameAsarPath)`
  * @param tempAsarPath temp(updated) asar path
  * @param appNameAsarPath `${app.name}.asar` path
@@ -28,21 +28,21 @@ type OnInstallFunction = (install: VoidFunction, tempAsarPath: string, appNameAs
 
 export interface AppOption {
   /**
-   * updater options
+   * Updater options
    */
   updater?: (() => Promisable<Updater>) | UpdaterOption
   /**
-   * hooks on rename temp asar path to `${app.name}.asar`
+   * Hooks on rename temp asar path to `${app.name}.asar`
    */
   onInstall?: OnInstallFunction
   /**
-   * hooks before app start up
+   * Hooks before app start up
    * @param mainFilePath main file path of `${app.name}.asar`
    * @param logger logger
    */
   beforeStart?: (mainFilePath: string, logger?: Logger) => Promisable<void>
   /**
-   * hooks on app start up error
+   * Hooks on app start up error
    * @param err installing or startup error
    * @param logger logger
    */
@@ -50,7 +50,7 @@ export interface AppOption {
 }
 
 /**
- * utils for startuping with updater
+ * Utils to startup with updater
  * @param fn startup function
  * @example
  * // in electron/main/index.ts
@@ -72,28 +72,20 @@ const defaultOnInstall: OnInstallFunction = (install, _, __, logger) => {
 /**
  * initialize app
  * @example
- * ```ts
- * import { getGithubReleaseCdnGroup, initApp, parseGithubCdnURL } from 'electron-incremental-update'
- * import { repository } from '../package.json'
- *
- * const { cdnPrefix: asarPrefix } = getGithubReleaseCdnGroup()[0]
- * const { cdnPrefix: jsonPrefix } = getGithubFileCdnGroup()[0]
- *
  * initApp({
- *   // can be updater option or function that return updater
  *   updater: {
- *     SIGNATURE_CERT: 'custom certificate',
- *     repository,
- *     updateJsonURL: parseGithubCdnURL(repository, jsonPrefix, 'version.json'),
- *     releaseAsarURL: parseGithubCdnURL(repository, asarPrefix, `download/latest/${app.name}.asar.gz`),
- *     receiveBeta: true,
+ *     provider: new GitHubProvider({
+ *       username: 'jerry7536',
+ *       repo: 'electron2',
+ *     }),
  *   },
- *   onStart: console.log
+ *   beforeStart(mainFilePath, logger) {
+ *     logger?.debug(mainFilePath)
+ *   },
  * })
- * ```
  */
 export async function initApp(
-  appOptions: AppOption,
+  appOptions: AppOption = {},
 ): Promise<void> {
   const {
     updater,
