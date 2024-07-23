@@ -32,7 +32,7 @@ function getElectronPath(): string {
   return electronExecPath
 }
 function getBytecodeCompilerPath(): string {
-  const scriptPath = path.join(electronModulePath!, 'bytenode.cjs')
+  const scriptPath = path.join(electronModulePath!, 'EIU_bytenode.cjs')
   if (!fs.existsSync(scriptPath)) {
     fs.writeFileSync(scriptPath, bytecodeGeneratorScript)
   }

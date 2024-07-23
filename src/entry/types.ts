@@ -2,16 +2,16 @@ import type { IProvider } from '../provider'
 import type { UpdateJSON } from '../utils'
 
 export const ErrorInfo = {
-  download: 'Download failed',
-  validate: 'Validate failed',
-  param: 'Missing params',
-  network: 'Network error',
+  download: 'Download Failed',
+  validate: 'Validate Failed',
+  param: 'Missing Params',
+  network: 'Network Error',
 } as const
 
 export class UpdaterError extends Error {
   public code: keyof typeof ErrorInfo
   constructor(msg: keyof typeof ErrorInfo, info: string) {
-    super(ErrorInfo[msg] + ': ' + info)
+    super('[' + ErrorInfo[msg] + '] ' + info)
     this.code = msg
   }
 }

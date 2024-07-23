@@ -27,7 +27,7 @@ export interface BytecodeOptions {
    * @param code transformed code
    * @param id file path
    */
-  beforeCompile?: (code: string, id: string) => Promisable<string | null | undefined>
+  beforeCompile?: (code: string, id: string) => Promisable<string | null | undefined | void>
 }
 
 /**
