@@ -149,6 +149,10 @@ export function convertLiteral(code: string, sourcemap?: boolean, offset?: numbe
         return
       }
 
+      if (parent.type === 'ObjectMethod' && parent.key === node) {
+        return
+      }
+
       if (parent.type === 'ObjectProperty' && parent.key === node) {
         const result = `[${obfuscateString(node.value, offset)}]`
         const start = node.start

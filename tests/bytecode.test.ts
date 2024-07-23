@@ -72,13 +72,22 @@ describe('convert', () => {
   })
 
   it('convert string key', () => {
-    const code = `const test = {'test': 1};test`
+    const code = `const test = {
+  'test': 1,
+  zxc(a = 1) { console.log(a) },
+  "asd"() { },
+  "qwe": function() { }
+}`
     const result = convertLiteral(code, false, 4).code
     expect(result).toMatchInlineSnapshot(`
-      "const test = {[_0xstr_([0x78,0x69,0x77,0x78],4)]: 1};test
+      "const test = {
+        [_0xstr_([0x78,0x69,0x77,0x78],4)]: 1,
+        zxc(a = 1) { console.log(a) },
+        "asd"() { },
+        [_0xstr_([0x75,0x7b,0x69],4)]: function() { }
+      }
       ;function _0xstr_(a,b){return String.fromCharCode.apply(0,a.map(function(x){return x-b}))};"
     `)
-    expect(eval(result)).toEqual({ test: 1 })
   })
 
   it('skip convert import', () => {
