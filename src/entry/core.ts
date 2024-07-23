@@ -1,11 +1,10 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { app } from 'electron'
-import { type Logger, Updater, type UpdaterOption } from './updater'
-import type { IProvider } from './provider'
-import { getPathFromAppNameAsar, isDev } from './utils/electron'
-
-export * from './updater'
+import { getPathFromAppNameAsar, isDev } from '../utils/electron'
+import type { IProvider } from '../provider'
+import type { Logger, UpdaterOption } from './types'
+import { Updater } from './updater'
 
 /**
  * type only electron main file path, transformed by esbuild's define

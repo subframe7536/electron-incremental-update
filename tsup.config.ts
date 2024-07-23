@@ -6,7 +6,7 @@ function getConfig(): Options[] {
   return [
     {
       entry: {
-        index: './src/entry.ts',
+        index: './src/entry/index.ts',
         utils: './src/utils/index.ts',
         provider: './src/provider/index.ts',
       },
@@ -17,7 +17,7 @@ function getConfig(): Options[] {
     },
     {
       entry: {
-        vite: './src/vite.ts',
+        vite: './src/vite/index.ts',
       },
       format: 'esm',
       dts: true,
