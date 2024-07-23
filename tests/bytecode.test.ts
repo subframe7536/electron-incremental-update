@@ -1,6 +1,7 @@
+/* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-eval */
 import { describe, expect, it } from 'vitest'
-import { convertLiteral, decodeFn, obfuscateString } from '../src/build-plugins/bytecode/utils'
+import { convertArrowFunctionAndTemplate, convertLiteral, decodeFn, obfuscateString } from '../src/build-plugins/bytecode/utils'
 
 describe('obfuscate', () => {
   function testObfuscate(str: string) {
@@ -12,6 +13,31 @@ describe('obfuscate', () => {
 
   it('obfuscate escape', () => {
     testObfuscate('\\\{\}\'\"`')
+  })
+})
+
+describe('arrow to function', () => {
+  it('convert normal', () => {
+    const code = 'const test = () => `hello ${1} world`'
+    expect(convertArrowFunctionAndTemplate(code).code).toMatchInlineSnapshot(`
+      "const test = function () {
+        return "hello ".concat(1, " world");
+      };"
+    `)
+  })
+  it('convert template tag', () => {
+    const code = 'sql`select * from ${table}`'
+    expect(convertArrowFunctionAndTemplate(code).code).toMatchInlineSnapshot(`
+      "var _templateObject;
+      function _taggedTemplateLiteral(e, t) { return t || (t = e.slice(0)), Object.freeze(Object.defineProperties(e, { raw: { value: Object.freeze(t) } })); }
+      sql(_templateObject || (_templateObject = _taggedTemplateLiteral(["select * from ", ""])), table);"
+    `)
+  })
+  it('convert multiple line template tag', () => {
+    const code = `\`
+    no new version for \$\{test\}
+    \``
+    expect(convertArrowFunctionAndTemplate(code).code).toMatchInlineSnapshot(`""\\n    no new version for ".concat(test, "\\n    ");"`)
   })
 })
 

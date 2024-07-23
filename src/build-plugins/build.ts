@@ -8,7 +8,7 @@ import { bytecodeLog, log } from './constant'
 import { bytecodeModuleLoaderCode } from './bytecode/code'
 import {
   compileToBytecode,
-  convertArrowToFunction,
+  convertArrowFunctionAndTemplate,
   convertLiteral,
   // convertString,
   useStrict,
@@ -115,27 +115,28 @@ export async function buildEntry(
   )
   const { metafile } = await build(option)
 
-  if (!bytecodeOptions || !bytecodeOptions.enable) {
+  if (!bytecodeOptions?.enable) {
     return
   }
-  const filePaths = Object.keys(metafile?.outputs ?? [])
+
+  const filePaths = Object.keys(metafile?.outputs ?? []).filter(filePath => filePath.endsWith('js'))
   for (const filePath of filePaths) {
     let code = fs.readFileSync(filePath, 'utf-8')
     const fileName = path.basename(filePath)
     const isEntry = fileName.endsWith('entry.js')
 
-    if (isEntry) {
-      code = code.replace(
-        /(`-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\n`)/,
-        (_, cert: string) => `"${cert.slice(1, -1).replace(/\n/g, '\\n')}"`,
-      )
-    }
+    // if (isEntry) {
+    //   code = code.replace(
+    //     /(`-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----\n`)/,
+    //     (_, cert: string) => `"${cert.slice(1, -1).replace(/\n/g, '\\n')}"`,
+    //   )
+    // }
 
     // const transformedCode = convertString(
     //   convertArrowToFunction(code).code,
     //   [...protectedStrings, ...(isEntry ? getCert(code) : [])],
     // ).code
-    let transformedCode = convertLiteral(convertArrowToFunction(code).code).code
+    let transformedCode = convertLiteral(convertArrowFunctionAndTemplate(code).code).code
     if (bytecodeOptions.beforeCompile) {
       const result = await bytecodeOptions.beforeCompile(transformedCode, filePath)
       if (result) {

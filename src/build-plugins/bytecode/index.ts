@@ -8,7 +8,7 @@ import { readableSize } from '../utils'
 import {
   bytecodeModuleLoader,
   compileToBytecode,
-  convertArrowToFunction,
+  convertArrowFunctionAndTemplate,
   // convertString,
   convertLiteral,
   toRelativePath,
@@ -94,7 +94,7 @@ export function bytecodePlugin(
       }
       if (chunk.type === 'chunk') {
         bytecodeRequired = true
-        return convertArrowToFunction(code)
+        return convertArrowFunctionAndTemplate(code)
       }
       return null
     },
