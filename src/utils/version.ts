@@ -1,22 +1,22 @@
 export interface Version {
   /**
-   * `2` of `2.1.0-beta.10`
+   * `4` of `4.3.2-beta.1`
    */
   major: number
   /**
-   * `1` of `2.1.0-beta.10`
+   * `3` of `4.3.2-beta.1`
    */
   minor: number
   /**
-   * `0` of `2.1.0-beta.10`
+   * `2` of `4.3.2-beta.1`
    */
   patch: number
   /**
-   * `beta` of `2.1.0-beta.10`
+   * `beta` of `4.3.2-beta.1`
    */
   stage: string
   /**
-   * `10` of `2.1.0-beta.10`
+   * `1` of `4.3.2-beta.1`
    */
   stageVersion: number
 }
@@ -44,7 +44,7 @@ export function parseVersion(version: string): Version {
     ret.stageVersion = Number(_v) || -1
   }
   if (Number.isNaN(major) || Number.isNaN(minor) || Number.isNaN(patch) || Number.isNaN(ret.stageVersion)) {
-    throw new TypeError(`invalid version: ${version}`)
+    throw new TypeError(`Invalid version: ${version}`)
   }
   return ret
 }

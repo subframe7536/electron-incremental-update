@@ -28,7 +28,7 @@ export const isMac = process.platform === 'darwin'
 export const isLinux = process.platform === 'linux'
 
 /**
- * Get the absolute path of `${electron.app.name}.asar` (not `app.asar`)
+ * Get joined path of `${electron.app.name}.asar` (not `app.asar`)
  *
  * If is in dev, **always** return `'DEV.asar'`
  */

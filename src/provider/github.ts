@@ -46,7 +46,7 @@ export class GitHubProvider extends BaseProvider {
    * - download update json from `https://raw.githubusercontent.com/{user}/{repo}/HEAD/{versionPath}`
    * - download update asar from `https://github.com/{user}/{repo}/releases/download/v{version}/{name}-{version}.asar.gz`
    *
-   * you can setup `urlHandler` in {@link GitHubProviderOptions} or `Updater` to modify url before request
+   * you can setup `urlHandler` in {@link GitHubProviderOptions} to modify url before request
    * @param options provider options
    */
   constructor(options: GitHubProviderOptions) {
