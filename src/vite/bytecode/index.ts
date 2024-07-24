@@ -82,7 +82,7 @@ export function bytecodePlugin(
     renderChunk(code, chunk, options) {
       if (options.format === 'es') {
         bytecodeLog.warn(
-          '`bytecodePlugin` does not support ES module, please remove "type": "module" in package.json or set the "build.rollupOptions.output.format" option to "cjs".',
+          '`bytecodePlugin` does not support ES module, please set "build.rollupOptions.output.format" option to "cjs"',
           { timestamp: true },
         )
         return null
@@ -121,9 +121,10 @@ export function bytecodePlugin(
           const chunk = output[name]
           if (chunk.type === 'chunk') {
             let _code = chunk.code
+            const chunkFilePath = path.resolve(outDir, name)
 
             if (beforeCompile) {
-              const cbResult = await beforeCompile(_code, chunk.fileName)
+              const cbResult = await beforeCompile(_code, chunkFilePath)
               if (cbResult) {
                 _code = cbResult
               }
@@ -142,8 +143,6 @@ export function bytecodePlugin(
               }
               _code = s.toString()
             }
-
-            const chunkFilePath = path.resolve(outDir, name)
 
             if (bytecodeChunks.includes(name)) {
               const bytecodeBuffer = await compileToBytecode(_code)

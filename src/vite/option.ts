@@ -9,6 +9,7 @@ export interface PKG {
   name: string
   version: string
   main: string
+  type: 'commonjs' | 'module'
 }
 
 export interface DistinguishedName {
@@ -97,7 +98,8 @@ export interface BuildEntryOption {
    *     '.node': 'empty',
    *   },
    *   define: {
-   *     __SIGNATURE_CERT__: JSON.stringify(cert),
+   *     __EIU_SIGNATURE_CERT__: JSON.stringify(cert),
+   *     // ...
    *   },
    * }
    * ```

@@ -86,6 +86,7 @@ export async function buildEntry(
     nativeModuleEntryMap,
     overrideEsbuildOptions,
   }: Required<Omit<BuildEntryOption, 'postBuild'>>,
+  isESM: boolean,
   define: Record<string, string>,
   bytecodeOptions: BytecodeOptions | undefined,
 ): Promise<void> {
@@ -109,6 +110,7 @@ export async function buildEntry(
         '.node': 'empty',
       },
       define,
+      format: isESM ? 'esm' : 'cjs',
     } satisfies BuildOptions,
     overrideEsbuildOptions ?? {},
   )

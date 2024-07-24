@@ -14,6 +14,10 @@ declare const __EIU_MAIN_FILE__: string
  * type only electron main dir path when dev, transformed by esbuild's define
  */
 declare const __EIU_MAIN_DEV_DIR__: string
+/**
+ * type only is esmodule, transformed by esbuild's define
+ */
+declare const __EIU_IS_ESM__: string
 
 /**
  * Hooks on rename temp asar path to `${app.name}.asar`
@@ -133,10 +137,15 @@ export async function createElectronApp(
     // logger.debug(`appNameAsar: ${appNameAsarPath}`)
     // logger.debug(`__EIU_MAIN_FILE__: ${__EIU_MAIN_FILE__}`)
     // logger.debug(`__EIU_MAIN_DEV_DIR__: ${__EIU_MAIN_DEV_DIR__}`)
-    // logger.debug(`mainFilePath: ${mainFilePath}`)
+    // logger?.debug(`mainFilePath: ${mainPath}`)
     await beforeStart?.(mainPath, logger)
-    // eslint-disable-next-line ts/no-require-imports
-    require(mainPath)(updaterInstance)
+
+    if (__EIU_IS_ESM__) {
+      (await import('file://' + mainPath)).default(updaterInstance)
+    } else {
+      // eslint-disable-next-line ts/no-require-imports
+      require(mainPath)(updaterInstance)
+    }
   } catch (error) {
     logger?.error('startup error', error)
     onStartError?.(error, logger)

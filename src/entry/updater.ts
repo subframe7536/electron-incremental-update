@@ -24,7 +24,7 @@ export class Updater extends EventEmitter<{
   'download-progress': [info: DownloadingInfo]
   'update-downloaded': any
 }> {
-  private CERT = __EIU_SIGNATURE_CERT__
+  private CERT: string
   private info?: UpdateInfo
   public provider?: IProvider
   /**

@@ -11,7 +11,7 @@ import { isCI } from 'ci-info'
 import { buildAsar, buildEntry, buildVersion } from './build'
 import type { ElectronUpdaterOptions, PKG } from './option'
 import { parseOptions } from './option'
-import { id, log } from './constant'
+import { bytecodeLog, id, log } from './constant'
 import { type BytecodeOptions, bytecodePlugin } from './bytecode'
 
 export { isCI } from 'ci-info'
@@ -198,20 +198,30 @@ export async function electronWithUpdater(
     return undefined
   }
   const _options = parseOptions(pkg, sourcemap, minify, updater)
-  const bytecodeOptions = typeof bytecode === 'object'
+  let bytecodeOptions = typeof bytecode === 'object'
     ? bytecode
     : bytecode === true
       ? { enable: true }
       : undefined
 
-  try {
-    fs.rmSync(_options.buildAsarOption.electronDistPath, { recursive: true, force: true })
-    fs.rmSync(_options.buildEntryOption.entryOutputDirPath, { recursive: true, force: true })
-  } catch { }
-  log.info(`Remove old files`, { timestamp: true })
+  const isESM = pkg.type === 'module'
+
+  if (isESM && bytecodeOptions?.enable) {
+    bytecodeLog.warn(
+      '`bytecodePlugin` does not support ES module, please remove "type": "module" in package.json',
+      { timestamp: true },
+    )
+    bytecodeOptions = undefined
+  }
 
   const { buildAsarOption, buildEntryOption, buildVersionOption, postBuild, cert } = _options
   const { entryOutputDirPath, nativeModuleEntryMap, appEntryPath } = buildEntryOption
+
+  try {
+    fs.rmSync(buildAsarOption.electronDistPath, { recursive: true, force: true })
+    fs.rmSync(entryOutputDirPath, { recursive: true, force: true })
+  } catch { }
+  log.info(`Clear cache files`, { timestamp: true })
 
   sourcemap ??= (isBuild || !!process.env.VSCODE_DEBUG)
 
@@ -225,6 +235,7 @@ export async function electronWithUpdater(
     __EIU_ELECTRON_DIST_PATH__: JSON.stringify(buildAsarOption.electronDistPath),
     __EIU_ENTRY_DIST_PATH__: JSON.stringify(buildEntryOption.entryOutputDirPath),
     __EIU_IS_DEV__: JSON.stringify(!isBuild),
+    __EIU_IS_ESM__: JSON.stringify(isESM),
     __EIU_MAIN_DEV_DIR__: JSON.stringify(buildAsarOption.electronDistPath),
     __EIU_MAIN_FILE__: JSON.stringify(getMainFilePath(_main.files)),
     __EIU_SIGNATURE_CERT__: JSON.stringify(cert),
@@ -234,6 +245,7 @@ export async function electronWithUpdater(
   const _buildEntry = async (): Promise<void> => {
     await buildEntry(
       buildEntryOption,
+      isESM,
       define,
       bytecodeOptions,
     )
