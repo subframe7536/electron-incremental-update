@@ -24,7 +24,9 @@ export interface Logger {
 
 export interface UpdaterOption {
   /**
-   * Update provider, call setup later
+   * Update provider
+   *
+   * If you will not setup `UpdateJSON` or `Buffer` in params when checking update or download, this option is **required**
    */
   provider?: IProvider
   /**

@@ -57,17 +57,11 @@ export class Updater extends EventEmitter<{
         warn: (...args) => console.log('[EIU-WARN ]', ...args),
         error: (...args) => console.error('[EIU-ERROR]', ...args),
       }
-      this.logger.info('no logger set, enable dev-only logger')
+      this.logger.info('No logger set, enable dev-only logger')
     }
 
     if (!this.provider) {
-      this.logger?.debug('No update provider, please setup provider before checking update')
-    }
-  }
-
-  private checkProvider(): void {
-    if (!this.provider) {
-      throw new UpdaterError('param', 'missing update provider')
+      this.logger?.debug('WARN: No update provider')
     }
   }
 
@@ -89,23 +83,23 @@ export class Updater extends EventEmitter<{
       if ((format === 'json' && isUpdateJSON(data)) || (format === 'buffer' && Buffer.isBuffer(data))) {
         return data
       } else {
-        this.err('invalid type', 'param', `invalid type at format '${format}': ${JSON.stringify(data)}`)
+        this.err('Invalid type', 'param', `Invalid type at format '${format}': ${JSON.stringify(data)}`)
         return
       }
     }
 
     // fetch data from remote
-    this.logger?.debug(`download from ${this.provider!.name}`)
+    this.logger?.debug(`Download from ${this.provider!.name}`)
     try {
       const result = format === 'json'
         ? await this.provider!.downloadJSON(data ?? __EIU_VERSION_PATH__)
         : await this.provider!.downloadAsar(app.name, this.info!, data => this.emit('download-progress', data))
 
-      this.logger?.debug(`download ${format} success${format === 'buffer' ? `, file size: ${(result as Buffer).length}` : ''}`)
+      this.logger?.debug(`Download ${format} success${format === 'buffer' ? `, file size: ${(result as Buffer).length}` : ''}`)
 
       return result
     } catch (e) {
-      this.err(`fetch ${format} failed`, 'network', `download ${format} failed: ${e}`)
+      this.err(`Fetch ${format} failed`, 'network', `Download ${format} failed: ${e}`)
     }
   }
 
@@ -128,15 +122,21 @@ export class Updater extends EventEmitter<{
    */
   public async checkUpdate(data: UpdateJSON): Promise<boolean>
   public async checkUpdate(data?: UpdateJSON): Promise<boolean> {
-    this.checkProvider()
     const emitUnavailable = (msg: string): false => {
       this.logger?.info(msg)
       this.emit('update-unavailable', msg)
       return false
     }
+
+    if (!data && !this.provider) {
+      const errorInfo = 'No update json or provider'
+      this.err('Check update failed', 'param', errorInfo)
+      return emitUnavailable(errorInfo)
+    }
+
     const _data = await this.fetch('json', data)
     if (!_data) {
-      return emitUnavailable('failed to get update info')
+      return emitUnavailable('Failed to get update info')
     }
     let { signature, version, minimumVersion, beta } = _data
     if (this.receiveBeta) {
@@ -144,30 +144,30 @@ export class Updater extends EventEmitter<{
       signature = beta.signature
       minimumVersion = beta.minimumVersion
     }
-    this.logger?.debug(`checked update, version: ${version}, signature: ${signature}`)
+    this.logger?.debug(`Checked update, version: ${version}, signature: ${signature}`)
 
     if (isDev && !this.forceUpdate && !data) {
-      return emitUnavailable('skip check update in dev mode, to force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON')
+      return emitUnavailable('Skip check update in dev mode. To force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON')
     }
     const isLowerVersion = this.provider!.isLowerVersion
     const entryVersion = getEntryVersion()
     const appVersion = getAppVersion()
     try {
       if (isLowerVersion(entryVersion, minimumVersion)) {
-        return emitUnavailable(`entry version (${entryVersion}) < minimumVersion (${minimumVersion})`)
+        return emitUnavailable(`Entry Version (${entryVersion}) < MinimumVersion (${minimumVersion})`)
       }
 
-      this.logger?.info(`check update: current version is ${appVersion}, new version is ${version}`)
+      this.logger?.info(`Check update: current version is ${appVersion}, new version is ${version}`)
 
       if (!isLowerVersion(appVersion, version)) {
-        return emitUnavailable(`current version (${appVersion}) < new version (${version})`)
+        return emitUnavailable(`Current version (${appVersion}) < New version (${version})`)
       }
-      this.logger?.info(`update available: ${version}`)
+      this.logger?.info(`Update available: ${version}`)
       this.info = { signature, minimumVersion, version }
       this.emit('update-available', this.info)
       return true
     } catch {
-      this.err('Fail to parse version', 'validate', 'fail to parse version string')
+      this.err('Fail to parse version', 'validate', 'Fail to parse version string')
       return false
     }
   }
@@ -183,12 +183,16 @@ export class Updater extends EventEmitter<{
    */
   public async downloadUpdate(data: Uint8Array, info: Omit<UpdateInfo, 'minimumVersion'>): Promise<boolean>
   public async downloadUpdate(data?: Uint8Array, info?: Omit<UpdateInfo, 'minimumVersion'>): Promise<boolean> {
-    this.checkProvider()
     const _sig = info?.signature ?? this.info?.signature
     const _version = info?.version ?? this.info?.version
 
     if (!_sig || !_version) {
-      this.err('download failed', 'param', 'no update signature, please call `checkUpdate` first or manually setup params')
+      this.err('Download failed', 'param', 'No update signature, please call `checkUpdate` first or manually setup params')
+      return false
+    }
+
+    if (!data && !this.provider) {
+      this.err('Download failed', 'param', 'No update asar buffer and provider')
       return false
     }
 
@@ -196,30 +200,30 @@ export class Updater extends EventEmitter<{
     const buffer = await this.fetch('buffer', data ? Buffer.from(data) : undefined)
 
     if (!buffer) {
-      this.err('download failed', 'param', 'no update asar file buffer')
+      this.err('Download failed', 'param', 'No update asar file buffer')
       return false
     }
 
     // verify update file
     this.logger?.debug('verify start')
     if (!await this.provider!.verifySignaure(buffer, _version, _sig, this.CERT)) {
-      this.err('download failed', 'validate', 'invalid update asar file')
+      this.err('Download failed', 'validate', 'Invalid update asar file')
       return false
     }
-    this.logger?.debug('verify success')
+    this.logger?.debug('Verify success')
 
     try {
       const tmpFilePath = getPathFromAppNameAsar() + '.tmp'
       // write file to tmp path
-      this.logger?.debug(`install to ${tmpFilePath}`)
+      this.logger?.debug(`Install to ${tmpFilePath}`)
       fs.writeFileSync(tmpFilePath, await this.provider!.unzipFile(buffer))
 
-      this.logger?.info(`download success, version: ${_version}`)
+      this.logger?.info(`Download success, version: ${_version}`)
       this.info = undefined
       this.emit('update-downloaded')
       return true
     } catch (error) {
-      this.err('download failed', 'download', `fail to unwrap asar file, ${error}`)
+      this.err('Download failed', 'download', `Fail to unwrap asar file, ${error}`)
       return false
     }
   }
@@ -228,7 +232,7 @@ export class Updater extends EventEmitter<{
    * quit App and install
    */
   public quitAndInstall(): void {
-    this.logger?.info('quit and install')
+    this.logger?.info('Quit and install')
     restartApp()
   }
 }
