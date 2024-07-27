@@ -66,6 +66,7 @@ function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files']): 
     }
     mainFilePath = options?.index ? 'index.js' : 'main.js'
   }
+  log.info(`Using "${mainFilePath}" as main file`, { timestamp: true })
   return mainFilePath.replace(/\.[cm]?ts$/, '.js')
 }
 
@@ -178,7 +179,7 @@ export async function electronWithUpdater(
 ): Promise<PluginOption[] | undefined> {
   let {
     isBuild,
-    pkg = await loadPackageJSON() as PKG,
+    pkg = await loadPackageJSON() as PKG | null,
     main: _main,
     preload: _preload,
     sourcemap = !isBuild,
@@ -189,22 +190,17 @@ export async function electronWithUpdater(
     useNotBundle = true,
     logParsedOptions,
   } = options
-  if (!pkg) {
-    log.error(`package.json not found`, { timestamp: true })
+  if (!pkg || !pkg.version || !pkg.name || !pkg.main) {
+    log.error('package.json not found or invalid', { timestamp: true })
     return undefined
   }
-  if (!pkg.version || !pkg.name || !pkg.main) {
-    log.error(`package.json not valid`, { timestamp: true })
-    return undefined
-  }
-  const _options = parseOptions(pkg, sourcemap, minify, updater)
+  const isESM = pkg.type === 'module'
+
   let bytecodeOptions = typeof bytecode === 'object'
     ? bytecode
     : bytecode === true
       ? { enable: true }
       : undefined
-
-  const isESM = pkg.type === 'module'
 
   if (isESM && bytecodeOptions?.enable) {
     bytecodeLog.warn(
@@ -214,7 +210,13 @@ export async function electronWithUpdater(
     bytecodeOptions = undefined
   }
 
-  const { buildAsarOption, buildEntryOption, buildVersionOption, postBuild, cert } = _options
+  const {
+    buildAsarOption,
+    buildEntryOption,
+    buildVersionOption,
+    postBuild,
+    cert,
+  } = parseOptions(pkg, sourcemap, minify, updater)
   const { entryOutputDirPath, nativeModuleEntryMap, appEntryPath } = buildEntryOption
 
   try {
