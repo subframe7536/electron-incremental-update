@@ -246,8 +246,8 @@ export class Updater extends EventEmitter<{
     if (this.controller.signal.aborted) {
       return
     }
-    this.logger?.info('Cancel update')
     this.controller.abort()
+    this.logger?.info('Cancel update')
     this.emit('update-cancelled')
     this.controller = new AbortController()
   }
