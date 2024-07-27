@@ -19,7 +19,7 @@ declare const __EIU_VERSION_PATH__: string
 export class Updater extends EventEmitter<{
   'checking': any
   'update-available': [data: UpdateInfo]
-  'update-unavailable': [reason: string]
+  'update-not-available': [reason: string]
   'error': [error: UpdaterError]
   'download-progress': [info: DownloadingInfo]
   'update-downloaded': any
@@ -115,16 +115,16 @@ export class Updater extends EventEmitter<{
   /**
    * Check update info using default options
    */
-  public async checkUpdate(): Promise<boolean>
+  public async checkForUpdates(): Promise<boolean>
   /**
    * Check update info using existing update json
    * @param data existing update json
    */
-  public async checkUpdate(data: UpdateJSON): Promise<boolean>
-  public async checkUpdate(data?: UpdateJSON): Promise<boolean> {
+  public async checkForUpdates(data: UpdateJSON): Promise<boolean>
+  public async checkForUpdates(data?: UpdateJSON): Promise<boolean> {
     const emitUnavailable = (msg: string): false => {
       this.logger?.info(msg)
-      this.emit('update-unavailable', msg)
+      this.emit('update-not-available', msg)
       return false
     }
 
@@ -241,7 +241,7 @@ export class Updater extends EventEmitter<{
  * Auto check update, download and install
  */
 export async function autoUpdate(updater: Updater): Promise<void> {
-  if (await updater.checkUpdate() && await updater.downloadUpdate()) {
+  if (await updater.checkForUpdates() && await updater.downloadUpdate()) {
     updater.quitAndInstall()
   }
 }
