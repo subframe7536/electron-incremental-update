@@ -1,4 +1,4 @@
-import { type IncomingMessage, app, net } from 'electron'
+import electron, { type IncomingMessage } from 'electron'
 import type { Arrayable } from '@subframe7536/type-utils'
 import { type UpdateJSON, isUpdateJSON } from '../utils/version'
 import type { OnDownloading } from './types'
@@ -20,11 +20,13 @@ export function getHeader(headers: Record<string, Arrayable<string>>, key: any):
 async function downloadFn<T>(
   url: string,
   headers: Record<string, any>,
+  signal: AbortSignal,
   onResponse: (resp: IncomingMessage, resolve: (data: T) => void, reject: (e: any) => void) => void,
 ): Promise<T> {
-  await app.whenReady()
+  await electron.app.whenReady()
   return new Promise((resolve, reject) => {
-    const request = net.request({ url, method: 'GET', redirect: 'follow', headers })
+    const request = electron.net.request({ url, method: 'GET', redirect: 'follow', headers, cache: 'no-cache' })
+    signal.addEventListener('abort', () => request.abort(), { once: true })
     request.on('response', (resp) => {
       resp.on('aborted', () => reject(new Error('aborted')))
       resp.on('error', () => reject(new Error('download error')))
@@ -39,24 +41,30 @@ async function downloadFn<T>(
  * Default function to download json and parse to UpdateJson
  * @param url target url
  * @param headers extra headers
+ * @param signal abort signal
  */
-export async function defaultDownloadUpdateJSON(url: string, headers: Record<string, any>): Promise<UpdateJSON> {
-  return await downloadFn<UpdateJSON>(url, headers, (resp, resolve, reject) => {
-    let data = ''
-    resp.on('data', chunk => (data += chunk))
-    resp.on('end', () => {
-      try {
-        const json = JSON.parse(data)
-        if (isUpdateJSON(json)) {
-          resolve(json)
-        } else {
-          throw Error
+export async function defaultDownloadUpdateJSON(url: string, headers: Record<string, any>, signal: AbortSignal): Promise<UpdateJSON> {
+  return await downloadFn<UpdateJSON>(
+    url,
+    headers,
+    signal,
+    (resp, resolve, reject) => {
+      let data = ''
+      resp.on('data', chunk => (data += chunk))
+      resp.on('end', () => {
+        try {
+          const json = JSON.parse(data)
+          if (isUpdateJSON(json)) {
+            resolve(json)
+          } else {
+            throw Error
+          }
+        } catch {
+          reject(new Error('invalid update json ' + data))
         }
-      } catch {
-        reject(new Error('invalid update json'))
-      }
-    })
-  })
+      })
+    },
+  )
 }
 
 /**
@@ -64,32 +72,39 @@ export async function defaultDownloadUpdateJSON(url: string, headers: Record<str
  * get total size from `Content-Length` header
  * @param url target url
  * @param headers extra headers
+ * @param signal abort signal
  * @param onDownloading on downloading callback
  */
 export async function defaultDownloadAsar(
   url: string,
   headers: Record<string, any>,
+  signal: AbortSignal,
   onDownloading?: OnDownloading,
 ): Promise<Buffer> {
   let transferred = 0
   let time = Date.now()
-  return await downloadFn<Buffer>(url, headers, (resp, resolve) => {
-    const total = getHeader(resp.headers, 'content-length') || -1
-    let data: Buffer[] = []
-    resp.on('data', (chunk) => {
-      const delta = chunk.length
-      transferred += delta
-      const current = Date.now()
-      onDownloading?.({
-        percent: +(transferred / total).toFixed(2) * 100,
-        total,
-        transferred,
-        delta,
-        bps: delta / ((current - time) * 1e3),
+  return await downloadFn<Buffer>(
+    url,
+    headers,
+    signal,
+    (resp, resolve) => {
+      const total = +getHeader(resp.headers, 'content-length') || -1
+      let data: Buffer[] = []
+      resp.on('data', (chunk) => {
+        const delta = chunk.length
+        transferred += delta
+        const current = Date.now()
+        onDownloading?.({
+          percent: total ? +(transferred / total).toFixed(2) * 100 : -1,
+          total,
+          transferred,
+          delta,
+          bps: delta / ((current - time) * 1e3),
+        })
+        time = current
+        data.push(chunk)
       })
-      time = current
-      data.push(chunk)
-    })
-    resp.on('end', () => resolve(Buffer.concat(data)))
-  })
+      resp.on('end', () => resolve(Buffer.concat(data)))
+    },
+  )
 }

@@ -21,10 +21,10 @@ export abstract class BaseProvider implements IProvider {
   /**
    * @inheritdoc
    */
-  public abstract downloadJSON(versionPath: string): Promise<UpdateJSON>
+  public abstract downloadJSON(versionPath: string, signal: AbortSignal): Promise<UpdateJSON>
 
   /**
    * @inheritdoc
    */
-  public abstract downloadAsar(name: string, info: UpdateInfo, onDownloading?: (info: DownloadingInfo) => void,): Promise<Buffer>
+  public abstract downloadAsar(name: string, info: UpdateInfo, signal: AbortSignal, onDownloading?: (info: DownloadingInfo) => void,): Promise<Buffer>
 }

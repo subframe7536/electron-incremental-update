@@ -8,7 +8,7 @@ export interface GitHubProviderOptions {
   /**
    * Github user name
    */
-  username: string
+  user: string
   /**
    * Github repo name
    */
@@ -23,9 +23,7 @@ export interface GitHubProviderOptions {
    */
   extraHeaders?: Record<string, string>
   /**
-   * Custom url handler
-   *
-   * for Github, there are some {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L40 public CDN links}
+   * Custom url handler ({@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L40 some public CDN links})
    * @example
    * (url, isDownloadAsar) => {
    *   if (isDownloadAsar) {
@@ -67,7 +65,7 @@ export class GitHubProvider extends BaseProvider {
 
   private async parseURL(isDownloadAsar: boolean, extraPath: string): Promise<string> {
     const url = new URL(
-      `/${this.options.username}/${this.options.repo}/${extraPath}`,
+      `/${this.options.user}/${this.options.repo}/${extraPath}`,
       'https://' + (isDownloadAsar ? 'github.com' : 'raw.githubusercontent.com'),
     )
     return (await this.urlHandler?.(url, isDownloadAsar) || url).toString()
@@ -76,10 +74,11 @@ export class GitHubProvider extends BaseProvider {
   /**
    * @inheritdoc
    */
-  public async downloadJSON(versionPath: string): Promise<UpdateJSON> {
+  public async downloadJSON(versionPath: string, signal: AbortSignal): Promise<UpdateJSON> {
     return await defaultDownloadUpdateJSON(
       await this.parseURL(false, `${this.options.branch}/${versionPath}`),
       { Accept: 'application/json', ...this.options.extraHeaders },
+      signal,
     )
   }
 
@@ -89,11 +88,13 @@ export class GitHubProvider extends BaseProvider {
   public async downloadAsar(
     name: string,
     info: UpdateInfo,
+    signal: AbortSignal,
     onDownloading?: (info: DownloadingInfo) => void,
   ): Promise<Buffer> {
     return await defaultDownloadAsar(
       await this.parseURL(true, `releases/download/v${info.version}/${name}-${info.version}.asar.gz`),
       { Accept: 'application/octet-stream', ...this.options.extraHeaders },
+      signal,
       onDownloading,
     )
   }

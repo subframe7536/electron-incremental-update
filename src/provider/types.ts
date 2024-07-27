@@ -12,7 +12,7 @@ export interface DownloadingInfo {
   /**
    * Downloaded percent, 0 ~ 100
    *
-   * If no `Content-Length` header, will be nagative
+   * If no `Content-Length` header, will be -1
    */
   percent: number
   /**
@@ -46,17 +46,20 @@ export interface IProvider {
   /**
    * Download update json
    * @param versionPath parsed version path in project
+   * @param signal abort signal
    */
-  downloadJSON: (versionPath: string) => Promise<UpdateJSON>
+  downloadJSON: (versionPath: string, signal: AbortSignal) => Promise<UpdateJSON>
   /**
    * Download update asar
    * @param name app name
    * @param updateInfo existing update info
+   * @param signal abort signal
    * @param onDownloading hook for on downloading
    */
   downloadAsar: (
     name: string,
     updateInfo: UpdateInfo,
+    signal: AbortSignal,
     onDownloading?: (info: DownloadingInfo) => void
   ) => Promise<Buffer>
   /**

@@ -23,8 +23,10 @@ export class Updater extends EventEmitter<{
   'error': [error: UpdaterError]
   'download-progress': [info: DownloadingInfo]
   'update-downloaded': any
+  'update-cancelled': any
 }> {
   private CERT: string
+  private controller: AbortController
   private info?: UpdateInfo
   public provider?: IProvider
   /**
@@ -49,6 +51,7 @@ export class Updater extends EventEmitter<{
     this.receiveBeta = options.receiveBeta
     this.CERT = options.SIGNATURE_CERT || __EIU_SIGNATURE_CERT__
     this.logger = options.logger
+    this.controller = new AbortController()
 
     if (isDev && !this.logger) {
       this.logger = {
@@ -67,16 +70,19 @@ export class Updater extends EventEmitter<{
 
   /**
    * This function is used to parse download data.
-   * - if format is `'json'`
-   *   - if data is `UpdateJSON`, return it
-   *   - if data is string or absent, download URL data and return it
-   * - if format is `'buffer'`
-   *   - if data is `Buffer`, return it
-   *   - if data is string or absent, download URL data and return it
+   *
+   * if data is absent, download URL from provider and return it,
+   * else if data is `UpdateJSON`, return it
+   */
+  private async fetch(format: 'json', data?: UpdateJSON): Promise<UpdateJSON | undefined>
+  /**
+   * This function is used to parse download data.
+   *
+   * if data is absent, download URL from provider and return it,
+   * else if data is `Buffer`, return it
    * @param format 'json' or 'buffer'
    * @param data download URL or update json or buffer
    */
-  private async fetch(format: 'json', data?: UpdateJSON): Promise<UpdateJSON | undefined>
   private async fetch(format: 'buffer', data?: Buffer): Promise<Buffer | undefined>
   private async fetch(format: 'json' | 'buffer', data?: Uint8Array | UpdateJSON): Promise<any> {
     if (typeof data === 'object') {
@@ -89,11 +95,11 @@ export class Updater extends EventEmitter<{
     }
 
     // fetch data from remote
-    this.logger?.debug(`Download from ${this.provider!.name}`)
+    this.logger?.debug(`Download from \`${this.provider!.name}\``)
     try {
       const result = format === 'json'
-        ? await this.provider!.downloadJSON(data ?? __EIU_VERSION_PATH__)
-        : await this.provider!.downloadAsar(app.name, this.info!, data => this.emit('download-progress', data))
+        ? await this.provider!.downloadJSON(__EIU_VERSION_PATH__, this.controller.signal)
+        : await this.provider!.downloadAsar(app.name, this.info!, this.controller.signal, info => this.emit('download-progress', info))
 
       this.logger?.debug(`Download ${format} success${format === 'buffer' ? `, file size: ${(result as Buffer).length}` : ''}`)
 
@@ -234,6 +240,16 @@ export class Updater extends EventEmitter<{
   public quitAndInstall(): void {
     this.logger?.info('Quit and install')
     restartApp()
+  }
+
+  public cancel(): void {
+    if (this.controller.signal.aborted) {
+      return
+    }
+    this.logger?.info('Cancel update')
+    this.controller.abort()
+    this.emit('update-cancelled')
+    this.controller = new AbortController()
   }
 }
 
