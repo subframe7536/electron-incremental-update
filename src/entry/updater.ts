@@ -19,7 +19,7 @@ declare const __EIU_VERSION_PATH__: string
 export class Updater extends EventEmitter<{
   'checking': any
   'update-available': [data: UpdateInfo]
-  'update-not-available': [reason: string]
+  'update-not-available': [reason: string, data?: UpdateInfo]
   'error': [error: UpdaterError]
   'download-progress': [info: DownloadingInfo]
   'update-downloaded': any
@@ -128,49 +128,44 @@ export class Updater extends EventEmitter<{
    */
   public async checkForUpdates(data: UpdateJSON): Promise<boolean>
   public async checkForUpdates(data?: UpdateJSON): Promise<boolean> {
-    const emitUnavailable = (msg: string): false => {
+    const emitUnavailable = (msg: string, info?: UpdateInfo): false => {
       this.logger?.info(msg)
-      this.emit('update-not-available', msg)
+      this.emit('update-not-available', msg, info)
       return false
     }
 
     if (!data && !this.provider) {
-      const errorInfo = 'No update json or provider'
-      this.err('Check update failed', 'param', errorInfo)
-      return emitUnavailable(errorInfo)
+      this.err('Check update failed', 'param', 'No update json or provider')
+      return false
     }
 
     const _data = await this.fetch('json', data)
     if (!_data) {
       return emitUnavailable('Failed to get update info')
     }
-    let { signature, version, minimumVersion, beta } = _data
-    if (this.receiveBeta) {
-      version = beta.version
-      signature = beta.signature
-      minimumVersion = beta.minimumVersion
-    }
+    const { signature, version, minimumVersion } = this.receiveBeta ? _data.beta : _data
+    const info = { signature, minimumVersion, version }
     this.logger?.debug(`Checked update, version: ${version}, signature: ${signature}`)
 
     if (isDev && !this.forceUpdate && !data) {
-      return emitUnavailable('Skip check update in dev mode. To force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON')
+      return emitUnavailable('Skip check update in dev mode. To force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON', info)
     }
     const isLowerVersion = this.provider!.isLowerVersion
     const entryVersion = getEntryVersion()
     const appVersion = getAppVersion()
     try {
       if (isLowerVersion(entryVersion, minimumVersion)) {
-        return emitUnavailable(`Entry Version (${entryVersion}) < MinimumVersion (${minimumVersion})`)
+        return emitUnavailable(`Entry Version (${entryVersion}) < MinimumVersion (${minimumVersion})`, info)
       }
 
       this.logger?.info(`Check update: current version is ${appVersion}, new version is ${version}`)
 
       if (!isLowerVersion(appVersion, version)) {
-        return emitUnavailable(`Current version (${appVersion}) < New version (${version})`)
+        return emitUnavailable(`Current version (${appVersion}) < New version (${version})`, info)
       }
       this.logger?.info(`Update available: ${version}`)
-      this.info = { signature, minimumVersion, version }
-      this.emit('update-available', this.info)
+      this.emit('update-available', info)
+      this.info = info
       return true
     } catch {
       this.err('Fail to parse version', 'validate', 'Fail to parse version string')
