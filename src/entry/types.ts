@@ -10,7 +10,7 @@ export const ErrorInfo = {
 export class UpdaterError extends Error {
   public code: keyof typeof ErrorInfo
   constructor(msg: keyof typeof ErrorInfo, info: string) {
-    super('[' + ErrorInfo[msg] + '] ' + info)
+    super(`[${ErrorInfo[msg]}] ${info}`)
     this.code = msg
   }
 }

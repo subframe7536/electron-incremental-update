@@ -73,7 +73,7 @@ export function bytecodePlugin(
       if (options.format !== 'es' && bytecodeRequired) {
         this.emitFile({
           type: 'asset',
-          source: bytecodeModuleLoaderCode + '\n',
+          source: `${bytecodeModuleLoaderCode}\n`,
           name: 'Bytecode Loader File',
           fileName: bytecodeModuleLoader,
         })
@@ -137,7 +137,7 @@ export function bytecodePlugin(
               while ((match = bytecodeRE.exec(_code))) {
                 const [prefix, chunkName] = match
                 const len = prefix.length + chunkName.length
-                s.overwrite(match.index, match.index + len, prefix + chunkName + 'c', {
+                s.overwrite(match.index, match.index + len, `${prefix + chunkName}c`, {
                   contentOnly: true,
                 })
               }
@@ -146,18 +146,18 @@ export function bytecodePlugin(
 
             if (bytecodeChunks.includes(name)) {
               const bytecodeBuffer = await compileToBytecode(_code)
-              fs.writeFileSync(chunkFilePath + 'c', bytecodeBuffer)
+              fs.writeFileSync(`${chunkFilePath}c`, bytecodeBuffer)
 
               if (chunk.isEntry) {
                 const bytecodeLoaderBlock = getBytecodeLoaderBlock(chunk.fileName)
-                const bytecodeModuleBlock = `require("./${path.basename(name) + 'c'}");`
+                const bytecodeModuleBlock = `require("./${`${path.basename(name)}c`}");`
                 const code = `${useStrict}\n${bytecodeLoaderBlock}\nmodule.exports=${bytecodeModuleBlock}\n`
                 fs.writeFileSync(chunkFilePath, code)
               } else {
                 fs.unlinkSync(chunkFilePath)
               }
 
-              bytecodeFiles.push({ name: name + 'c', size: bytecodeBuffer.length })
+              bytecodeFiles.push({ name: `${name}c`, size: bytecodeBuffer.length })
             } else {
               if (chunk.isEntry) {
                 let hasBytecodeMoudle = false

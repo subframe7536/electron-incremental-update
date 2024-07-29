@@ -73,7 +73,7 @@ function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files']): 
 function parseVersionPath(versionPath: string): string {
   versionPath = normalizePath(versionPath)
   if (!versionPath.startsWith('./')) {
-    versionPath = './' + versionPath
+    versionPath = `./${versionPath}`
   }
   return new URL(versionPath, 'file://').pathname.slice(1)
 }

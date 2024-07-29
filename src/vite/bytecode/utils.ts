@@ -89,7 +89,7 @@ export function convertArrowFunctionAndTemplate(code: string): { code: string, m
 
 export const decodeFn = ';function _0xstr_(a,b){return String.fromCharCode.apply(0,a.map(function(x){return x-b}))};'
 export function obfuscateString(input: string, offset = ~~(Math.random() * 16) + 1): string {
-  const hexArray = input.split('').map(c => '0x' + (c.charCodeAt(0) + offset).toString(16))
+  const hexArray = input.split('').map(c => `0x${(c.charCodeAt(0) + offset).toString(16)}`)
   return `_0xstr_([${hexArray.join(',')}],${offset})`
 }
 

@@ -105,7 +105,7 @@ export class Updater extends EventEmitter<{
 
       return result
     } catch (e) {
-      this.err(`Fetch ${format} failed`, 'network', `Download ${format} failed: ${e}`)
+      this.err(`Fetch ${format} failed`, 'network', e instanceof Error ? e.message : (e as any).toString())
     }
   }
 
@@ -214,7 +214,7 @@ export class Updater extends EventEmitter<{
     this.logger?.debug('Verify success')
 
     try {
-      const tmpFilePath = getPathFromAppNameAsar() + '.tmp'
+      const tmpFilePath = `${getPathFromAppNameAsar()}.tmp`
       // write file to tmp path
       this.logger?.debug(`Install to ${tmpFilePath}`)
       fs.writeFileSync(tmpFilePath, await this.provider!.unzipFile(buffer))

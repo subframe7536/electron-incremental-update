@@ -60,7 +60,7 @@ export async function defaultDownloadUpdateJSON(url: string, headers: Record<str
             throw Error
           }
         } catch {
-          reject(new Error('invalid update json ' + data))
+          reject(new Error(`Invalid update json, "${data}"`))
         }
       })
     },

@@ -141,7 +141,7 @@ export async function createElectronApp(
     await beforeStart?.(mainPath, logger)
 
     if (__EIU_IS_ESM__) {
-      (await import('file://' + mainPath)).default(updaterInstance)
+      (await import(`file://${mainPath}`)).default(updaterInstance)
     } else {
       // eslint-disable-next-line ts/no-require-imports
       require(mainPath)(updaterInstance)

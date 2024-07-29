@@ -66,7 +66,7 @@ export class GitHubProvider extends BaseProvider {
   private async parseURL(isDownloadAsar: boolean, extraPath: string): Promise<string> {
     const url = new URL(
       `/${this.options.user}/${this.options.repo}/${extraPath}`,
-      'https://' + (isDownloadAsar ? 'github.com' : 'raw.githubusercontent.com'),
+      `https://${isDownloadAsar ? 'github.com' : 'raw.githubusercontent.com'}`,
     )
     return (await this.urlHandler?.(url, isDownloadAsar) || url).toString()
   }
