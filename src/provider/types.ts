@@ -1,7 +1,6 @@
 import type { Promisable } from '@subframe7536/type-utils'
 import type { UpdateInfo, UpdateJSON } from '../utils/version'
 
-export type URLHandler = (url: URL, isDownloadAsar: boolean) => Promisable<URL | string | undefined | null>
 export type OnDownloading = (progress: DownloadingInfo) => void
 
 export interface DownloadingInfo {
@@ -36,12 +35,6 @@ export interface IProvider {
    * Provider name
    */
   name: string
-  /**
-   * Custom url handler
-   *
-   * for Github, there are some {@link https://github.com/XIU2/UserScript/blob/master/GithubEnhanced-High-Speed-Download.user.js#L34 public CDN links}
-   */
-  urlHandler?: URLHandler
   onDownloading?: OnDownloading
   /**
    * Download update json

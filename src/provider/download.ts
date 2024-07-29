@@ -89,7 +89,7 @@ export async function defaultDownloadAsar(
     signal,
     (resp, resolve) => {
       const total = +getHeader(resp.headers, 'content-length') || -1
-      let data: Buffer[] = []
+      const data: Buffer[] = []
       resp.on('data', (chunk) => {
         const delta = chunk.length
         transferred += delta
@@ -99,7 +99,7 @@ export async function defaultDownloadAsar(
           total,
           transferred,
           delta,
-          bps: delta / ((current - time) * 1e3),
+          bps: delta / (current - time),
         })
         time = current
         data.push(chunk)
