@@ -35,7 +35,6 @@ export interface IProvider {
    * Provider name
    */
   name: string
-  onDownloading?: OnDownloading
   /**
    * Download update json
    * @param versionPath parsed version path in project
