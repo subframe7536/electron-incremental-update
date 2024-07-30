@@ -97,10 +97,7 @@ export interface BuildEntryOption {
    *   loader: {
    *     '.node': 'empty',
    *   },
-   *   define: {
-   *     __EIU_SIGNATURE_CERT__: JSON.stringify(cert),
-   *     // ...
-   *   },
+   *   define,
    * }
    * ```
    */
@@ -171,16 +168,16 @@ export interface GeneratorOverrideFunctions {
 
 export interface ElectronUpdaterOptions {
   /**
-   * mini version of entry
+   * Minimum version of entry
    * @default '0.0.0'
    */
   minimumVersion?: string
   /**
-   * config for entry (app.asar)
+   * Options for entry (app.asar)
    */
   entry?: BuildEntryOption
   /**
-   * paths config
+   * Options for paths
    */
   paths?: {
     /**
@@ -214,40 +211,40 @@ export interface ElectronUpdaterOptions {
    */
   keys?: {
     /**
-     * path to the pem file that contains private key
-     * if not ended with .pem, it will be appended
+     * Path to the pem file that contains private key
+     * If not ended with .pem, it will be appended
      *
-     * **if `UPDATER_PK` is set, will read it instead of read from `privateKeyPath`**
+     * **If `UPDATER_PK` is set, will read it instead of read from `privateKeyPath`**
      * @default 'keys/private.pem'
      */
     privateKeyPath?: string
     /**
-     * path to the pem file that contains public key
-     * if not ended with .pem, it will be appended
+     * Path to the pem file that contains public key
+     * If not ended with .pem, it will be appended
      *
-     * **if `UPDATER_CERT` is set, will read it instead of read from `certPath`**
+     * **If `UPDATER_CERT` is set, will read it instead of read from `certPath`**
      * @default 'keys/cert.pem'
      */
     certPath?: string
     /**
-     * length of the key
+     * Length of the key
      * @default 2048
      */
     keyLength?: number
     /**
      * X509 certificate info
      *
-     * only generate simple **self-signed** certificate **without extensions**
+     * Only generate simple **self-signed** certificate **without extensions**
      */
     certInfo?: {
       /**
-       * the subject of the certificate
+       * The subject of the certificate
        *
        * @default { commonName: `${app.name}`, organizationName: `org.${app.name}` }
        */
       subject?: DistinguishedName
       /**
-       * expire days of the certificate
+       * Expire days of the certificate
        *
        * @default 3650
        */

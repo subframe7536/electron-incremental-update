@@ -25,7 +25,7 @@ declare const __EIU_IS_ESM__: string
  * @param tempAsarPath temp(updated) asar path
  * @param appNameAsarPath `${app.name}.asar` path
  * @param logger logger
- * @default install(); logger.info(`update success!`)
+ * @default install(); logger.info('update success!')
  */
 type OnInstallFunction = (
   install: VoidFunction,
