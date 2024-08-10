@@ -340,7 +340,8 @@ electronWithUpdater({
 
 https://electron-vite.org/guide/source-code-protection
 
-- Improve the string protection (see [original issue](https://github.com/alex8088/electron-vite/issues/552)) and protect all strings by default
+- Improve the string protection (see [original issue](https://github.com/alex8088/electron-vite/issues/552))
+- Protect all strings by default
 - Minification is allowed
 
 #### Limitation
@@ -667,6 +668,24 @@ export interface ElectronUpdaterOptions {
     }
   }
   overrideGenerator?: GeneratorOverrideFunctions
+}
+
+export interface BytecodeOptions {
+  enable: boolean
+  /**
+   * Enable in preload script. Remember to set `sandbox: false` when creating window
+   */
+  preload?: boolean
+  /**
+   * Custom electron binary path
+   */
+  electronPath?: string
+  /**
+   * Before transformed code compile function. If return `Falsy` value, it will be ignored
+   * @param code transformed code
+   * @param id file path
+   */
+  beforeCompile?: (code: string, id: string) => Promisable<string | null | undefined | void>
 }
 
 export interface BuildEntryOption {

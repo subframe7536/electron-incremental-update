@@ -133,7 +133,7 @@ export async function buildEntry(
         transformedCode = result
       }
     }
-    const buffer = await compileToBytecode(transformedCode)
+    const buffer = await compileToBytecode(transformedCode, bytecodeOptions.electronPath)
     fs.writeFileSync(
       filePath,
       `${isEntry ? bytecodeModuleLoaderCode : useStrict}${isEntry ? '' : 'module.exports = '}require("./${fileName}c")`,

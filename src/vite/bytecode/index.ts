@@ -22,6 +22,10 @@ export interface BytecodeOptions {
    */
   preload?: boolean
   /**
+   * Custom electron binary path
+   */
+  electronPath?: string
+  /**
    * Before transformed code compile function. If return `Falsy` value, it will be ignored
    * @param code transformed code
    * @param id file path
@@ -39,6 +43,7 @@ export function bytecodePlugin(
   const {
     enable,
     preload = false,
+    electronPath,
     beforeCompile,
   } = options
 
@@ -145,7 +150,7 @@ export function bytecodePlugin(
             }
 
             if (bytecodeChunks.includes(name)) {
-              const bytecodeBuffer = await compileToBytecode(_code)
+              const bytecodeBuffer = await compileToBytecode(_code, electronPath)
               fs.writeFileSync(`${chunkFilePath}c`, bytecodeBuffer)
 
               if (chunk.isEntry) {

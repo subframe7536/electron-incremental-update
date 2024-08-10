@@ -65,7 +65,7 @@ export function requireNative<T = any>(moduleName: string): T {
     throw new Error(`Cannot require "${path.join(__EIU_ENTRY_DIST_PATH__, moduleName)}", \`requireNative\` only support CommonJS`)
   }
   // eslint-disable-next-line ts/no-require-imports
-  return require(path.join(electron.app.getAppPath(), __EIU_ENTRY_DIST_PATH__, moduleName))
+  return require(getPathFromEntryAsar(moduleName))
 }
 
 /**

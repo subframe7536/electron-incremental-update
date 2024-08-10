@@ -42,11 +42,10 @@ export function toRelativePath(filename: string, importer: string): string {
   const relPath = path.posix.relative(path.dirname(importer), filename)
   return relPath.startsWith('.') ? relPath : `./${relPath}`
 }
-export function compileToBytecode(code: string): Promise<Buffer> {
+export function compileToBytecode(code: string, electronPath = getElectronPath()): Promise<Buffer> {
   let data = Buffer.from([])
   const logErr = (...args: any[]): void => bytecodeLog.error(args.join(' '), { timestamp: true })
 
-  const electronPath = getElectronPath()
   const bytecodePath = getBytecodeCompilerPath()
   return new Promise((resolve, reject) => {
     const proc = cp.spawn(electronPath, [bytecodePath], {
