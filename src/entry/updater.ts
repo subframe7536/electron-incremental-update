@@ -2,9 +2,9 @@ import fs from 'node:fs'
 import { EventEmitter } from 'node:events'
 import { app } from 'electron'
 import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
-import type { DownloadingInfo, IProvider } from '../provider'
+import type { DownloadingInfo, IProvider, UpdateJSONWithURL } from '../provider'
 import { getAppVersion, getEntryVersion, getPathFromAppNameAsar, isDev, restartApp } from '../utils/electron'
-import type { ErrorInfo, Logger, UpdaterOption } from './types'
+import type { ErrorInfo, Logger, UnavailableInfo, UpdateInfoWithExtraVersion, UpdateInfoWithURL, UpdaterOption } from './types'
 import { UpdaterError } from './types'
 
 /**
@@ -18,8 +18,8 @@ declare const __EIU_VERSION_PATH__: string
 
 export class Updater extends EventEmitter<{
   'checking': any
-  'update-available': [data: UpdateInfo]
-  'update-not-available': [reason: string, data?: UpdateInfo]
+  'update-available': [data: UpdateInfoWithExtraVersion]
+  'update-not-available': [code: UnavailableInfo, msg: string, info?: UpdateInfoWithExtraVersion]
   'error': [error: UpdaterError]
   'download-progress': [info: DownloadingInfo]
   'update-downloaded': any
@@ -27,7 +27,7 @@ export class Updater extends EventEmitter<{
 }> {
   private CERT: string
   private controller: AbortController
-  private info?: UpdateInfo
+  private info?: UpdateInfoWithURL
   public provider?: IProvider
   /**
    * Updater logger
@@ -74,7 +74,7 @@ export class Updater extends EventEmitter<{
    * if data is absent, download URL from provider and return it,
    * else if data is `UpdateJSON`, return it
    */
-  private async fetch(format: 'json', data?: UpdateJSON): Promise<UpdateJSON | undefined>
+  private async fetch(format: 'json', data?: UpdateJSONWithURL): Promise<UpdateJSONWithURL | undefined>
   /**
    * This function is used to parse download data.
    *
@@ -84,12 +84,12 @@ export class Updater extends EventEmitter<{
    * @param data download URL or update json or buffer
    */
   private async fetch(format: 'buffer', data?: Buffer): Promise<Buffer | undefined>
-  private async fetch(format: 'json' | 'buffer', data?: Uint8Array | UpdateJSON): Promise<any> {
+  private async fetch(format: 'json' | 'buffer', data?: Buffer | UpdateJSONWithURL): Promise<any> {
     if (typeof data === 'object') {
       if ((format === 'json' && isUpdateJSON(data)) || (format === 'buffer' && Buffer.isBuffer(data))) {
         return data
       } else {
-        this.err('Invalid type', 'param', `Invalid type at format '${format}': ${JSON.stringify(data)}`)
+        this.err('Invalid type', 'ERR_PARAM', `Invalid type at format '${format}': ${JSON.stringify(data)}`)
         return
       }
     }
@@ -98,23 +98,23 @@ export class Updater extends EventEmitter<{
     this.logger?.debug(`Download from \`${this.provider!.name}\``)
     try {
       const result = format === 'json'
-        ? await this.provider!.downloadJSON(__EIU_VERSION_PATH__, this.controller.signal)
-        : await this.provider!.downloadAsar(app.name, this.info!, this.controller.signal, info => this.emit('download-progress', info))
+        ? await this.provider!.downloadJSON(app.name, __EIU_VERSION_PATH__, this.controller.signal)
+        : await this.provider!.downloadAsar(this.info!, this.controller.signal, info => this.emit('download-progress', info))
 
       this.logger?.debug(`Download ${format} success${format === 'buffer' ? `, file size: ${(result as Buffer).length}` : ''}`)
 
       return result
     } catch (e) {
-      this.err(`Fetch ${format} failed`, 'network', e instanceof Error ? e.message : (e as any).toString())
+      this.err(`Fetch ${format} failed`, 'ERR_NETWORK', e instanceof Error ? e.message : (e as any).toString())
     }
   }
 
   /**
    * Handle error message and emit error event
    */
-  private err(msg: string, code: keyof typeof ErrorInfo, errorInfo: string): void {
+  private err(msg: string, code: ErrorInfo, errorInfo: string): void {
     const err = new UpdaterError(code, errorInfo)
-    this.logger?.error(msg, err)
+    this.logger?.error(`[${code}] ${msg}`, err)
     this.emit('error', err)
   }
 
@@ -126,50 +126,57 @@ export class Updater extends EventEmitter<{
    * Check update info using existing update json
    * @param data existing update json
    */
-  public async checkForUpdates(data: UpdateJSON): Promise<boolean>
-  public async checkForUpdates(data?: UpdateJSON): Promise<boolean> {
-    const emitUnavailable = (msg: string, info?: UpdateInfo): false => {
-      this.logger?.info(msg)
-      this.emit('update-not-available', msg, info)
+  public async checkForUpdates(data: UpdateJSON | UpdateJSONWithURL): Promise<boolean>
+  public async checkForUpdates(data?: UpdateJSON | UpdateJSONWithURL): Promise<boolean> {
+    const emitUnavailable = (msg: string, code: UnavailableInfo, info?: UpdateInfoWithExtraVersion): false => {
+      this.logger?.info(`[${code}] ${msg}`)
+      this.emit('update-not-available', code, msg, info)
       return false
     }
 
     if (!data && !this.provider) {
-      this.err('Check update failed', 'param', 'No update json or provider')
-      return false
+      const msg = 'No update json or provider'
+      this.err('Check update failed', 'ERR_PARAM', msg)
+      return emitUnavailable(msg, 'UNAVAILABLE_ERROR')
     }
 
-    const _data = await this.fetch('json', data)
+    const _data = await this.fetch('json', data as any)
     if (!_data) {
-      return emitUnavailable('Failed to get update info')
+      return emitUnavailable('Failed to get update info', 'UNAVAILABLE_ERROR')
     }
-    const { signature, version, minimumVersion } = this.receiveBeta ? _data.beta : _data
-    const info = { signature, minimumVersion, version }
+    const { signature, version, minimumVersion, url = '' } = this.receiveBeta ? _data.beta : _data
+    const info = { signature, minimumVersion, version, url }
+    const extraVersionInfo = {
+      signature,
+      minimumVersion,
+      version,
+      appVersion: getAppVersion(),
+      entryVersion: getEntryVersion(),
+    }
     this.logger?.debug(`Checked update, version: ${version}, signature: ${signature}`)
 
     if (isDev && !this.forceUpdate && !data) {
-      return emitUnavailable('Skip check update in dev mode. To force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON', info)
+      return emitUnavailable('Skip check update in dev mode. To force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON', 'UNAVAILABLE_DEV', extraVersionInfo)
     }
     const isLowerVersion = this.provider!.isLowerVersion
-    const entryVersion = getEntryVersion()
-    const appVersion = getAppVersion()
     try {
-      if (isLowerVersion(entryVersion, minimumVersion)) {
-        return emitUnavailable(`Entry Version (${entryVersion}) < MinimumVersion (${minimumVersion})`, info)
+      if (isLowerVersion(extraVersionInfo.entryVersion, minimumVersion)) {
+        return emitUnavailable(`Entry Version (${extraVersionInfo.entryVersion}) < MinimumVersion (${minimumVersion})`, 'UNAVAILABLE_VERSION', extraVersionInfo)
       }
 
-      this.logger?.info(`Check update: current version is ${appVersion}, new version is ${version}`)
+      this.logger?.info(`Current version is ${extraVersionInfo.appVersion}, new version is ${version}`)
 
-      if (!isLowerVersion(appVersion, version)) {
-        return emitUnavailable(`Current version (${appVersion}) < New version (${version})`, info)
+      if (!isLowerVersion(extraVersionInfo.appVersion, version)) {
+        return emitUnavailable(`Current version (${extraVersionInfo.appVersion}) > New version (${version})`, 'UNAVAILABLE_VERSION', extraVersionInfo)
       }
       this.logger?.info(`Update available: ${version}`)
-      this.emit('update-available', info)
+      this.emit('update-available', extraVersionInfo)
       this.info = info
       return true
     } catch {
-      this.err('Fail to parse version', 'validate', 'Fail to parse version string')
-      return false
+      const msg = 'Fail to parse version string'
+      this.err('Check update failed', 'ERR_VALIDATE', msg)
+      return emitUnavailable(msg, 'UNAVAILABLE_ERROR', extraVersionInfo)
     }
   }
 
@@ -188,12 +195,12 @@ export class Updater extends EventEmitter<{
     const _version = info?.version ?? this.info?.version
 
     if (!_sig || !_version) {
-      this.err('Download failed', 'param', 'No update signature, please call `checkUpdate` first or manually setup params')
+      this.err('Download failed', 'ERR_PARAM', 'No update signature, please call `checkUpdate` first or manually setup params')
       return false
     }
 
     if (!data && !this.provider) {
-      this.err('Download failed', 'param', 'No update asar buffer and provider')
+      this.err('Download failed', 'ERR_PARAM', 'No update asar buffer and provider')
       return false
     }
 
@@ -201,14 +208,14 @@ export class Updater extends EventEmitter<{
     const buffer = await this.fetch('buffer', data ? Buffer.from(data) : undefined)
 
     if (!buffer) {
-      this.err('Download failed', 'param', 'No update asar file buffer')
+      this.err('Download failed', 'ERR_PARAM', 'No update asar file buffer')
       return false
     }
 
     // verify update file
     this.logger?.debug('verify start')
     if (!await this.provider!.verifySignaure(buffer, _version, _sig, this.CERT)) {
-      this.err('Download failed', 'validate', 'Invalid update asar file')
+      this.err('Download failed', 'ERR_VALIDATE', 'Invalid update asar file')
       return false
     }
     this.logger?.debug('Verify success')
@@ -224,7 +231,7 @@ export class Updater extends EventEmitter<{
       this.emit('update-downloaded')
       return true
     } catch (error) {
-      this.err('Download failed', 'download', `Fail to unwrap asar file, ${error}`)
+      this.err('Download failed', 'ERR_DOWNLOAD', `Fail to unwrap asar file, ${error}`)
       return false
     }
   }

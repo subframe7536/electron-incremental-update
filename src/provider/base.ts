@@ -1,7 +1,8 @@
 import { defaultVerifySignature } from '../utils/crypto'
 import { defaultUnzipFile } from '../utils/zip'
-import { type UpdateInfo, type UpdateJSON, defaultIsLowerVersion } from '../utils/version'
-import type { DownloadingInfo, IProvider } from './types'
+import { defaultIsLowerVersion } from '../utils/version'
+import type { UpdateInfoWithURL } from '../entry'
+import type { DownloadingInfo, IProvider, UpdateJSONWithURL } from './types'
 
 export abstract class BaseProvider implements IProvider {
   public name = 'BaseProvider'
@@ -21,10 +22,10 @@ export abstract class BaseProvider implements IProvider {
   /**
    * @inheritdoc
    */
-  public abstract downloadJSON(versionPath: string, signal: AbortSignal): Promise<UpdateJSON>
+  public abstract downloadJSON(name: string, versionPath: string, signal: AbortSignal): Promise<UpdateJSONWithURL>
 
   /**
    * @inheritdoc
    */
-  public abstract downloadAsar(name: string, info: UpdateInfo, signal: AbortSignal, onDownloading?: (info: DownloadingInfo) => void,): Promise<Buffer>
+  public abstract downloadAsar(info: UpdateInfoWithURL, signal: AbortSignal, onDownloading?: (info: DownloadingInfo) => void,): Promise<Buffer>
 }

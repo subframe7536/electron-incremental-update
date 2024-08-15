@@ -1,11 +1,8 @@
 import { URL } from 'node:url'
-import type { Promisable } from '@subframe7536/type-utils'
-import type { UpdateInfo, UpdateJSON } from '../utils/version'
-import type { DownloadingInfo } from './types'
+import type { UpdateInfoWithURL } from '../entry'
+import type { DownloadingInfo, URLHandler, UpdateJSONWithURL } from './types'
 import { defaultDownloadAsar, defaultDownloadUpdateJSON } from './download'
 import { BaseProvider } from './base'
-
-export type URLHandler = (url: URL) => Promisable<URL | string | undefined | null>
 
 export interface GitHubProviderOptions {
   /**
@@ -72,29 +69,43 @@ export class GitHubProvider extends BaseProvider {
     return (await this.urlHandler?.(url) || url).toString()
   }
 
+  private getHeaders(accept: string): Record<string, string> {
+    return { Accept: `application/${accept}`, ...this.options.extraHeaders }
+  }
+
   /**
    * @inheritdoc
    */
-  public async downloadJSON(versionPath: string, signal: AbortSignal): Promise<UpdateJSON> {
-    return await defaultDownloadUpdateJSON(
+  public async downloadJSON(name: string, versionPath: string, signal: AbortSignal): Promise<UpdateJSONWithURL> {
+    const { beta, version, ...info } = await defaultDownloadUpdateJSON(
       await this.parseURL(`raw/${this.options.branch}/${versionPath}`),
-      { Accept: 'application/json', ...this.options.extraHeaders },
+      this.getHeaders('json'),
       signal,
     )
+    const getURL = (ver: string): Promise<string> => this.parseURL(`releases/download/v${ver}/${name}-${ver}.asar.gz`)
+
+    return {
+      ...info,
+      version,
+      url: await getURL(version),
+      beta: {
+        ...beta,
+        url: await getURL(beta.version),
+      },
+    }
   }
 
   /**
    * @inheritdoc
    */
   public async downloadAsar(
-    name: string,
-    info: UpdateInfo,
+    info: UpdateInfoWithURL,
     signal: AbortSignal,
     onDownloading?: (info: DownloadingInfo) => void,
   ): Promise<Buffer> {
     return await defaultDownloadAsar(
-      await this.parseURL(`releases/download/v${info.version}/${name}-${info.version}.asar.gz`),
-      { Accept: 'application/octet-stream', ...this.options.extraHeaders },
+      info.url,
+      this.getHeaders('octet-stream'),
       signal,
       onDownloading,
     )

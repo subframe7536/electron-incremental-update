@@ -1,16 +1,21 @@
 import type { IProvider } from '../provider'
+import type { UpdateInfo } from '../utils/version'
 
-export const ErrorInfo = {
-  download: 'Download Failed',
-  validate: 'Validate Failed',
-  param: 'Missing Params',
-  network: 'Network Error',
-} as const
+export type ErrorInfo =
+  | 'ERR_DOWNLOAD'
+  | 'ERR_VALIDATE'
+  | 'ERR_PARAM'
+  | 'ERR_NETWORK'
+
+export type UnavailableInfo =
+  | 'UNAVAILABLE_ERROR'
+  | 'UNAVAILABLE_DEV'
+  | 'UNAVAILABLE_VERSION'
 
 export class UpdaterError extends Error {
-  public code: keyof typeof ErrorInfo
-  constructor(msg: keyof typeof ErrorInfo, info: string) {
-    super(`[${ErrorInfo[msg]}] ${info}`)
+  public code: ErrorInfo
+  constructor(msg: ErrorInfo, info: string) {
+    super(`[${msg}] ${info}`)
     this.code = msg
   }
 }
@@ -42,4 +47,11 @@ export interface UpdaterOption {
    * Updater logger
    */
   logger?: Logger
+}
+
+export type UpdateInfoWithURL = UpdateInfo & { url: string }
+
+export type UpdateInfoWithExtraVersion = UpdateInfo & {
+  appVersion: string
+  entryVersion: string
 }

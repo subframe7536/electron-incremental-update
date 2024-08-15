@@ -1,5 +1,5 @@
 import type { Promisable } from '@subframe7536/type-utils'
-import type { UpdateInfo, UpdateJSON } from '../utils/version'
+import type { UpdateInfoWithURL } from '../entry/types'
 
 export type OnDownloading = (progress: DownloadingInfo) => void
 
@@ -30,6 +30,8 @@ export interface DownloadingInfo {
   bps: number
 }
 
+export type UpdateJSONWithURL = UpdateInfoWithURL & { beta: UpdateInfoWithURL }
+
 export interface IProvider {
   /**
    * Provider name
@@ -37,20 +39,19 @@ export interface IProvider {
   name: string
   /**
    * Download update json
-   * @param versionPath parsed version path in project
+   * @param name app name
+   * @param versionPath normalized version path in project
    * @param signal abort signal
    */
-  downloadJSON: (versionPath: string, signal: AbortSignal) => Promise<UpdateJSON>
+  downloadJSON: (name: string, versionPath: string, signal: AbortSignal) => Promise<UpdateJSONWithURL>
   /**
    * Download update asar
-   * @param name app name
    * @param updateInfo existing update info
    * @param signal abort signal
    * @param onDownloading hook for on downloading
    */
   downloadAsar: (
-    name: string,
-    updateInfo: UpdateInfo,
+    updateInfo: UpdateInfoWithURL,
     signal: AbortSignal,
     onDownloading?: (info: DownloadingInfo) => void
   ) => Promise<Buffer>
@@ -75,3 +76,5 @@ export interface IProvider {
    */
   verifySignaure: (buffer: Buffer, version: string, signature: string, cert: string) => Promisable<boolean>
 }
+
+export type URLHandler = (url: URL) => Promisable<URL | string | undefined | null>
