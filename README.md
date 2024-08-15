@@ -245,7 +245,7 @@ Luckily, `Esbuild` can bundle all the dependencies. Just follow the steps:
 1. setup `nativeModuleEntryMap` option
 2. Manually copy the native binaries in `postBuild` callback
 3. Exclude all the dependencies in `electron-builder`'s config
-4. call the native functions with `requireNative` in your code
+4. call the native functions with `requireNative` / `importNative` in your code
 
 #### Example
 
@@ -283,8 +283,9 @@ in `electron/native/db.ts`
 
 ```ts
 import Database from 'better-sqlite3'
+import { getPathFromEntryAsar } from 'electron-incremental-update/utils'
 
-const db = new Database(':memory:', { nativeBinding: './better_sqlite3.node' })
+const db = new Database(':memory:', { nativeBinding: getPathFromEntryAsar('./better_sqlite3.node') })
 
 export function test(): void {
   db.exec(
@@ -308,9 +309,13 @@ export function test(): void {
 in `electron/main/service.ts`
 
 ```ts
-import { requireNative } from 'electron-incremental-update/utils'
+import { importNative, requireNative } from 'electron-incremental-update/utils'
 
+// commonjs
 requireNative<typeof import('../native/db')>('db').test()
+
+// esm
+importNative<typeof import('../native/db')>('db').test()
 ```
 
 in `electron-builder.config.js`
