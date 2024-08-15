@@ -166,6 +166,20 @@ export function loadPage(win: BrowserWindow, htmlFilePath = 'index.html'): void 
   }
 }
 
+declare const __FONT_CSS__: string
+declare const __SCROLLBAR_CSS__: string
+export function beautifyDevTools(win: BrowserWindow, options: { sans: string, mono: string, scrollbar?: boolean }): void {
+  const { mono, sans, scrollbar = true } = options
+  win.webContents.on('devtools-opened', () => {
+    // eslint-disable-next-line prefer-template
+    let css = `:root{--sans: ${sans};--mono: ${mono}}` + __FONT_CSS__
+    if (scrollbar) {
+      css += __SCROLLBAR_CSS__
+    }
+    const js = `let overriddenStyle=document.createElement('style');overriddenStyle.innerHTML='${css}';document.body.append(overriddenStyle);document.body.classList.remove('platform-windows','platform-mac','platform-linux');`
+    win?.webContents.devToolsWebContents?.executeJavaScript(js)
+  })
+}
 /**
  * Get joined path from preload dir
  * @param paths rest paths
