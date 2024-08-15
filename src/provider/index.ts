@@ -1,4 +1,5 @@
 export * from './github'
+export * from './githubApi'
 export * from './types'
 export * from './download'
 export * from './base'

@@ -37,6 +37,47 @@ async function downloadFn<T>(
   })
 }
 
+type ResolveDataFn = (data: string, resolve: (data: any) => void, reject: (e: any) => void) => void
+
+/**
+ * trim length to 5000
+ */
+function trimData(data: string): string {
+  return data.trim().slice(0, 5e3).replace(/\s+/g, ' ')
+}
+
+const defaultResolveDataFn: ResolveDataFn = (data, resolve, reject) => {
+  try {
+    resolve(JSON.parse(data))
+  } catch {
+    reject(new Error(`Invalid json, "${trimData(data)}"`))
+  }
+}
+
+/**
+ * Default function to download json and parse to UpdateJson
+ * @param url target url
+ * @param headers extra headers
+ * @param signal abort signal
+ * @param resolveData on resolve
+ */
+export async function defaultDownloadJSON<T>(
+  url: string,
+  headers: Record<string, any>,
+  signal: AbortSignal,
+  resolveData: ResolveDataFn = defaultResolveDataFn,
+): Promise<T> {
+  return await downloadFn<T>(
+    url,
+    headers,
+    signal,
+    (resp, resolve, reject) => {
+      let data = ''
+      resp.on('data', chunk => (data += chunk))
+      resp.on('end', () => resolveData(data, resolve, reject))
+    },
+  )
+}
 /**
  * Default function to download json and parse to UpdateJson
  * @param url target url
@@ -44,25 +85,21 @@ async function downloadFn<T>(
  * @param signal abort signal
  */
 export async function defaultDownloadUpdateJSON(url: string, headers: Record<string, any>, signal: AbortSignal): Promise<UpdateJSON> {
-  return await downloadFn<UpdateJSON>(
+  return await defaultDownloadJSON<UpdateJSON>(
     url,
     headers,
     signal,
-    (resp, resolve, reject) => {
-      let data = ''
-      resp.on('data', chunk => (data += chunk))
-      resp.on('end', () => {
-        try {
-          const json = JSON.parse(data)
-          if (isUpdateJSON(json)) {
-            resolve(json)
-          } else {
-            throw Error
-          }
-        } catch {
-          reject(new Error(`Invalid update json, "${data}"`))
+    (data, resolve, reject) => {
+      try {
+        const json = JSON.parse(data)
+        if (isUpdateJSON(json)) {
+          resolve(json)
+        } else {
+          throw Error
         }
-      })
+      } catch {
+        reject(new Error(`Invalid update json, "${trimData(data)}"`))
+      }
     },
   )
 }
