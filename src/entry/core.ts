@@ -117,12 +117,9 @@ export async function createElectronApp(
     onStartError,
   } = appOptions
 
-  let updaterInstance
-  if (typeof updater === 'object' || !updater) {
-    updaterInstance = new Updater(updater)
-  } else {
-    updaterInstance = await updater()
-  }
+  const updaterInstance = typeof updater === 'object' || !updater
+    ? new Updater(updater)
+    : await updater()
 
   const logger = updaterInstance.logger
   try {

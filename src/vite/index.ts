@@ -53,7 +53,7 @@ export function debugStartup(args: {
   }
 }
 
-function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files']): string {
+function getMainFileBaseName(options: ElectronWithUpdaterOptions['main']['files']): string {
   let mainFilePath
   if (typeof options === 'string') {
     mainFilePath = path.basename(options)
@@ -62,7 +62,7 @@ function getMainFilePath(options: ElectronWithUpdaterOptions['main']['files']): 
   } else {
     const name = options?.index ?? options?.main
     if (!name) {
-      throw new Error(`\`options.main.files\` (${options}) must have "index" or "main" key, like \`{ index: "..." }\``)
+      throw new Error(`\`options.main.files\` (${options}) must have "index" or "main" key, like \`{ index: "./electron/main/index.ts" }\``)
     }
     mainFilePath = options?.index ? 'index.js' : 'main.js'
   }
@@ -239,7 +239,7 @@ export async function electronWithUpdater(
     __EIU_IS_DEV__: JSON.stringify(!isBuild),
     __EIU_IS_ESM__: JSON.stringify(isESM),
     __EIU_MAIN_DEV_DIR__: JSON.stringify(normalizePath(buildAsarOption.electronDistPath)),
-    __EIU_MAIN_FILE__: JSON.stringify(getMainFilePath(_main.files)),
+    __EIU_MAIN_FILE__: JSON.stringify(getMainFileBaseName(_main.files)),
     __EIU_SIGNATURE_CERT__: JSON.stringify(cert),
     __EIU_VERSION_PATH__: JSON.stringify(parseVersionPath(normalizePath(buildVersionOption.versionPath))),
   }
