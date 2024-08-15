@@ -61,11 +61,26 @@ export function getEntryVersion(): string {
  * requireNative<typeof import('../native/db')>('db')
  */
 export function requireNative<T = any>(moduleName: string): T {
+  const m = getPathFromEntryAsar(moduleName)
   if (__EIU_IS_ESM__) {
-    throw new Error(`Cannot require "${path.join(__EIU_ENTRY_DIST_PATH__, moduleName)}", \`requireNative\` only support CommonJS`)
+    throw new Error(`Cannot require "${m}", \`requireNative\` only support CommonJS, use \`importNative\` instead`)
   }
   // eslint-disable-next-line ts/no-require-imports
-  return require(getPathFromEntryAsar(moduleName))
+  return require(m)
+}
+
+/**
+ * Use `import` to load native module from entry asar
+ * @param moduleName file name in entry
+ * @example
+ * await importNative<typeof import('../native/db')>('db')
+ */
+export async function importNative<T = any>(moduleName: string): Promise<T> {
+  const m = getPathFromEntryAsar(moduleName)
+  if (!__EIU_IS_ESM__) {
+    throw new Error(`Cannot import "${m}", \`importNative\` only support ESModule, use \`requireNative\` instead`)
+  }
+  return await import(`file://${m}.js`)
 }
 
 /**
