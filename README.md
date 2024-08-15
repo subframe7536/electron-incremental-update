@@ -222,7 +222,7 @@ export default startupWithUpdater((updater) => {
     }
     await updater.downloadUpdate()
   })
-  updater.on('update-not-available', (reason, info) => console.log(reason, info))
+  updater.on('update-not-available', (code, reason, info) => console.log(code, reason, info))
   updater.on('download-progress', (data) => {
     console.log(data)
     main.send(BrowserWindow.getAllWindows()[0], 'msg', data)

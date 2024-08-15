@@ -1,22 +1,22 @@
 import type { IProvider } from '../provider'
 import type { UpdateInfo } from '../utils/version'
 
-export type ErrorInfo =
+export type ErrorCode =
   | 'ERR_DOWNLOAD'
   | 'ERR_VALIDATE'
   | 'ERR_PARAM'
   | 'ERR_NETWORK'
 
-export type UnavailableInfo =
+export type UnavailableCode =
   | 'UNAVAILABLE_ERROR'
   | 'UNAVAILABLE_DEV'
   | 'UNAVAILABLE_VERSION'
 
 export class UpdaterError extends Error {
-  public code: ErrorInfo
-  constructor(msg: ErrorInfo, info: string) {
-    super(`[${msg}] ${info}`)
-    this.code = msg
+  public code: ErrorCode
+  constructor(code: ErrorCode, info: string) {
+    super(`[${code}] ${info}`)
+    this.code = code
   }
 }
 
