@@ -11,8 +11,8 @@ import { isCI } from 'ci-info'
 import { buildAsar, buildEntry, buildVersion } from './build'
 import type { ElectronUpdaterOptions, PKG } from './option'
 import { parseOptions } from './option'
-import { bytecodeLog, id, log } from './constant'
-import { type BytecodeOptions, bytecodePlugin } from './bytecode'
+import { id, log } from './constant'
+import type { BytecodeOptions } from './bytecode'
 
 export { isCI } from 'ci-info'
 
@@ -203,7 +203,7 @@ export async function electronWithUpdater(
       : undefined
 
   if (isESM && bytecodeOptions?.enable) {
-    bytecodeLog.warn(
+    (await import('./constant')).bytecodeLog.warn(
       '`bytecodePlugin` does not support ES module, please remove "type": "module" in package.json',
       { timestamp: true },
     )
@@ -234,14 +234,14 @@ export async function electronWithUpdater(
 
   /// keep-sorted
   const define = {
-    __EIU_ELECTRON_DIST_PATH__: JSON.stringify(buildAsarOption.electronDistPath),
-    __EIU_ENTRY_DIST_PATH__: JSON.stringify(buildEntryOption.entryOutputDirPath),
+    __EIU_ELECTRON_DIST_PATH__: JSON.stringify(normalizePath(buildAsarOption.electronDistPath)),
+    __EIU_ENTRY_DIST_PATH__: JSON.stringify(normalizePath(buildEntryOption.entryOutputDirPath)),
     __EIU_IS_DEV__: JSON.stringify(!isBuild),
     __EIU_IS_ESM__: JSON.stringify(isESM),
-    __EIU_MAIN_DEV_DIR__: JSON.stringify(buildAsarOption.electronDistPath),
+    __EIU_MAIN_DEV_DIR__: JSON.stringify(normalizePath(buildAsarOption.electronDistPath)),
     __EIU_MAIN_FILE__: JSON.stringify(getMainFilePath(_main.files)),
     __EIU_SIGNATURE_CERT__: JSON.stringify(cert),
-    __EIU_VERSION_PATH__: JSON.stringify(parseVersionPath(buildVersionOption.versionPath)),
+    __EIU_VERSION_PATH__: JSON.stringify(parseVersionPath(normalizePath(buildVersionOption.versionPath))),
   }
 
   const _buildEntry = async (): Promise<void> => {
@@ -281,6 +281,8 @@ export async function electronWithUpdater(
     treeshake: true,
   }
 
+  const esmShimPlugin = isESM ? (await import('./esm/index')).esm() : undefined
+
   const electronPluginOptions: ElectronSimpleOptions = {
     main: {
       entry: _main.files,
@@ -300,7 +302,8 @@ export async function electronWithUpdater(
         {
           plugins: [
             !isBuild && useNotBundle ? notBundle() : undefined,
-            bytecodeOptions && bytecodePlugin('main', bytecodeOptions),
+            bytecodeOptions && ((await import('./bytecode/index')).bytecodePlugin)('main', bytecodeOptions),
+            esmShimPlugin,
           ],
           build: {
             sourcemap,
@@ -319,7 +322,8 @@ export async function electronWithUpdater(
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
           plugins: [
-            bytecodeOptions && bytecodePlugin('preload', bytecodeOptions),
+            bytecodeOptions && ((await import('./bytecode/index')).bytecodePlugin)('preload', bytecodeOptions),
+            esmShimPlugin,
             {
               name: `${id}-build`,
               enforce: 'post',
@@ -331,7 +335,7 @@ export async function electronWithUpdater(
                 await _postBuild()
                 const buffer = await buildAsar(buildAsarOption)
                 if (!buildVersionJson && !isCI) {
-                  log.warn('No `buildVersionJson` setup, skip build version json. Will build in CI by default', { timestamp: true })
+                  log.warn('No `buildVersionJson` option setup, skip build version json. Only build in CI by default', { timestamp: true })
                 } else {
                   await buildVersion(buildVersionOption, buffer)
                 }

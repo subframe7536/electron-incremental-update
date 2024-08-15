@@ -5,13 +5,6 @@ import { type BuildOptions, build } from 'esbuild'
 import { mergeConfig } from 'vite'
 import { type UpdateJSON, isUpdateJSON } from '../utils/version'
 import { bytecodeLog, log } from './constant'
-import { bytecodeModuleLoaderCode } from './bytecode/code'
-import {
-  compileToBytecode,
-  convertArrowFunctionAndTemplate,
-  convertLiteral,
-  useStrict,
-} from './bytecode/utils'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 import { readableSize } from './utils'
 import type { BytecodeOptions } from './bytecode'
@@ -111,16 +104,48 @@ export async function buildEntry(
       },
       define,
       format: isESM ? 'esm' : 'cjs',
+      write: !isESM,
+      plugins: isESM
+        ? [
+            {
+              name: 'entry-esm-shim',
+              setup(build) {
+                build.onEnd(async ({ outputFiles }) => {
+                  const parse = (await import('./esm/utils')).insertCJSShim
+                  fs.mkdirSync(entryOutputDirPath, { recursive: true })
+                  outputFiles?.filter(file => file.path.endsWith('.js'))
+                    .forEach((file) => {
+                      const output = parse(file.text, sourcemap)
+                      fs.writeFileSync(file.path, output?.code || file.text, 'utf-8')
+                      if (sourcemap && output?.map) {
+                        fs.writeFileSync(`${file.path}.map`, output.map.toString(), 'utf-8')
+                      }
+                    })
+                })
+              },
+            },
+          ]
+        : undefined,
     } satisfies BuildOptions,
     overrideEsbuildOptions ?? {},
   )
   const { metafile } = await build(option)
 
+  // when isESM, bytecodeOptions.enable is false, so there is no need to check
   if (!bytecodeOptions?.enable) {
     return
   }
 
   const filePaths = Object.keys(metafile?.outputs ?? []).filter(filePath => filePath.endsWith('js'))
+
+  const {
+    compileToBytecode,
+    convertArrowFunctionAndTemplate,
+    convertLiteral,
+    useStrict,
+  } = await import('./bytecode/utils')
+  const { bytecodeModuleLoaderCode } = await import('./bytecode/code')
+
   for (const filePath of filePaths) {
     let code = fs.readFileSync(filePath, 'utf-8')
     const fileName = path.basename(filePath)

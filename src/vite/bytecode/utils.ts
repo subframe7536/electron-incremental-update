@@ -5,13 +5,19 @@ import * as babel from '@babel/core'
 import MagicString from 'magic-string'
 import { getPackageInfoSync } from 'local-pkg'
 import { bytecodeLog } from '../constant'
+import { parseVersion } from '../../utils/version'
 import { bytecodeGeneratorScript } from './code'
 
-const electronModulePath = getPackageInfoSync('electron')?.rootPath
+export const electronModule: {
+  version: string | undefined
+  rootPath: string
+} = getPackageInfoSync('electron')!
+export const electronMajorVersion = parseVersion(electronModule.version!).major
 export const useStrict = '\'use strict\';'
 export const bytecodeModuleLoader = '__loader__.js'
 
 function getElectronPath(): string {
+  const electronModulePath = electronModule.rootPath
   let electronExecPath = process.env.ELECTRON_EXEC_PATH || ''
   if (!electronExecPath) {
     if (!electronModulePath) {
@@ -32,7 +38,7 @@ function getElectronPath(): string {
   return electronExecPath
 }
 function getBytecodeCompilerPath(): string {
-  const scriptPath = path.join(electronModulePath!, 'EIU_bytenode.cjs')
+  const scriptPath = path.join(electronModule.rootPath, 'EIU_bytenode.cjs')
   if (!fs.existsSync(scriptPath)) {
     fs.writeFileSync(scriptPath, bytecodeGeneratorScript)
   }
