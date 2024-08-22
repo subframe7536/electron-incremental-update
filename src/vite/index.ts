@@ -173,6 +173,40 @@ export interface ElectronWithUpdaterOptions {
  * You can override all the vite configs, except output directories (use `options.updater.paths.electronDistPath` instead)
  *
  * @example
+ * ```ts
+ * import { defineConfig } from 'vite'
+ * import { debugStartup, electronWithUpdater } from 'electron-incremental-update/vite'
+ *
+ * export default defineConfig(async ({ command }) => {
+ *   const isBuild = command === 'build'
+ *   return {
+ *     plugins: [
+ *       electronWithUpdater({
+ *         isBuild,
+ *         logParsedOptions: true,
+ *         main: {
+ *           files: ['./electron/main/index.ts', './electron/main/worker.ts'],
+ *           // see https://github.com/electron-vite/electron-vite-vue/blob/85ed267c4851bf59f32888d766c0071661d4b94c/vite.config.ts#L22-L28
+ *           onstart: debugStartup,
+ *         },
+ *         preload: {
+ *           files: './electron/preload/index.ts',
+ *         },
+ *         updater: {
+ *           // options
+ *         }
+ *       }),
+ *     ],
+ *     server: process.env.VSCODE_DEBUG && (() => {
+ *       const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL)
+ *       return {
+ *         host: url.hostname,
+ *         port: +url.port,
+ *       }
+ *     })(),
+ *   }
+ * })
+ * ```
  */
 export async function electronWithUpdater(
   options: ElectronWithUpdaterOptions,

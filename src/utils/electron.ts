@@ -160,7 +160,28 @@ export function loadPage(win: BrowserWindow, htmlFilePath = 'index.html'): void 
 
 declare const __FONT_CSS__: string
 declare const __SCROLLBAR_CSS__: string
-export function beautifyDevTools(win: BrowserWindow, options: { sans: string, mono: string, scrollbar?: boolean }): void {
+
+interface BeautifyDevToolsOptions {
+  /**
+   * Sans-serif font family
+   */
+  sans: string
+  /**
+   * Monospace font family
+   */
+  mono: string
+  /**
+   * Whether to round scrollbar
+   */
+  scrollbar?: boolean
+}
+
+/**
+ * Beautify devtools' font and scrollbar
+ * @param win target window
+ * @param options sans font family, mono font family and scrollbar
+ */
+export function beautifyDevTools(win: BrowserWindow, options: BeautifyDevToolsOptions): void {
   const { mono, sans, scrollbar = true } = options
   win.webContents.on('devtools-opened', () => {
     // eslint-disable-next-line prefer-template
@@ -173,7 +194,7 @@ export function beautifyDevTools(win: BrowserWindow, options: { sans: string, mo
   })
 }
 /**
- * Get joined path from preload dir
+ * Get joined path from main dir
  * @param paths rest paths
  */
 export function getPathFromMain(...paths: string[]): string {

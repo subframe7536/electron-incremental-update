@@ -354,6 +354,124 @@ https://electron-vite.org/guide/source-code-protection
 - Only support commonjs
 - Only for main process by default, if you want to use in preload script, please use `electronWithUpdater({ bytecode: { enablePreload: true } })` and set `sandbox: false` when creating window
 
+### Utils
+
+```ts
+/**
+ * Compile time dev check
+ */
+const isDev: boolean
+const isWin: boolean
+const isMac: boolean
+const isLinux: boolean
+/**
+ * Get joined path of `${electron.app.name}.asar` (not `app.asar`)
+ *
+ * If is in dev, **always** return `'DEV.asar'`
+ */
+function getPathFromAppNameAsar(...paths: string[]): string
+/**
+ * Get app version, if is in dev, return `getEntryVersion()`
+ */
+function getAppVersion(): string
+/**
+ * Get entry version
+ */
+function getEntryVersion(): string
+/**
+ * Use `require` to load native module from entry asar
+ * @param moduleName file name in entry
+ * @example
+ * requireNative<typeof import('../native/db')>('db')
+ */
+function requireNative<T = any>(moduleName: string): T
+/**
+ * Use `import` to load native module from entry asar
+ * @param moduleName file name in entry
+ * @example
+ * await importNative<typeof import('../native/db')>('db')
+ */
+function importNative<T = any>(moduleName: string): Promise<T>
+/**
+ * Restarts the Electron app.
+ */
+function restartApp(): void
+/**
+ * Fix app use model id, only for Windows
+ * @param id app id, default is `org.${electron.app.name}`
+ */
+function setAppUserModelId(id?: string): void
+/**
+ * Disable hardware acceleration for Windows 7
+ *
+ * Only support CommonJS
+ */
+function disableHWAccForWin7(): void
+/**
+ * Keep single electron instance and auto restore window on `second-instance` event
+ * @param window brwoser window to show
+ */
+function singleInstance(window?: BrowserWindow): void
+/**
+ * Set `AppData` dir to the dir of .exe file
+ *
+ * Useful for portable Windows app
+ * @param dirName dir name, default to `data`
+ */
+function setPortableAppDataPath(dirName?: string): void
+/**
+ * Load `process.env.VITE_DEV_SERVER_URL` when dev, else load html file
+ * @param win window
+ * @param htmlFilePath html file path, default is `index.html`
+ */
+function loadPage(win: BrowserWindow, htmlFilePath?: string): void
+interface BeautifyDevToolsOptions {
+  /**
+   * Sans-serif font family
+   */
+  sans: string
+  /**
+   * Monospace font family
+   */
+  mono: string
+  /**
+   * Whether to round scrollbar
+   */
+  scrollbar?: boolean
+}
+/**
+ * Beautify devtools' font and scrollbar
+ * @param win target window
+ * @param options sans font family, mono font family and scrollbar
+ */
+function beautifyDevTools(win: BrowserWindow, options: BeautifyDevToolsOptions): void
+/**
+ * Get joined path from main dir
+ * @param paths rest paths
+ */
+function getPathFromMain(...paths: string[]): string
+/**
+ * Get joined path from preload dir
+ * @param paths rest paths
+ */
+function getPathFromPreload(...paths: string[]): string
+/**
+ * Get joined path from publich dir
+ * @param paths rest paths
+ */
+function getPathFromPublic(...paths: string[]): string
+/**
+ * Get joined path from entry asar
+ * @param paths rest paths
+ */
+function getPathFromEntryAsar(...paths: string[]): string
+/**
+ * Handle all unhandled error
+ * @param callback callback function
+ */
+function handleUnexpectedErrors(callback: (err: unknown) => void): void
+```
+
 ### Types
 
 #### Entry
