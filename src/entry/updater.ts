@@ -4,7 +4,7 @@ import { app } from 'electron'
 import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
 import type { DownloadingInfo, IProvider, UpdateJSONWithURL } from '../provider'
 import { getAppVersion, getEntryVersion, getPathFromAppNameAsar, isDev, restartApp } from '../utils/electron'
-import type { ErrorCode, Logger, UnavailableCode, UpdateInfoWithExtraVersion, UpdateInfoWithURL, UpdaterOption } from './types'
+import type { Logger, UpdateInfoWithExtraVersion, UpdateInfoWithURL, UpdaterErrorCode, UpdaterOption, UpdaterUnavailableCode } from './types'
 import { UpdaterError } from './types'
 
 /**
@@ -19,7 +19,7 @@ declare const __EIU_VERSION_PATH__: string
 export class Updater extends EventEmitter<{
   'checking': any
   'update-available': [data: UpdateInfoWithExtraVersion]
-  'update-not-available': [code: UnavailableCode, msg: string, info?: UpdateInfoWithExtraVersion]
+  'update-not-available': [code: UpdaterUnavailableCode, msg: string, info?: UpdateInfoWithExtraVersion]
   'error': [error: UpdaterError]
   'download-progress': [info: DownloadingInfo]
   'update-downloaded': any
@@ -112,7 +112,7 @@ export class Updater extends EventEmitter<{
   /**
    * Handle error message and emit error event
    */
-  private err(msg: string, code: ErrorCode, errorInfo: string): void {
+  private err(msg: string, code: UpdaterErrorCode, errorInfo: string): void {
     const err = new UpdaterError(code, errorInfo)
     this.logger?.error(`[${code}] ${msg}`, err)
     this.emit('error', err)
@@ -128,7 +128,7 @@ export class Updater extends EventEmitter<{
    */
   public async checkForUpdates(data: UpdateJSON | UpdateJSONWithURL): Promise<boolean>
   public async checkForUpdates(data?: UpdateJSON | UpdateJSONWithURL): Promise<boolean> {
-    const emitUnavailable = (msg: string, code: UnavailableCode, info?: UpdateInfoWithExtraVersion): false => {
+    const emitUnavailable = (msg: string, code: UpdaterUnavailableCode, info?: UpdateInfoWithExtraVersion): false => {
       this.logger?.info(`[${code}] ${msg}`)
       this.emit('update-not-available', code, msg, info)
       return false
