@@ -116,25 +116,17 @@ export function disableHWAccForWin7(): void {
 /**
  * Keep single electron instance and auto restore window on `second-instance` event
  * @param window brwoser window to show
- * @returns `false` if the app is running
  */
-export function singleInstance(window?: BrowserWindow): boolean {
-  const result = electron.app.requestSingleInstanceLock()
-  if (result) {
-    electron.app.on('second-instance', () => {
-      if (window) {
-        window.show()
-        if (window.isMinimized()) {
-          window.restore()
-        }
-        window.focus()
+export function singleInstance(window?: BrowserWindow): void {
+  electron.app.on('second-instance', () => {
+    if (window) {
+      window.show()
+      if (window.isMinimized()) {
+        window.restore()
       }
-    })
-  } else {
-    electron.app.quit()
-  }
-
-  return result
+      window.focus()
+    }
+  })
 }
 
 /**
