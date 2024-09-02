@@ -272,7 +272,6 @@ export async function electronWithUpdater(
     __EIU_ENTRY_DIST_PATH__: JSON.stringify(normalizePath(buildEntryOption.entryOutputDirPath)),
     __EIU_IS_DEV__: JSON.stringify(!isBuild),
     __EIU_IS_ESM__: JSON.stringify(isESM),
-    __EIU_MAIN_DEV_DIR__: JSON.stringify(normalizePath(buildAsarOption.electronDistPath)),
     __EIU_MAIN_FILE__: JSON.stringify(getMainFileBaseName(_main.files)),
     __EIU_SIGNATURE_CERT__: JSON.stringify(cert),
     __EIU_VERSION_PATH__: JSON.stringify(parseVersionPath(normalizePath(buildVersionOption.versionPath))),

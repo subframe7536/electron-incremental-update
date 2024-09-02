@@ -2,7 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import electron from 'electron'
 import type { Promisable } from '@subframe7536/type-utils'
-import { getPathFromAppNameAsar, isDev } from '../utils/electron'
+import { getPathFromAppNameAsar, getPathFromMain, isDev } from '../utils/electron'
 import type { Logger, UpdaterOption } from './types'
 import { Updater } from './updater'
 
@@ -13,7 +13,7 @@ declare const __EIU_MAIN_FILE__: string
 /**
  * type only electron main dir path when dev, transformed by esbuild's define
  */
-declare const __EIU_MAIN_DEV_DIR__: string
+declare const __EIU_ELECTRON_DIST_PATH__: string
 /**
  * type only is esmodule, transformed by esbuild's define
  */
@@ -104,13 +104,7 @@ export async function createElectronApp(
   const appNameAsarPath = getPathFromAppNameAsar()
 
   const {
-    mainPath = path.join(
-      isDev
-        ? path.join(electron.app.getAppPath(), __EIU_MAIN_DEV_DIR__)
-        : appNameAsarPath,
-      'main',
-      __EIU_MAIN_FILE__,
-    ),
+    mainPath = getPathFromMain(__EIU_MAIN_FILE__),
     updater,
     onInstall = defaultOnInstall,
     beforeStart,
@@ -133,7 +127,6 @@ export async function createElectronApp(
     // logger.debug(`app.getAppPath(): ${app.getAppPath()}`)
     // logger.debug(`appNameAsar: ${appNameAsarPath}`)
     // logger.debug(`__EIU_MAIN_FILE__: ${__EIU_MAIN_FILE__}`)
-    // logger.debug(`__EIU_MAIN_DEV_DIR__: ${__EIU_MAIN_DEV_DIR__}`)
     // logger?.debug(`mainFilePath: ${mainPath}`)
     await beforeStart?.(mainPath, logger)
 
