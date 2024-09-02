@@ -1,10 +1,23 @@
 import fs from 'node:fs'
 import { EventEmitter } from 'node:events'
-import { app } from 'electron'
+import electron from 'electron'
 import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
 import type { DownloadingInfo, IProvider, UpdateJSONWithURL } from '../provider'
-import { getAppVersion, getEntryVersion, getPathFromAppNameAsar, isDev, restartApp } from '../utils/electron'
-import type { Logger, UpdateInfoWithExtraVersion, UpdateInfoWithURL, UpdaterErrorCode, UpdaterOption, UpdaterUnavailableCode } from './types'
+import {
+  getAppVersion,
+  getEntryVersion,
+  getPathFromAppNameAsar,
+  isDev,
+  restartApp,
+} from '../utils/electron'
+import type {
+  Logger,
+  UpdateInfoWithExtraVersion,
+  UpdateInfoWithURL,
+  UpdaterErrorCode,
+  UpdaterOption,
+  UpdaterUnavailableCode,
+} from './types'
 import { UpdaterError } from './types'
 
 /**
@@ -98,7 +111,7 @@ export class Updater extends EventEmitter<{
     this.logger?.debug(`Download from \`${this.provider!.name}\``)
     try {
       const result = format === 'json'
-        ? await this.provider!.downloadJSON(app.name, __EIU_VERSION_PATH__, this.controller.signal)
+        ? await this.provider!.downloadJSON(electron.app.name, __EIU_VERSION_PATH__, this.controller.signal)
         : await this.provider!.downloadAsar(this.info!, this.controller.signal, info => this.emit('download-progress', info))
 
       this.logger?.debug(`Download ${format} success${format === 'buffer' ? `, file size: ${(result as Buffer).length}` : ''}`)

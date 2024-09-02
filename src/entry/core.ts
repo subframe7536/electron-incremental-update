@@ -1,6 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
-import { app } from 'electron'
+import electron from 'electron'
 import type { Promisable } from '@subframe7536/type-utils'
 import { getPathFromAppNameAsar, isDev } from '../utils/electron'
 import type { Logger, UpdaterOption } from './types'
@@ -106,7 +106,7 @@ export async function createElectronApp(
   const {
     mainPath = path.join(
       isDev
-        ? path.join(app.getAppPath(), __EIU_MAIN_DEV_DIR__)
+        ? path.join(electron.app.getAppPath(), __EIU_MAIN_DEV_DIR__)
         : appNameAsarPath,
       'main',
       __EIU_MAIN_FILE__,
@@ -146,7 +146,7 @@ export async function createElectronApp(
   } catch (error) {
     logger?.error('startup error', error)
     onStartError?.(error, logger)
-    app.quit()
+    electron.app.quit()
   }
 }
 
