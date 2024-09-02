@@ -336,7 +336,7 @@ export async function electronWithUpdater(
         {
           plugins: [
             !isBuild && useNotBundle ? notBundle() : undefined,
-            bytecodeOptions && ((await import('./bytecode/index')).bytecodePlugin)('main', bytecodeOptions),
+            bytecodeOptions && await import('./bytecode').then(m => m.bytecodePlugin('main', bytecodeOptions)),
             esmShimPlugin,
           ],
           build: {

@@ -48,9 +48,11 @@ export function toRelativePath(filename: string, importer: string): string {
   const relPath = path.posix.relative(path.dirname(importer), filename)
   return relPath.startsWith('.') ? relPath : `./${relPath}`
 }
+
+const logErr = (...args: any[]): void => bytecodeLog.error(args.join(' '), { timestamp: true })
+
 export function compileToBytecode(code: string, electronPath = getElectronPath()): Promise<Buffer> {
   let data = Buffer.from([])
-  const logErr = (...args: any[]): void => bytecodeLog.error(args.join(' '), { timestamp: true })
 
   const bytecodePath = getBytecodeCompilerPath()
   return new Promise((resolve, reject) => {

@@ -3,10 +3,11 @@
 import { describe, expect, it } from 'vitest'
 import { convertArrowFunctionAndTemplate, convertLiteral, decodeFn, obfuscateString } from '../src/vite/bytecode/utils'
 
+function testObfuscate(str: string) {
+  expect(eval(decodeFn + obfuscateString(str))).toBe(str)
+}
+
 describe('obfuscate', () => {
-  function testObfuscate(str: string) {
-    expect(eval(decodeFn + obfuscateString(str))).toBe(str)
-  }
   it('obfuscate normal', () => {
     testObfuscate('hello world')
   })

@@ -49,6 +49,15 @@ export function parseVersion(version: string): Version {
   return ret
 }
 
+function compareStrings(str1: string, str2: string): boolean {
+  if (str1 === '') {
+    return str2 !== ''
+  } else if (str2 === '') {
+    return true
+  }
+  return str1 < str2
+}
+
 /**
  * Default function to check the old version is less than new version
  * @param oldVer old version string
@@ -57,15 +66,6 @@ export function parseVersion(version: string): Version {
 export function defaultIsLowerVersion(oldVer: string, newVer: string): boolean {
   const oldV = parseVersion(oldVer)
   const newV = parseVersion(newVer)
-
-  function compareStrings(str1: string, str2: string): boolean {
-    if (str1 === '') {
-      return str2 !== ''
-    } else if (str2 === '') {
-      return true
-    }
-    return str1 < str2
-  }
 
   for (let key of Object.keys(oldV) as Extract<keyof Version, string>[]) {
     if (key === 'stage' && compareStrings(oldV[key], newV[key])) {
@@ -94,12 +94,13 @@ export type UpdateJSON = UpdateInfo & {
   beta: UpdateInfo
 }
 
+const is = (j: any): boolean => !!(j && j.minimumVersion && j.signature && j.version)
+
 /**
  * Check is `UpdateJSON`
  * @param json any variable
  */
 export function isUpdateJSON(json: any): json is UpdateJSON {
-  const is = (j: any): boolean => !!(j && j.minimumVersion && j.signature && j.version)
   return is(json) && is(json?.beta)
 }
 

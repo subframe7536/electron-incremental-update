@@ -33,6 +33,10 @@ export interface BytecodeOptions {
   beforeCompile?: (code: string, id: string) => Promisable<string | null | undefined | void>
 }
 
+function getBytecodeLoaderBlock(chunkFileName: string): string {
+  return `require("${toRelativePath(bytecodeModuleLoader, normalizePath(chunkFileName))}");`
+}
+
 /**
  * Compile to v8 bytecode to protect source code.
  */
@@ -116,10 +120,6 @@ export function bytecodePlugin(
 
       const pattern = nonEntryChunks.map(chunk => `(${chunk})`).join('|')
       const bytecodeRE = pattern ? new RegExp(`require\\(\\S*(?=(${pattern})\\S*\\))`, 'g') : null
-
-      const getBytecodeLoaderBlock = (chunkFileName: string): string => {
-        return `require("${toRelativePath(bytecodeModuleLoader, normalizePath(chunkFileName))}");`
-      }
 
       await Promise.all(
         bundles.map(async (name) => {
