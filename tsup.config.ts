@@ -22,7 +22,7 @@ function getConfig(): Options[] {
       format: ['esm', 'cjs'],
       dts: true,
       treeshake: true,
-      external: ['electron', 'esbuild', 'vite'],
+      external: ['electron', 'vite'],
       define: {
         __FONT_CSS__: JSON.stringify(fontCSS?.code.replace(/\n/g, '') || ''),
         __SCROLLBAR_CSS__: JSON.stringify(scrollbarCSS?.code.replace(/\n/g, '') || ''),
@@ -35,7 +35,7 @@ function getConfig(): Options[] {
       format: 'esm',
       dts: true,
       treeshake: true,
-      external: ['electron', 'esbuild', 'vite'],
+      external: ['electron', 'vite'],
     },
   ]
 }

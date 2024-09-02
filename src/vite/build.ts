@@ -1,10 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import Asar from '@electron/asar'
-import { type BuildOptions, build } from 'esbuild'
-import { mergeConfig } from 'vite'
+import { build } from 'vite-plugin-electron'
+import { type InlineConfig, mergeConfig } from 'vite'
 import { type UpdateJSON, isUpdateJSON } from '../utils/version'
-import { bytecodeLog, log } from './constant'
+import { log } from './constant'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 import { readableSize } from './utils'
 import type { BytecodeOptions } from './bytecode'
@@ -77,97 +77,39 @@ export async function buildEntry(
     appEntryPath,
     entryOutputDirPath,
     nativeModuleEntryMap,
-    overrideEsbuildOptions,
+    ignoreDynamicRequires,
+    overrideViteOptions,
   }: Required<Omit<BuildEntryOption, 'postBuild'>>,
   isESM: boolean,
   define: Record<string, string>,
   bytecodeOptions: BytecodeOptions | undefined,
 ): Promise<void> {
-  const option: BuildOptions = mergeConfig(
-    {
-      entryPoints: {
-        entry: appEntryPath,
-        ...nativeModuleEntryMap,
-      },
-      bundle: true,
-      metafile: true,
-      platform: 'node',
-      outdir: entryOutputDirPath,
-      minify,
-      sourcemap,
-      entryNames: '[dir]/[name]',
-      assetNames: '[dir]/[name]',
-      external: ['electron', 'original-fs'],
-      treeShaking: true,
-      loader: {
-        '.node': 'empty',
+  await build({
+    entry: {
+      entry: appEntryPath,
+      ...nativeModuleEntryMap,
+    },
+    vite: mergeConfig<InlineConfig, InlineConfig>({
+      plugins: [
+        isESM && await import('./esm').then(m => m.esm()),
+        bytecodeOptions && await import('./bytecode').then(m => m.bytecodePlugin('main', bytecodeOptions)),
+      ],
+      build: {
+        sourcemap,
+        minify,
+        outDir: entryOutputDirPath,
+        commonjsOptions: {
+          ignoreDynamicRequires,
+        },
+        rollupOptions: {
+          external(source) {
+            if (source.endsWith('.node')) {
+              return true
+            }
+          },
+        },
       },
       define,
-      format: isESM ? 'esm' : 'cjs',
-      write: !isESM,
-      plugins: isESM
-        ? [
-            {
-              name: 'entry-esm-shim',
-              setup(build) {
-                build.onEnd(async ({ outputFiles }) => {
-                  const parse = (await import('./esm/utils')).insertCJSShim
-                  fs.mkdirSync(entryOutputDirPath, { recursive: true })
-                  outputFiles?.filter(file => file.path.endsWith('.js'))
-                    .forEach((file) => {
-                      const output = parse(file.text, sourcemap)
-                      fs.writeFileSync(file.path, output?.code || file.text, 'utf-8')
-                      if (sourcemap && output?.map) {
-                        fs.writeFileSync(`${file.path}.map`, output.map.toString(), 'utf-8')
-                      }
-                    })
-                })
-              },
-            },
-          ]
-        : undefined,
-    } satisfies BuildOptions,
-    overrideEsbuildOptions ?? {},
-  )
-  const { metafile } = await build(option)
-
-  // when isESM, bytecodeOptions.enable is false, so there is no need to check
-  if (!bytecodeOptions?.enable) {
-    return
-  }
-
-  const filePaths = Object.keys(metafile?.outputs ?? []).filter(filePath => filePath.endsWith('js'))
-
-  const {
-    compileToBytecode,
-    convertArrowFunctionAndTemplate,
-    convertLiteral,
-    useStrict,
-  } = await import('./bytecode/utils')
-  const { bytecodeModuleLoaderCode } = await import('./bytecode/code')
-
-  for (const filePath of filePaths) {
-    let code = fs.readFileSync(filePath, 'utf-8')
-    const fileName = path.basename(filePath)
-    const isEntry = fileName.endsWith('entry.js')
-
-    let transformedCode = convertLiteral(convertArrowFunctionAndTemplate(code).code).code
-    if (bytecodeOptions.beforeCompile) {
-      const result = await bytecodeOptions.beforeCompile(transformedCode, filePath)
-      if (result) {
-        transformedCode = result
-      }
-    }
-    const buffer = await compileToBytecode(transformedCode, bytecodeOptions.electronPath)
-    fs.writeFileSync(
-      filePath,
-      `${isEntry ? bytecodeModuleLoaderCode : useStrict}${isEntry ? '' : 'module.exports = '}require("./${fileName}c")`,
-    )
-    fs.writeFileSync(`${filePath}c`, buffer)
-    bytecodeLog.info(
-      `${filePath} [${(buffer.byteLength / 1000).toFixed(2)} kB]`,
-      { timestamp: true },
-    )
-  }
-  bytecodeLog.info(`${filePaths.length} file${filePaths.length > 1 ? 's' : ''} compiled into bytecode`, { timestamp: true })
+    }, overrideViteOptions ?? {}),
+  })
 }

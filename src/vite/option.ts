@@ -1,5 +1,5 @@
 import type { Promisable } from '@subframe7536/type-utils'
-import type { BuildOptions } from 'esbuild'
+import type { InlineConfig } from 'vite'
 import { type UpdateJSON, defaultVersionJsonGenerator } from '../utils/version'
 import { defaultZipFile } from '../utils/zip'
 import { defaultSignature } from '../utils/crypto'
@@ -78,30 +78,15 @@ export interface BuildEntryOption {
    */
   nativeModuleEntryMap?: Record<string, string>
   /**
-   * Custom options for esbuild
-   * ```ts
-   * // default options
-   * const options = {
-   *   entryPoints: {
-   *     entry: appEntryPath,
-   *     ...moduleEntryMap,
-   *   },
-   *   bundle: true,
-   *   platform: 'node',
-   *   outdir: entryOutputDirPath,
-   *   minify,
-   *   sourcemap,
-   *   entryNames: '[dir]/[name]',
-   *   assetNames: '[dir]/[name]',
-   *   external: ['electron', 'original-fs'],
-   *   loader: {
-   *     '.node': 'empty',
-   *   },
-   *   define,
-   * }
-   * ```
+   * Rollup commonjs plugin option to skip process dynamic require
+   *
+   * Useful for `better-sqlite3` and other old packages
    */
-  overrideEsbuildOptions?: BuildOptions
+  ignoreDynamicRequires?: boolean
+  /**
+   * Custom options for `vite` build
+   */
+  overrideViteOptions?: InlineConfig
   /**
    * Resolve extra files on startup, such as `.node`
    * @remark won't trigger will reload
@@ -284,7 +269,8 @@ export function parseOptions(
       appEntryPath = 'electron/entry.ts',
       nativeModuleEntryMap = {},
       postBuild,
-      overrideEsbuildOptions = {},
+      ignoreDynamicRequires: ignoreDynamicRequire = false,
+      overrideViteOptions = {},
     } = {},
     paths: {
       asarOutputPath = `release/${pkg.name}.asar`,
@@ -325,7 +311,8 @@ export function parseOptions(
     entryOutputDirPath,
     appEntryPath,
     nativeModuleEntryMap,
-    overrideEsbuildOptions,
+    overrideViteOptions,
+    ignoreDynamicRequires: ignoreDynamicRequire,
   }
   // generate keys or get from file
   const { privateKey, cert } = parseKeys({
