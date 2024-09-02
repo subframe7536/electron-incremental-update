@@ -78,6 +78,7 @@ export async function buildEntry(
     entryOutputDirPath,
     nativeModuleEntryMap,
     ignoreDynamicRequires,
+    external,
     overrideViteOptions,
   }: Required<Omit<BuildEntryOption, 'postBuild'>>,
   isESM: boolean,
@@ -102,11 +103,7 @@ export async function buildEntry(
           ignoreDynamicRequires,
         },
         rollupOptions: {
-          external(source) {
-            if (source.endsWith('.node')) {
-              return true
-            }
-          },
+          external,
         },
       },
       define,

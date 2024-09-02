@@ -78,11 +78,16 @@ export interface BuildEntryOption {
    */
   nativeModuleEntryMap?: Record<string, string>
   /**
-   * Rollup commonjs plugin option to skip process dynamic require
+   * Skip process dynamic require
    *
    * Useful for `better-sqlite3` and other old packages
    */
   ignoreDynamicRequires?: boolean
+  /**
+   * `external` option in `build.rollupOptions`
+   * @default source => source.endsWith('.node')
+   */
+  external?: (source: string, importer: string | undefined, isResolved: boolean) => boolean | null | undefined | void
   /**
    * Custom options for `vite` build
    */
@@ -269,7 +274,8 @@ export function parseOptions(
       appEntryPath = 'electron/entry.ts',
       nativeModuleEntryMap = {},
       postBuild,
-      ignoreDynamicRequires: ignoreDynamicRequire = false,
+      ignoreDynamicRequires = false,
+      external = (source: string) => source.endsWith('.node'),
       overrideViteOptions = {},
     } = {},
     paths: {
@@ -312,7 +318,8 @@ export function parseOptions(
     appEntryPath,
     nativeModuleEntryMap,
     overrideViteOptions,
-    ignoreDynamicRequires: ignoreDynamicRequire,
+    ignoreDynamicRequires,
+    external,
   }
   // generate keys or get from file
   const { privateKey, cert } = parseKeys({
