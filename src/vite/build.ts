@@ -99,12 +99,8 @@ export async function buildEntry(
         sourcemap,
         minify,
         outDir: entryOutputDirPath,
-        commonjsOptions: {
-          ignoreDynamicRequires,
-        },
-        rollupOptions: {
-          external,
-        },
+        commonjsOptions: { ignoreDynamicRequires },
+        rollupOptions: { external },
       },
       define,
     }, overrideViteOptions ?? {}),

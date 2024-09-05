@@ -90,6 +90,19 @@ export interface BuildEntryOption {
   external?: (source: string, importer: string | undefined, isResolved: boolean) => boolean | null | undefined | void
   /**
    * Custom options for `vite` build
+   * ```ts
+   * const options = {
+   *   plugins: [esm(), bytecodePlugin()], // load on needed
+   *   build: {
+   *     sourcemap,
+   *     minify,
+   *     outDir: entryOutputDirPath,
+   *     commonjsOptions: { ignoreDynamicRequires },
+   *     rollupOptions: { external },
+   *   },
+   *   define,
+   * }
+   * ```
    */
   overrideViteOptions?: InlineConfig
   /**

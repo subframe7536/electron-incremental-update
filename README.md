@@ -840,30 +840,22 @@ export interface BuildEntryOption {
    */
   nativeModuleEntryMap?: Record<string, string>
   /**
-   * Custom options for esbuild
+   * Custom options for `vite` build
    * ```ts
-   * // default options
    * const options = {
-   *   entryPoints: {
-   *     entry: appEntryPath,
-   *     ...moduleEntryMap,
-   *   },
-   *   bundle: true,
-   *   platform: 'node',
-   *   outdir: entryOutputDirPath,
-   *   minify,
-   *   sourcemap,
-   *   entryNames: '[dir]/[name]',
-   *   assetNames: '[dir]/[name]',
-   *   external: ['electron', 'original-fs'],
-   *   loader: {
-   *     '.node': 'empty',
+   *   plugins: [esm(), bytecodePlugin()], // load on needed
+   *   build: {
+   *     sourcemap,
+   *     minify,
+   *     outDir: entryOutputDirPath,
+   *     commonjsOptions: { ignoreDynamicRequires },
+   *     rollupOptions: { external },
    *   },
    *   define,
    * }
    * ```
    */
-  overrideEsbuildOptions?: BuildOptions
+  overrideViteOptions?: InlineConfig
   /**
    * Resolve extra files on startup, such as `.node`
    * @remark won't trigger will reload
