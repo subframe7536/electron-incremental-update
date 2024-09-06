@@ -141,8 +141,11 @@ export class Updater extends EventEmitter<{
    */
   public async checkForUpdates(data: UpdateJSON | UpdateJSONWithURL): Promise<boolean>
   public async checkForUpdates(data?: UpdateJSON | UpdateJSONWithURL): Promise<boolean> {
-    // eslint-disable-next-line unicorn/consistent-function-scoping
-    const emitUnavailable = (msg: string, code: UpdaterUnavailableCode, info?: UpdateInfoWithExtraVersion): false => {
+    const emitUnavailable = (
+      msg: string,
+      code: UpdaterUnavailableCode,
+      info?: UpdateInfoWithExtraVersion,
+    ): false => {
       this.logger?.info(`[${code}] ${msg}`)
       this.emit('update-not-available', code, msg, info)
       return false

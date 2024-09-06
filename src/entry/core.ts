@@ -1,8 +1,7 @@
-import path from 'node:path'
 import fs from 'node:fs'
 import electron from 'electron'
 import type { Promisable } from '@subframe7536/type-utils'
-import { getPathFromAppNameAsar, getPathFromMain, isDev } from '../utils/electron'
+import { getPathFromAppNameAsar, getPathFromMain } from '../utils/electron'
 import type { Logger, UpdaterOption } from './types'
 import { Updater } from './updater'
 

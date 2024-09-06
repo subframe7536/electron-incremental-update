@@ -71,16 +71,16 @@
     "vite-plugin-electron": "^0.28.7"
   },
   "devDependencies": {
-    "@subframe7536/eslint-config": "^0.8.0",
+    "@subframe7536/eslint-config": "^0.9.0",
     "@types/babel__core": "^7.20.5",
-    "@types/node": "^20.16.3",
+    "@types/node": "^20.16.5",
     "bumpp": "^9.5.2",
     "electron": "28.2.10",
     "eslint": "^9.9.1",
     "esno": "^4.7.0",
     "tsup": "^8.2.4",
     "typescript": "^5.5.4",
-    "vite": "^5.4.2",
+    "vite": "^5.4.3",
     "vite-plugin-electron": "^0.28.7",
     "vitest": "^2.0.5"
   }
