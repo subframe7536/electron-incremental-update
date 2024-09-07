@@ -3,7 +3,7 @@ import type { InlineConfig } from 'vite'
 import { type UpdateJSON, defaultVersionJsonGenerator } from '../utils/version'
 import { defaultZipFile } from '../utils/zip'
 import { defaultSignature } from '../utils/crypto'
-import { parseKeys } from './key'
+import { type DistinguishedName, parseKeys } from './key'
 
 export interface PKG {
   name: string
@@ -11,24 +11,6 @@ export interface PKG {
   main: string
   type: 'commonjs' | 'module'
 }
-
-export interface DistinguishedName {
-  countryName?: string
-  stateOrProvinceName?: string
-  localityName?: string
-  organizationName?: string
-  organizationalUnitName?: string
-  commonName?: string
-  serialNumber?: string
-  title?: string
-  description?: string
-  businessCategory?: string
-  emailAddress?: string
-}
-export type CertSubject = {
-  name: string
-  value: string
-}[]
 
 export interface BuildAsarOption {
   version: string

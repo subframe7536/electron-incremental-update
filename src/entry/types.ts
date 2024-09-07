@@ -1,4 +1,4 @@
-import type { IProvider } from '../provider'
+import type { IProvider } from '../provider/types'
 import type { UpdateInfo } from '../utils/version'
 
 export type UpdaterErrorCode =
@@ -48,8 +48,6 @@ export interface UpdaterOption {
    */
   logger?: Logger
 }
-
-export type UpdateInfoWithURL = UpdateInfo & { url: string }
 
 export type UpdateInfoWithExtraVersion = UpdateInfo & {
   appVersion: string

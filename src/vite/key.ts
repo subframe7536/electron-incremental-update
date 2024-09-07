@@ -2,7 +2,24 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { generate } from 'selfsigned'
 import { log } from './constant'
-import type { CertSubject, DistinguishedName } from './option'
+
+export interface DistinguishedName {
+  countryName?: string
+  stateOrProvinceName?: string
+  localityName?: string
+  organizationName?: string
+  organizationalUnitName?: string
+  commonName?: string
+  serialNumber?: string
+  title?: string
+  description?: string
+  businessCategory?: string
+  emailAddress?: string
+}
+export type CertSubject = {
+  name: string
+  value: string
+}[]
 
 export function generateKeyPair(
   keyLength: number,

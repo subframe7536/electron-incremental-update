@@ -1,6 +1,5 @@
 import { URL } from 'node:url'
-import type { UpdateInfoWithURL } from '../entry'
-import type { DownloadingInfo, URLHandler, UpdateJSONWithURL } from './types'
+import type { DownloadingInfo, URLHandler, UpdateInfoWithURL, UpdateJSONWithURL } from './types'
 import { defaultDownloadAsar, defaultDownloadUpdateJSON } from './download'
 import { BaseProvider } from './base'
 

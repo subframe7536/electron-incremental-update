@@ -1,5 +1,7 @@
 import type { Promisable } from '@subframe7536/type-utils'
-import type { UpdateInfoWithURL } from '../entry/types'
+import type { UpdateInfo } from '../utils/version'
+
+export type UpdateInfoWithURL = UpdateInfo & { url: string }
 
 export type OnDownloading = (progress: DownloadingInfo) => void
 

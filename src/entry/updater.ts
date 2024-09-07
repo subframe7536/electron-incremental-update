@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import { EventEmitter } from 'node:events'
 import electron from 'electron'
 import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
-import type { DownloadingInfo, IProvider, UpdateJSONWithURL } from '../provider'
+import type { DownloadingInfo, IProvider, UpdateInfoWithURL, UpdateJSONWithURL } from '../provider/types'
 import {
   getAppVersion,
   getEntryVersion,
@@ -13,7 +13,6 @@ import {
 import type {
   Logger,
   UpdateInfoWithExtraVersion,
-  UpdateInfoWithURL,
   UpdaterErrorCode,
   UpdaterOption,
   UpdaterUnavailableCode,
