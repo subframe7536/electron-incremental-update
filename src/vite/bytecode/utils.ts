@@ -100,6 +100,12 @@ export function obfuscateString(input: string, offset = ~~(Math.random() * 16) +
   return `_0xstr_([${hexArray.join(',')}],${offset})`
 }
 
+/**
+ * Obfuscate string
+ * @param code source code
+ * @param sourcemap whether to generate sourcemap
+ * @param offset custom offset
+ */
 export function convertLiteral(code: string, sourcemap?: boolean, offset?: number): { code: string, map?: any } {
   const s = new MagicString(code)
   let hasTransformed = false

@@ -435,3 +435,5 @@ export async function electronWithUpdater(
 }
 
 export default electronWithUpdater
+
+export { convertLiteral } from './bytecode/utils'
