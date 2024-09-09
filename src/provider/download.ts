@@ -132,7 +132,7 @@ export async function defaultDownloadAsar(
         transferred += delta
         const current = Date.now()
         onDownloading?.({
-          percent: total ? +(transferred / total).toFixed(2) * 100 : -1,
+          percent: total > 0 ? +(transferred / total).toFixed(2) * 100 : -1,
           total,
           transferred,
           delta,
