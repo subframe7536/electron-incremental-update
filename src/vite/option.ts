@@ -66,10 +66,9 @@ export interface BuildEntryOption {
    */
   ignoreDynamicRequires?: boolean
   /**
-   * `external` option in `build.rollupOptions`
-   * @default source => source.endsWith('.node')
+   * `external` option in `build.rollupOptions`, external `.node` by default
    */
-  external?: (source: string, importer: string | undefined, isResolved: boolean) => boolean | null | undefined | void
+  external?: string | string[] | ((source: string, importer: string | undefined, isResolved: boolean) => boolean | null | undefined | void)
   /**
    * Custom options for `vite` build
    * ```ts
@@ -106,6 +105,20 @@ export interface BuildEntryOption {
     copyToEntryOutputDir: (options: {
       from: string
       to?: string
+      /**
+       * Skip copy if `to` exist
+       * @default true
+       */
+      skipIfExist?: boolean
+    }) => void
+    /**
+     * Copy specified modules to entry output dir, just like `external` option in rollup
+     */
+    copyModules: (options: {
+      /**
+       * External Modules
+       */
+      modules: string[]
       /**
        * Skip copy if `to` exist
        * @default true
@@ -243,14 +256,7 @@ type ParseOptionReturn = {
   buildAsarOption: BuildAsarOption
   buildEntryOption: Required<Omit<BuildEntryOption, 'postBuild'>>
   buildVersionOption: BuildVersionOption
-  postBuild: ((args: {
-    getPathFromEntryOutputDir: (...paths: string[]) => string
-    copyToEntryOutputDir: (options: {
-      from: string
-      to?: string
-      skipIfExist?: boolean
-    }) => void
-  }) => Promisable<void>) | undefined
+  postBuild: BuildEntryOption['postBuild']
   cert: string
 }
 
@@ -270,7 +276,7 @@ export function parseOptions(
       nativeModuleEntryMap = {},
       postBuild,
       ignoreDynamicRequires = false,
-      external = (source: string) => source.endsWith('.node'),
+      external,
       overrideViteOptions = {},
     } = {},
     paths: {
@@ -314,7 +320,21 @@ export function parseOptions(
     nativeModuleEntryMap,
     overrideViteOptions,
     ignoreDynamicRequires,
-    external,
+    external: (source, importer, isResolved) => {
+      if (source.endsWith('.node')) {
+        return false
+      }
+      if (!external) {
+        return undefined
+      }
+      if (typeof external === 'string') {
+        return source === external
+      }
+      if (Array.isArray(external)) {
+        return external.includes(source)
+      }
+      return external(source, importer, isResolved)
+    },
   }
   // generate keys or get from file
   const { privateKey, cert } = parseKeys({

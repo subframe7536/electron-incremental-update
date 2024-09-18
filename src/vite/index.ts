@@ -1,20 +1,22 @@
 import path from 'node:path'
 import fs from 'node:fs'
+import { getPackageInfoSync, loadPackageJSON } from 'local-pkg'
 import type { BuildOptions, InlineConfig, Plugin, PluginOption } from 'vite'
 import { mergeConfig, normalizePath } from 'vite'
 import ElectronSimple from 'vite-plugin-electron/simple'
 import { startup } from 'vite-plugin-electron'
 import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
 import { notBundle } from 'vite-plugin-electron/plugin'
-import { loadPackageJSON } from 'local-pkg'
 import { isCI } from 'ci-info'
 import { buildAsar, buildEntry, buildVersion } from './build'
 import type { ElectronUpdaterOptions, PKG } from './option'
 import { parseOptions } from './option'
 import { id, log } from './constant'
 import type { BytecodeOptions } from './bytecode'
+import { copyAndSkipIfExist } from './utils'
 
 export { isCI } from 'ci-info'
+export { getPackageInfo, getPackageInfoSync, loadPackageJSON, resolveModule } from 'local-pkg'
 
 type MakeRequired<T, K extends keyof T> = Exclude<T, undefined> & { [P in K]-?: T[P] }
 type ReplaceKey<
@@ -293,15 +295,22 @@ export async function electronWithUpdater(
         return path.join(entryOutputDirPath, ...paths)
       },
       copyToEntryOutputDir({ from, to, skipIfExist = true }) {
-        if (fs.existsSync(from)) {
-          const target = path.join(entryOutputDirPath, to ?? path.basename(from))
-          if (!skipIfExist || !fs.existsSync(target)) {
-            try {
-              fs.cpSync(from, target)
-            } catch (error) {
-              log.warn(`Copy failed: ${error}`, { timestamp: true })
-            }
+        if (!fs.existsSync(from)) {
+          log.warn(`${from} not found`, { timestamp: true })
+          return
+        }
+        const target = path.join(entryOutputDirPath, to ?? path.basename(from))
+        copyAndSkipIfExist(from, target, skipIfExist)
+      },
+      copyModules({ modules, skipIfExist = true }) {
+        const nodeModulesPath = path.join(entryOutputDirPath, 'node_modules')
+        for (const m of modules) {
+          const { rootPath } = getPackageInfoSync(m) || {}
+          if (!rootPath) {
+            log.warn(`Package '${m}' not found`, { timestamp: true })
+            continue
           }
+          copyAndSkipIfExist(rootPath, path.join(nodeModulesPath, m), skipIfExist)
         }
       },
     })

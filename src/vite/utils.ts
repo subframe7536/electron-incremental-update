@@ -1,3 +1,6 @@
+import fs from 'node:fs'
+import { log } from './constant'
+
 export function readableSize(size: number): string {
   const units = ['B', 'KB', 'MB', 'GB']
   let i = 0
@@ -8,4 +11,14 @@ export function readableSize(size: number): string {
   }
 
   return `${size.toFixed(2)} ${units[i]}`
+}
+
+export function copyAndSkipIfExist(from: string, to: string, skipIfExist: boolean): void {
+  if (!skipIfExist || !fs.existsSync(to)) {
+    try {
+      fs.cpSync(from, to, { recursive: true })
+    } catch (error) {
+      log.warn(`Copy failed: ${error}`, { timestamp: true })
+    }
+  }
 }

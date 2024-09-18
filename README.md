@@ -840,6 +840,16 @@ export interface BuildEntryOption {
    */
   nativeModuleEntryMap?: Record<string, string>
   /**
+   * Skip process dynamic require
+   *
+   * Useful for `better-sqlite3` and other old packages
+   */
+  ignoreDynamicRequires?: boolean
+  /**
+   * `external` option in `build.rollupOptions`, external `.node` by default
+   */
+  external?: string | string[] | ((source: string, importer: string | undefined, isResolved: boolean) => boolean | null | undefined | void)
+  /**
    * Custom options for `vite` build
    * ```ts
    * const options = {
@@ -875,6 +885,20 @@ export interface BuildEntryOption {
     copyToEntryOutputDir: (options: {
       from: string
       to?: string
+      /**
+       * Skip copy if `to` exist
+       * @default true
+       */
+      skipIfExist?: boolean
+    }) => void
+    /**
+     * Copy specified modules to entry output dir, just like `external` option in rollup
+     */
+    copyModules: (options: {
+      /**
+       * External Modules
+       */
+      modules: string[]
       /**
        * Skip copy if `to` exist
        * @default true
