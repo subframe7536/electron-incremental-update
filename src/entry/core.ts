@@ -1,7 +1,8 @@
 import fs from 'node:fs'
+import path from 'node:path'
 import electron from 'electron'
 import type { Promisable } from '@subframe7536/type-utils'
-import { getPathFromAppNameAsar, getPathFromMain } from '../utils/electron'
+import { getPathFromAppNameAsar, isDev } from '../utils/electron'
 import type { Logger, UpdaterOption } from './types'
 import { Updater } from './updater'
 
@@ -10,9 +11,13 @@ import { Updater } from './updater'
  */
 declare const __EIU_MAIN_FILE__: string
 /**
- * type only electron main dir path when dev, transformed by esbuild's define
+ * type only electron dist path, transformed by esbuild's define
  */
 declare const __EIU_ELECTRON_DIST_PATH__: string
+/**
+ * type only asar base name, transformed by esbuild's define
+ */
+declare const __EIU_ASAR_BASE_NAME__: string
 /**
  * type only is esmodule, transformed by esbuild's define
  */
@@ -103,7 +108,9 @@ export async function createElectronApp(
   const appNameAsarPath = getPathFromAppNameAsar()
 
   const {
-    mainPath = getPathFromMain(__EIU_MAIN_FILE__),
+    mainPath = isDev
+      ? path.join(electron.app.getAppPath(), __EIU_ELECTRON_DIST_PATH__, 'main', __EIU_MAIN_FILE__)
+      : path.join(path.dirname(electron.app.getAppPath()), __EIU_ASAR_BASE_NAME__, 'main', __EIU_MAIN_FILE__),
     updater,
     onInstall = defaultOnInstall,
     beforeStart,

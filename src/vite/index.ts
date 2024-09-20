@@ -270,6 +270,7 @@ export async function electronWithUpdater(
 
   /// keep-sorted
   const define = {
+    __EIU_ASAR_BASE_NAME__: JSON.stringify(path.basename(buildAsarOption.asarOutputPath)),
     __EIU_ELECTRON_DIST_PATH__: JSON.stringify(normalizePath(buildAsarOption.electronDistPath)),
     __EIU_ENTRY_DIST_PATH__: JSON.stringify(normalizePath(buildEntryOption.entryOutputDirPath)),
     __EIU_IS_DEV__: JSON.stringify(!isBuild),
