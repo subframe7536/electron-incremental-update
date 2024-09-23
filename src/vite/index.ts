@@ -31,8 +31,10 @@ type MakeRequiredAndReplaceKey<
   NewKey extends string,
 > = MakeRequired<ReplaceKey<T, K, NewKey>, NewKey>
 
+type StartupFn = Exclude<Exclude<ElectronSimpleOptions['preload'], undefined>['onstart'], undefined>
+
 /**
- * startup function for debug (see {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template})
+ * Startup function for debug (see {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template})
  * @example
  * import { debugStartup, buildElectronPluginOptions } from 'electron-incremental-update/vite'
  * const options = buildElectronPluginOptions({
@@ -43,15 +45,33 @@ type MakeRequiredAndReplaceKey<
  *   },
  * })
  */
-export function debugStartup(args: {
-  startup: (argv?: string[]) => Promise<void>
-  reload: () => void
-}): void {
+export const debugStartup: StartupFn = (args) => {
   if (process.env.VSCODE_DEBUG) {
     // For `.vscode/.debug.script.mjs`
     console.log('[startup] Electron App')
   } else {
     args.startup()
+  }
+}
+
+/**
+ * Startup function util to fix Windows terminal charset
+ * @example
+ * import { debugStartup, fixWinCharEncoding, buildElectronPluginOptions } from 'electron-incremental-update/vite'
+ * const options = buildElectronPluginOptions({
+ *   // ...
+ *   main: {
+ *     // ...
+ *     startup: fixWinCharEncoding(debugStartup)
+ *   },
+ * })
+ */
+export function fixWinCharEncoding(fn: StartupFn): StartupFn {
+  return async (...args) => {
+    if (process.platform === 'win32') {
+      (await import('node:child_process')).spawnSync('chcp', ['65001'])
+    }
+    await fn(...args)
   }
 }
 
