@@ -3,8 +3,8 @@ import path from 'node:path'
 import electron from 'electron'
 import type { Promisable } from '@subframe7536/type-utils'
 import { getPathFromAppNameAsar, isDev } from '../utils/electron'
-import type { Logger, UpdaterOption } from './types'
 import { Updater } from './updater'
+import type { Logger, UpdaterOption } from './types'
 
 /**
  * type only electron main file path, transformed by esbuild's define

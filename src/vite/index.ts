@@ -1,22 +1,22 @@
-import path from 'node:path'
 import fs from 'node:fs'
-import { getPackageInfoSync, loadPackageJSON } from 'local-pkg'
-import type { BuildOptions, InlineConfig, Plugin, PluginOption } from 'vite'
-import { mergeConfig, normalizePath } from 'vite'
-import ElectronSimple from 'vite-plugin-electron/simple'
-import { startup } from 'vite-plugin-electron'
-import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
-import { notBundle } from 'vite-plugin-electron/plugin'
+import path from 'node:path'
 import { isCI } from 'ci-info'
+import { getPackageInfoSync, loadPackageJSON } from 'local-pkg'
+import { mergeConfig, normalizePath } from 'vite'
+import { startup } from 'vite-plugin-electron'
+import { notBundle } from 'vite-plugin-electron/plugin'
+import ElectronSimple from 'vite-plugin-electron/simple'
+import type { BuildOptions, InlineConfig, Plugin, PluginOption } from 'vite'
+import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
 import { buildAsar, buildEntry, buildVersion } from './build'
-import type { ElectronUpdaterOptions, PKG } from './option'
-import { parseOptions } from './option'
 import { id, log } from './constant'
-import type { BytecodeOptions } from './bytecode'
+import { parseOptions } from './option'
 import { copyAndSkipIfExist } from './utils'
+import type { BytecodeOptions } from './bytecode'
+import type { ElectronUpdaterOptions, PKG } from './option'
 
+export { convertLiteral } from './bytecode/utils'
 export { isCI } from 'ci-info'
-export { getPackageInfo, getPackageInfoSync, loadPackageJSON, resolveModule } from 'local-pkg'
 
 type MakeRequired<T, K extends keyof T> = Exclude<T, undefined> & { [P in K]-?: T[P] }
 type ReplaceKey<
@@ -466,4 +466,4 @@ export async function electronWithUpdater(
 
 export default electronWithUpdater
 
-export { convertLiteral } from './bytecode/utils'
+export { getPackageInfo, getPackageInfoSync, loadPackageJSON, resolveModule } from 'local-pkg'

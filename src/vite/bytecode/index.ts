@@ -1,10 +1,11 @@
-import path from 'node:path'
 import fs from 'node:fs'
-import { type Plugin, type ResolvedConfig, createFilter, normalizePath } from 'vite'
+import path from 'node:path'
 import MagicString from 'magic-string'
+import { createFilter, normalizePath, type Plugin, type ResolvedConfig } from 'vite'
 import type { Promisable } from '@subframe7536/type-utils'
 import { bytecodeId, bytecodeLog } from '../constant'
 import { readableSize } from '../utils'
+import { bytecodeModuleLoaderCode } from './code'
 import {
   bytecodeModuleLoader,
   compileToBytecode,
@@ -13,7 +14,6 @@ import {
   toRelativePath,
   useStrict,
 } from './utils'
-import { bytecodeModuleLoaderCode } from './code'
 
 export interface BytecodeOptions {
   enable: boolean

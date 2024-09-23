@@ -1,6 +1,6 @@
 import electron, { type IncomingMessage } from 'electron'
 import type { Arrayable } from '@subframe7536/type-utils'
-import { type UpdateJSON, isUpdateJSON } from '../utils/version'
+import { isUpdateJSON, type UpdateJSON } from '../utils/version'
 import type { OnDownloading } from './types'
 
 /**

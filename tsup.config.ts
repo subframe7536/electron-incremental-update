@@ -1,6 +1,6 @@
 import { readFileSync, rmSync } from 'node:fs'
 import { transformSync } from 'esbuild'
-import { type Options, defineConfig } from 'tsup'
+import { defineConfig, type Options } from 'tsup'
 
 function getConfig(): Options[] {
   rmSync('./dist', { recursive: true, force: true })

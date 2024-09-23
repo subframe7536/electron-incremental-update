@@ -94,8 +94,8 @@ See all config in [types](#plugin)
 in `vite.config.mts`
 
 ```ts
-import { defineConfig } from 'vite'
 import { debugStartup, electronWithUpdater } from 'electron-incremental-update/vite'
+import { defineConfig } from 'vite'
 
 export default defineConfig(async ({ command }) => {
   const isBuild = command === 'build'
@@ -180,9 +180,9 @@ The update steps are similar to [electron-updater](https://github.com/electron-u
 in `electron/main/index.ts`
 
 ```ts
-import { UpdaterError, startupWithUpdater } from 'electron-incremental-update'
-import { getPathFromAppNameAsar, getVersions } from 'electron-incremental-update/utils'
 import { app } from 'electron'
+import { startupWithUpdater, UpdaterError } from 'electron-incremental-update'
+import { getPathFromAppNameAsar, getVersions } from 'electron-incremental-update/utils'
 
 export default startupWithUpdater((updater) => {
   await app.whenReady()

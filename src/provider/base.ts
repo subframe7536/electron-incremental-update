@@ -1,6 +1,6 @@
 import { defaultVerifySignature } from '../utils/crypto'
-import { defaultUnzipFile } from '../utils/zip'
 import { defaultIsLowerVersion } from '../utils/version'
+import { defaultUnzipFile } from '../utils/zip'
 import type { DownloadingInfo, IProvider, UpdateInfoWithURL, UpdateJSONWithURL } from './types'
 
 export abstract class BaseProvider implements IProvider {

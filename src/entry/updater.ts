@@ -1,8 +1,6 @@
-import fs from 'node:fs'
 import { EventEmitter } from 'node:events'
+import fs from 'node:fs'
 import electron from 'electron'
-import { type UpdateInfo, type UpdateJSON, isUpdateJSON } from '../utils/version'
-import type { DownloadingInfo, IProvider, UpdateInfoWithURL, UpdateJSONWithURL } from '../provider/types'
 import {
   getAppVersion,
   getEntryVersion,
@@ -10,6 +8,9 @@ import {
   isDev,
   restartApp,
 } from '../utils/electron'
+import { isUpdateJSON, type UpdateInfo, type UpdateJSON } from '../utils/version'
+import { UpdaterError } from './types'
+import type { DownloadingInfo, IProvider, UpdateInfoWithURL, UpdateJSONWithURL } from '../provider/types'
 import type {
   Logger,
   UpdateInfoWithExtraVersion,
@@ -17,7 +18,6 @@ import type {
   UpdaterOption,
   UpdaterUnavailableCode,
 } from './types'
-import { UpdaterError } from './types'
 
 /**
  * type only signature cert, transformed by esbuild's define

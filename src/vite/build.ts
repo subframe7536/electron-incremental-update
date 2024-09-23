@@ -1,13 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import Asar from '@electron/asar'
-import { build } from 'vite-plugin-electron'
 import { type InlineConfig, mergeConfig } from 'vite'
-import { type UpdateJSON, isUpdateJSON } from '../utils/version'
+import { build } from 'vite-plugin-electron'
+import { isUpdateJSON, type UpdateJSON } from '../utils/version'
 import { log } from './constant'
-import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 import { readableSize } from './utils'
 import type { BytecodeOptions } from './bytecode'
+import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 
 export async function buildAsar({
   version,
