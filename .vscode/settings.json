@@ -1,8 +1,5 @@
 {
   "files.eol": "\n",
-  "i18n-ally.localesPaths": [
-    "apps/src/i18n/locales"
-  ],
   // Enable the ESlint flat config support
   "eslint.experimental.useFlatConfig": true,
   // Disable the default formatter, use eslint instead
