@@ -1,3 +1,11 @@
+import type { DownloadingInfo, IProvider, UpdateInfoWithURL, UpdateJSONWithURL } from '../provider/types'
+import type {
+  Logger,
+  UpdateInfoWithExtraVersion,
+  UpdaterErrorCode,
+  UpdaterOption,
+  UpdaterUnavailableCode,
+} from './types'
 import { EventEmitter } from 'node:events'
 import fs from 'node:fs'
 import electron from 'electron'
@@ -10,14 +18,6 @@ import {
 } from '../utils/electron'
 import { isUpdateJSON, type UpdateInfo, type UpdateJSON } from '../utils/version'
 import { UpdaterError } from './types'
-import type { DownloadingInfo, IProvider, UpdateInfoWithURL, UpdateJSONWithURL } from '../provider/types'
-import type {
-  Logger,
-  UpdateInfoWithExtraVersion,
-  UpdaterErrorCode,
-  UpdaterOption,
-  UpdaterUnavailableCode,
-} from './types'
 
 /**
  * type only signature cert, transformed by esbuild's define

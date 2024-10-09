@@ -60,9 +60,9 @@
     "esbuild": "*"
   },
   "dependencies": {
-    "@babel/core": "^7.25.2",
-    "@babel/plugin-transform-arrow-functions": "^7.24.7",
-    "@babel/plugin-transform-template-literals": "^7.24.7",
+    "@babel/core": "^7.25.7",
+    "@babel/plugin-transform-arrow-functions": "^7.25.7",
+    "@babel/plugin-transform-template-literals": "^7.25.7",
     "@subframe7536/type-utils": "^0.1.6",
     "ci-info": "^4.0.0",
     "local-pkg": "^0.5.0",
@@ -71,16 +71,16 @@
     "vite-plugin-electron": "^0.28.8"
   },
   "devDependencies": {
-    "@subframe7536/eslint-config": "^0.9.2",
+    "@subframe7536/eslint-config": "^0.9.4",
     "@types/babel__core": "^7.20.5",
-    "@types/node": "^20.16.5",
-    "bumpp": "^9.5.2",
+    "@types/node": "^20.16.11",
+    "bumpp": "^9.6.1",
     "electron": "28.2.10",
-    "eslint": "^9.11.0",
+    "eslint": "^9.12.0",
     "tsup": "^8.3.0",
-    "typescript": "^5.6.2",
-    "vite": "^5.4.7",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.8",
     "vite-plugin-electron": "^0.28.8",
-    "vitest": "^2.1.1"
+    "vitest": "^2.1.2"
   }
 }

@@ -1,7 +1,7 @@
-import electron, { type IncomingMessage } from 'electron'
 import type { Arrayable } from '@subframe7536/type-utils'
-import { isUpdateJSON, type UpdateJSON } from '../utils/version'
 import type { OnDownloading } from './types'
+import electron, { type IncomingMessage } from 'electron'
+import { isUpdateJSON, type UpdateJSON } from '../utils/version'
 
 /**
  * Safe get value from header

@@ -1,3 +1,5 @@
+import type { BytecodeOptions } from './bytecode'
+import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 import fs from 'node:fs'
 import path from 'node:path'
 import Asar from '@electron/asar'
@@ -6,8 +8,6 @@ import { build } from 'vite-plugin-electron'
 import { isUpdateJSON, type UpdateJSON } from '../utils/version'
 import { log } from './constant'
 import { readableSize } from './utils'
-import type { BytecodeOptions } from './bytecode'
-import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
 
 export async function buildAsar({
   version,

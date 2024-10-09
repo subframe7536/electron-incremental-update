@@ -1,7 +1,7 @@
+import type { DownloadingInfo, UpdateInfoWithURL, UpdateJSONWithURL, URLHandler } from './types'
 import { URL } from 'node:url'
 import { BaseProvider } from './base'
 import { defaultDownloadAsar, defaultDownloadJSON, defaultDownloadUpdateJSON } from './download'
-import type { DownloadingInfo, UpdateInfoWithURL, UpdateJSONWithURL, URLHandler } from './types'
 
 export interface GitHubApiProviderOptions {
   /**

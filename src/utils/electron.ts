@@ -1,7 +1,7 @@
+import type { BrowserWindow } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import electron from 'electron'
-import type { BrowserWindow } from 'electron'
 
 /**
  * type only entry dir path, transformed by esbuild's define
