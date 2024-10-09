@@ -82,8 +82,17 @@ export function defaultIsLowerVersion(oldVer: string, newVer: string): boolean {
  * Update info json
  */
 export type UpdateInfo = {
+  /**
+   * Update Asar signature
+   */
   signature: string
+  /**
+   * Minimum version
+   */
   minimumVersion: string
+  /**
+   * Target version
+   */
   version: string
 }
 
@@ -91,6 +100,9 @@ export type UpdateInfo = {
  * {@link UpdateInfo} with beta
  */
 export type UpdateJSON = UpdateInfo & {
+  /**
+   * Beta update info
+   */
   beta: UpdateInfo
 }
 

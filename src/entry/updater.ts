@@ -28,10 +28,9 @@ declare const __EIU_SIGNATURE_CERT__: string
  */
 declare const __EIU_VERSION_PATH__: string
 
-export class Updater extends EventEmitter<{
-  'checking': any
-  'update-available': [data: UpdateInfoWithExtraVersion]
-  'update-not-available': [code: UpdaterUnavailableCode, msg: string, info?: UpdateInfoWithExtraVersion]
+export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraVersion> extends EventEmitter<{
+  'update-available': [data: T]
+  'update-not-available': [code: UpdaterUnavailableCode, msg: string, info?: T]
   'error': [error: UpdaterError]
   'download-progress': [info: DownloadingInfo]
   'update-downloaded': any
@@ -143,7 +142,7 @@ export class Updater extends EventEmitter<{
     const emitUnavailable = (
       msg: string,
       code: UpdaterUnavailableCode,
-      info?: UpdateInfoWithExtraVersion,
+      info?: T,
     ): false => {
       this.logger?.info(`[${code}] ${msg}`)
       this.emit('update-not-available', code, msg, info)
@@ -160,7 +159,7 @@ export class Updater extends EventEmitter<{
     if (!_data) {
       return emitUnavailable('Failed to get update info', 'UNAVAILABLE_ERROR')
     }
-    const { signature, version, minimumVersion, url = '' } = this.receiveBeta ? _data.beta : _data
+    const { signature, version, minimumVersion, url = '', ...rest } = this.receiveBeta ? _data.beta : _data
     const info = { signature, minimumVersion, version, url }
     const extraVersionInfo = {
       signature,
@@ -168,11 +167,12 @@ export class Updater extends EventEmitter<{
       version,
       appVersion: getAppVersion(),
       entryVersion: getEntryVersion(),
-    }
+      ...rest,
+    } as T
     this.logger?.debug(`Checked update, version: ${version}, signature: ${signature}`)
 
     if (isDev && !this.forceUpdate && !data) {
-      return emitUnavailable('Skip check update in dev mode. To force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON', 'UNAVAILABLE_DEV', extraVersionInfo)
+      return emitUnavailable('Skip check update in dev mode. To force update, set `updater.forceUpdate` to true or call checkUpdate with UpdateJSON', 'UNAVAILABLE_DEV')
     }
     const isLowerVersion = this.provider!.isLowerVersion
     try {

@@ -49,7 +49,16 @@ export interface UpdaterOption {
   logger?: Logger
 }
 
+/**
+ * Update info with current app version and entry version
+ */
 export type UpdateInfoWithExtraVersion = UpdateInfo & {
+  /**
+   * Current app version
+   */
   appVersion: string
+  /**
+   * Current entry version
+   */
   entryVersion: string
 }

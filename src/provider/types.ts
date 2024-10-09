@@ -1,4 +1,5 @@
 import type { Promisable } from '@subframe7536/type-utils'
+import type { URL } from 'node:url'
 import type { UpdateInfo } from '../utils/version'
 
 export type UpdateInfoWithURL = UpdateInfo & { url: string }
@@ -34,7 +35,7 @@ export interface DownloadingInfo {
 
 export type UpdateJSONWithURL = UpdateInfoWithURL & { beta: UpdateInfoWithURL }
 
-export interface IProvider {
+export interface IProvider<T extends UpdateInfoWithURL = UpdateInfoWithURL> {
   /**
    * Provider name
    */
@@ -45,7 +46,7 @@ export interface IProvider {
    * @param versionPath normalized version path in project
    * @param signal abort signal
    */
-  downloadJSON: (name: string, versionPath: string, signal: AbortSignal) => Promise<UpdateJSONWithURL>
+  downloadJSON: (name: string, versionPath: string, signal: AbortSignal) => Promise<T>
   /**
    * Download update asar
    * @param updateInfo existing update info
