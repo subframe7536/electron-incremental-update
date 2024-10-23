@@ -149,7 +149,6 @@ export interface GeneratorOverrideFunctions {
    * @param signature generated signature
    * @param version current version
    * @param minVersion The minimum version
-   * @returns The updated version json
    */
   generateUpdateJson?: (
     existingJson: UpdateJSON,

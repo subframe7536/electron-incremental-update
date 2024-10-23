@@ -17,7 +17,7 @@ export function getHeader(headers: Record<string, Arrayable<string>>, key: any):
   }
 }
 
-async function downloadFn<T>(
+export async function downloadUtil<T>(
   url: string,
   headers: Record<string, any>,
   signal: AbortSignal,
@@ -67,7 +67,7 @@ export async function defaultDownloadJSON<T>(
   signal: AbortSignal,
   resolveData: ResolveDataFn = defaultResolveDataFn,
 ): Promise<T> {
-  return await downloadFn<T>(
+  return await downloadUtil<T>(
     url,
     headers,
     signal,
@@ -120,7 +120,7 @@ export async function defaultDownloadAsar(
 ): Promise<Buffer> {
   let transferred = 0
   let time = Date.now()
-  return await downloadFn<Buffer>(
+  return await downloadUtil<Buffer>(
     url,
     headers,
     signal,

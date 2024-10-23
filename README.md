@@ -472,6 +472,60 @@ function getPathFromEntryAsar(...paths: string[]): string
  * @param callback callback function
  */
 function handleUnexpectedErrors(callback: (err: unknown) => void): void
+/**
+ * Safe get value from header
+ * @param headers response header
+ * @param key target header key
+ */
+function getHeader(headers: Record<string, Arrayable<string>>, key: any): any
+function downloadUtil<T>(
+  url: string,
+  headers: Record<string, any>,
+  signal: AbortSignal,
+  onResponse: (
+    resp: IncomingMessage,
+    resolve: (data: T) => void,
+    reject: (e: any) => void
+  ) => void
+): Promise<T>
+/**
+ * Default function to download json and parse to UpdateJson
+ * @param url target url
+ * @param headers extra headers
+ * @param signal abort signal
+ * @param resolveData on resolve
+ */
+function defaultDownloadJSON<T>(
+  url: string,
+  headers: Record<string, any>,
+  signal: AbortSignal,
+  resolveData?: ResolveDataFn
+): Promise<T>
+/**
+ * Default function to download json and parse to UpdateJson
+ * @param url target url
+ * @param headers extra headers
+ * @param signal abort signal
+ */
+function defaultDownloadUpdateJSON(
+  url: string,
+  headers: Record<string, any>,
+  signal: AbortSignal
+): Promise<UpdateJSON>
+/**
+ * Default function to download asar buffer,
+ * get total size from `Content-Length` header
+ * @param url target url
+ * @param headers extra headers
+ * @param signal abort signal
+ * @param onDownloading on downloading callback
+ */
+function defaultDownloadAsar(
+  url: string,
+  headers: Record<string, any>,
+  signal: AbortSignal,
+  onDownloading?: (progress: DownloadingInfo) => void
+): Promise<Buffer>
 ```
 
 ### Types
@@ -925,15 +979,14 @@ export interface GeneratorOverrideFunctions {
     version: string
   ) => Promisable<string>
   /**
-   * Custom generate version json function
+   * Custom generate update json function
    * @param existingJson The existing JSON object.
    * @param buffer file buffer
    * @param signature generated signature
    * @param version current version
    * @param minVersion The minimum version
-   * @returns The updated version json
    */
-  generateVersionJson?: (
+  generateUpdateJson?: (
     existingJson: UpdateJSON,
     signature: string,
     version: string,
