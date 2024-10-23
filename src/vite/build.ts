@@ -26,7 +26,7 @@ export async function buildAsar({
   return buf
 }
 
-export async function buildVersion(
+export async function buildUpdateJson(
   {
     versionPath,
     privateKey,
@@ -34,7 +34,7 @@ export async function buildVersion(
     version,
     minimumVersion,
     generateSignature,
-    generateVersionJson,
+    generateUpdateJson,
   }: BuildVersionOption,
   asarBuffer: Buffer,
 ): Promise<void> {
@@ -61,13 +61,13 @@ export async function buildVersion(
 
   const sig = await generateSignature(asarBuffer, privateKey, cert, version)
 
-  _json = await generateVersionJson(_json, sig, version, minimumVersion)
+  _json = await generateUpdateJson(_json, sig, version, minimumVersion)
   if (!isUpdateJSON(_json)) {
-    throw new Error('Invalid version info')
+    throw new Error('Invalid update json')
   }
 
   fs.writeFileSync(versionPath, JSON.stringify(_json, null, 2))
-  log.info(`build version info to '${versionPath}'`, { timestamp: true })
+  log.info(`build update json to '${versionPath}'`, { timestamp: true })
 }
 
 export async function buildEntry(

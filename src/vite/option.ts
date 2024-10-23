@@ -28,7 +28,7 @@ export interface BuildVersionOption {
   cert: string
   versionPath: string
   generateSignature: Exclude<GeneratorOverrideFunctions['generateSignature'], undefined>
-  generateVersionJson: Exclude<GeneratorOverrideFunctions['generateVersionJson'], undefined>
+  generateUpdateJson: Exclude<GeneratorOverrideFunctions['generateUpdateJson'], undefined>
 }
 
 export interface BuildEntryOption {
@@ -133,7 +133,7 @@ export interface GeneratorOverrideFunctions {
    * Custom signature generate function
    * @param buffer file buffer
    * @param privateKey private key
-   * @param cert certificate string, **EOL must be '\n'**
+   * @param cert certificate string, **EOL must be `\n`**
    * @param version current version
    */
   generateSignature?: (
@@ -143,7 +143,7 @@ export interface GeneratorOverrideFunctions {
     version: string
   ) => Promisable<string>
   /**
-   * Custom generate version json function
+   * Custom generate update json function
    * @param existingJson The existing JSON object.
    * @param buffer file buffer
    * @param signature generated signature
@@ -151,7 +151,7 @@ export interface GeneratorOverrideFunctions {
    * @param minVersion The minimum version
    * @returns The updated version json
    */
-  generateVersionJson?: (
+  generateUpdateJson?: (
     existingJson: UpdateJSON,
     signature: string,
     version: string,
@@ -301,7 +301,7 @@ export function parseOptions(
     overrideGenerator: {
       generateGzipFile = defaultZipFile,
       generateSignature = defaultSignature,
-      generateVersionJson = defaultVersionJsonGenerator,
+      generateUpdateJson: generateVersionJson = defaultVersionJsonGenerator,
     } = {},
   } = options
   const buildAsarOption: BuildAsarOption = {
@@ -351,7 +351,7 @@ export function parseOptions(
     cert,
     versionPath,
     generateSignature,
-    generateVersionJson,
+    generateUpdateJson: generateVersionJson,
   }
 
   return { buildAsarOption, buildEntryOption, buildVersionOption, postBuild, cert }

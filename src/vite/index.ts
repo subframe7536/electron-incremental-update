@@ -10,7 +10,7 @@ import { mergeConfig, normalizePath } from 'vite'
 import { startup } from 'vite-plugin-electron'
 import { notBundle } from 'vite-plugin-electron/plugin'
 import ElectronSimple from 'vite-plugin-electron/simple'
-import { buildAsar, buildEntry, buildVersion } from './build'
+import { buildAsar, buildEntry, buildUpdateJson } from './build'
 import { id, log } from './constant'
 import { parseOptions } from './option'
 import { copyAndSkipIfExist } from './utils'
@@ -400,7 +400,7 @@ export async function electronWithUpdater(
                 if (!buildVersionJson && !isCI) {
                   log.warn('No `buildVersionJson` option setup, skip build version json. Only build in CI by default', { timestamp: true })
                 } else {
-                  await buildVersion(buildVersionOption, buffer)
+                  await buildUpdateJson(buildVersionOption, buffer)
                 }
               },
             },
