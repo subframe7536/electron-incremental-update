@@ -1,7 +1,7 @@
-import type { DownloadingInfo, UpdateInfoWithURL, UpdateJSONWithURL, URLHandler } from './types'
+import type { DownloadingInfo, UpdateInfoWithURL, URLHandler } from './types'
 import { URL } from 'node:url'
+import { defaultDownloadAsar, defaultDownloadUpdateJSON } from '../utils/download'
 import { BaseProvider } from './base'
-import { defaultDownloadAsar, defaultDownloadUpdateJSON } from './download'
 
 export interface GitHubProviderOptions {
   /**
@@ -33,7 +33,7 @@ export interface GitHubProviderOptions {
   urlHandler?: URLHandler
 }
 
-export class GitHubProvider extends BaseProvider {
+export class GitHubProviderr<T extends UpdateInfoWithURL = UpdateInfoWithURL> extends BaseProvider<T> {
   public name = 'GithubProvider'
   private options: GitHubProviderOptions
   /**
@@ -75,7 +75,7 @@ export class GitHubProvider extends BaseProvider {
   /**
    * @inheritdoc
    */
-  public async downloadJSON(name: string, versionPath: string, signal: AbortSignal): Promise<UpdateJSONWithURL> {
+  public async downloadJSON(name: string, versionPath: string, signal: AbortSignal): Promise<T> {
     const { beta, version, ...info } = await defaultDownloadUpdateJSON(
       await this.parseURL(`raw/${this.options.branch}/${versionPath}`),
       this.getHeaders('json'),
@@ -91,7 +91,7 @@ export class GitHubProvider extends BaseProvider {
         ...beta,
         url: await getURL(beta.version),
       },
-    }
+    } as unknown as T
   }
 
   /**

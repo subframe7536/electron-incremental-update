@@ -3,7 +3,7 @@ import { defaultVerifySignature } from '../utils/crypto'
 import { defaultIsLowerVersion } from '../utils/version'
 import { defaultUnzipFile } from '../utils/zip'
 
-export abstract class BaseProvider implements IProvider {
+export abstract class BaseProvider<T extends UpdateInfoWithURL = UpdateInfoWithURL> implements IProvider<T> {
   public name = 'BaseProvider'
   /**
    * @inheritdoc
@@ -21,7 +21,7 @@ export abstract class BaseProvider implements IProvider {
   /**
    * @inheritdoc
    */
-  public abstract downloadJSON(name: string, versionPath: string, signal: AbortSignal): Promise<UpdateJSONWithURL>
+  public abstract downloadJSON(name: string, versionPath: string, signal: AbortSignal): Promise<T>
 
   /**
    * @inheritdoc

@@ -1,7 +1,7 @@
 import type { Arrayable } from '@subframe7536/type-utils'
-import type { OnDownloading } from './types'
+import type { DownloadingInfo } from '../provider/types'
 import electron, { type IncomingMessage } from 'electron'
-import { isUpdateJSON, type UpdateJSON } from '../utils/version'
+import { isUpdateJSON, type UpdateJSON } from './version'
 
 /**
  * Safe get value from header
@@ -116,7 +116,7 @@ export async function defaultDownloadAsar(
   url: string,
   headers: Record<string, any>,
   signal: AbortSignal,
-  onDownloading?: OnDownloading,
+  onDownloading?: (progress: DownloadingInfo) => void,
 ): Promise<Buffer> {
   let transferred = 0
   let time = Date.now()

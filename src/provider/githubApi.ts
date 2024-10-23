@@ -1,7 +1,7 @@
-import type { DownloadingInfo, UpdateInfoWithURL, UpdateJSONWithURL, URLHandler } from './types'
+import type { DownloadingInfo, UpdateInfoWithURL, URLHandler } from './types'
 import { URL } from 'node:url'
+import { defaultDownloadAsar, defaultDownloadJSON, defaultDownloadUpdateJSON } from '../utils/download'
 import { BaseProvider } from './base'
-import { defaultDownloadAsar, defaultDownloadJSON, defaultDownloadUpdateJSON } from './download'
 
 export interface GitHubApiProviderOptions {
   /**
@@ -34,7 +34,7 @@ type ReleaseApiResult = {
   }[]
 }[]
 const ERROR_MSG = 'Cannot find UpdateJSON in latest release'
-export class GitHubApiProvider extends BaseProvider {
+export class GitHubApiProviderr<T extends UpdateInfoWithURL = UpdateInfoWithURL> extends BaseProvider<T> {
   public name = 'GithubApiProvider'
   private options: GitHubApiProviderOptions
   /**
@@ -75,7 +75,7 @@ export class GitHubApiProvider extends BaseProvider {
   /**
    * @inheritdoc
    */
-  public async downloadJSON(name: string, versionPath: string, signal: AbortSignal): Promise<UpdateJSONWithURL> {
+  public async downloadJSON(name: string, versionPath: string, signal: AbortSignal): Promise<T> {
     const basename = versionPath.slice(versionPath.lastIndexOf('/') + 1)
     const data = await defaultDownloadJSON<ReleaseApiResult>(
       await this.parseURL(`https://api.github.com/repos/${this.options.user}/${this.options.repo}/releases?per_page=1`),
@@ -110,7 +110,7 @@ export class GitHubApiProvider extends BaseProvider {
         ...beta,
         url: await getURL(beta.version),
       },
-    }
+    } as unknown as T
   }
 
   /**

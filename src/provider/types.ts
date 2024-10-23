@@ -4,8 +4,6 @@ import type { UpdateInfo } from '../utils/version'
 
 export type UpdateInfoWithURL = UpdateInfo & { url: string }
 
-export type OnDownloading = (progress: DownloadingInfo) => void
-
 export interface DownloadingInfo {
   /**
    * Download buffer delta

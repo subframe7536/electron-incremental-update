@@ -1,4 +1,5 @@
 export * from './crypto'
+export * from './download'
 export * from './electron'
 export * from './version'
 export * from './zip'
