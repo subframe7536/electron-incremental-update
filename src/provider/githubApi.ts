@@ -34,7 +34,7 @@ type ReleaseApiResult = {
   }[]
 }[]
 const ERROR_MSG = 'Cannot find UpdateJSON in latest release'
-export class GitHubApiProviderr<T extends UpdateInfoWithURL = UpdateInfoWithURL> extends BaseProvider<T> {
+export class GitHubApiProvider<T extends UpdateInfoWithURL = UpdateInfoWithURL> extends BaseProvider<T> {
   public name = 'GithubApiProvider'
   private options: GitHubApiProviderOptions
   /**

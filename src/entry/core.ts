@@ -143,7 +143,7 @@ export async function createElectronApp(
       require(mainPath)(updaterInstance)
     }
   } catch (error) {
-    logger?.error('startup error', error)
+    logger?.error('startup error, exit', error)
     onStartError?.(error, logger)
     electron.app.quit()
   }

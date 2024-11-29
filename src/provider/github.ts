@@ -33,7 +33,7 @@ export interface GitHubProviderOptions {
   urlHandler?: URLHandler
 }
 
-export class GitHubProviderr<T extends UpdateInfoWithURL = UpdateInfoWithURL> extends BaseProvider<T> {
+export class GitHubProvider<T extends UpdateInfoWithURL = UpdateInfoWithURL> extends BaseProvider<T> {
   public name = 'GithubProvider'
   private options: GitHubProviderOptions
   /**
