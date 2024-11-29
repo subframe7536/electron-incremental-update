@@ -238,3 +238,15 @@ export function handleUnexpectedErrors(callback: (err: unknown) => void): void {
   process.on('uncaughtException', callback)
   process.on('unhandledRejection', callback)
 }
+
+export function reloadOnPreloadScriptChanged(): void {
+  if (isDev) {
+    process.on('message', (msg) => {
+      if (msg === 'electron-vite&type=hot-reload') {
+        for (const window of electron.BrowserWindow.getAllWindows()) {
+          window.reload()
+        }
+      }
+    })
+  }
+}
