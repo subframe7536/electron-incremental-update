@@ -300,7 +300,7 @@ export function parseOptions(
     overrideGenerator: {
       generateGzipFile = defaultZipFile,
       generateSignature = defaultSignature,
-      generateUpdateJson: generateVersionJson = defaultVersionJsonGenerator,
+      generateUpdateJson = defaultVersionJsonGenerator,
     } = {},
   } = options
   const buildAsarOption: BuildAsarOption = {
@@ -350,7 +350,7 @@ export function parseOptions(
     cert,
     versionPath,
     generateSignature,
-    generateUpdateJson: generateVersionJson,
+    generateUpdateJson,
   }
 
   return { buildAsarOption, buildEntryOption, buildVersionOption, postBuild, cert }
