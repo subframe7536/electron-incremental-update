@@ -197,19 +197,6 @@ export default startupWithUpdater((updater) => {
   updater.onDownloading = ({ percent }) => {
     console.log(percent)
   }
-  updater.logger = console
-  updater.receiveBeta = true
-  // setup provider later
-  updater.provider = new GitHubProvider({
-    user: 'yourname',
-    repo: 'electron',
-    // setup url handler
-    urlHandler: (url) => {
-      url.hostname = 'mirror.ghproxy.com'
-      url.pathname = `https://github.com${url.pathname}`
-      return url
-    }
-  })
 
   updater.on('update-available', async ({ version }) => {
     const { response } = await dialog.showMessageBox({
@@ -222,16 +209,47 @@ export default startupWithUpdater((updater) => {
     }
     await updater.downloadUpdate()
   })
+
   updater.on('update-not-available', (code, reason, info) => console.log(code, reason, info))
+
   updater.on('download-progress', (data) => {
     console.log(data)
     main.send(BrowserWindow.getAllWindows()[0], 'msg', data)
   })
+
   updater.on('update-downloaded', () => {
     updater.quitAndInstall()
   })
+
   updater.checkForUpdates()
 })
+```
+
+#### Dynamicly setup `UpdateProvider`
+
+```ts
+updater.provider = new GitHubProvider({
+  user: 'yourname',
+  repo: 'electron',
+  // setup url handler
+  urlHandler: (url) => {
+    url.hostname = 'mirror.ghproxy.com'
+    url.pathname = `https://github.com${url.pathname}`
+    return url
+  }
+})
+```
+
+#### Custom logger
+
+```ts
+updater.logger = console
+```
+
+#### Setup Beta Channel
+
+```ts
+updater.receiveBeta = true
 ```
 
 ### Use Native Modules
@@ -240,7 +258,7 @@ To reduce production size, it is recommended that all the **native modules** sho
 
 If you are using `electron-builder` to build distributions, all the native modules with its **large relavent `node_modiles`** will be packaged into `app.asar` by default.
 
-Luckily, `Esbuild` can bundle all the dependencies. Just follow the steps:
+Luckily, `vite` can bundle all the dependencies. Just follow the steps:
 
 1. setup `nativeModuleEntryMap` option
 2. Manually copy the native binaries in `postBuild` callback
