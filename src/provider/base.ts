@@ -1,4 +1,4 @@
-import type { DownloadingInfo, IProvider, UpdateInfoWithURL, UpdateJSONWithURL } from './types'
+import type { DownloadingInfo, IProvider, UpdateInfoWithURL } from './types'
 import { defaultVerifySignature } from '../utils/crypto'
 import { defaultIsLowerVersion } from '../utils/version'
 import { defaultUnzipFile } from '../utils/zip'
