@@ -60,27 +60,32 @@
     "esbuild": "*"
   },
   "dependencies": {
-    "@babel/core": "^7.26.0",
+    "@babel/core": "^7.26.7",
     "@babel/plugin-transform-arrow-functions": "^7.25.9",
     "@babel/plugin-transform-template-literals": "^7.25.9",
     "@subframe7536/type-utils": "^0.1.6",
     "ci-info": "^4.1.0",
-    "local-pkg": "^0.5.1",
+    "local-pkg": "^1.0.0",
     "magic-string": "^0.30.17",
     "selfsigned": "^2.4.1",
     "vite-plugin-electron": "^0.29.0"
   },
   "devDependencies": {
-    "@subframe7536/eslint-config": "^1.0.0",
+    "@subframe7536/eslint-config": "^1.1.8",
     "@types/babel__core": "^7.20.5",
-    "@types/node": "^20.17.10",
-    "bumpp": "^9.9.1",
-    "electron": "32.2.6",
-    "eslint": "^9.17.0",
-    "tsup": "^8.3.5",
-    "typescript": "^5.7.2",
-    "vite": "^6.0.3",
+    "@types/node": "^20.17.17",
+    "bumpp": "^10.0.1",
+    "electron": "34.0.2",
+    "eslint": "^9.19.0",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.11",
     "vite-plugin-electron": "^0.29.0",
-    "vitest": "^2.1.8"
+    "vitest": "^3.0.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "is-core-module": "npm:@nolyfill/is-core-module@^1"
+    }
   }
 }
