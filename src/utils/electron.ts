@@ -160,6 +160,7 @@ export function loadPage(win: BrowserWindow, htmlFilePath = 'index.html'): void 
 
 declare const __FONT_CSS__: string
 declare const __SCROLLBAR_CSS__: string
+declare const __JS__: string
 
 interface BeautifyDevToolsOptions {
   /**
@@ -180,17 +181,18 @@ interface BeautifyDevToolsOptions {
  * Beautify devtools' font and scrollbar
  * @param win target window
  * @param options sans font family, mono font family and scrollbar
+ * @see https://github.com/electron/electron/issues/42055
  */
 export function beautifyDevTools(win: BrowserWindow, options: BeautifyDevToolsOptions): void {
   const { mono, sans, scrollbar = true } = options
-  win.webContents.on('devtools-opened', () => {
+  win.webContents.on('devtools-opened', async () => {
     // eslint-disable-next-line prefer-template
-    let css = `:root{--sans: ${sans};--mono: ${mono}}` + __FONT_CSS__
+    let css = `:root{--sans:${sans};--mono:${mono}}` + __FONT_CSS__
     if (scrollbar) {
       css += __SCROLLBAR_CSS__
     }
-    const js = `let overriddenStyle=document.createElement('style');overriddenStyle.innerHTML='${css}';document.body.append(overriddenStyle);document.body.classList.remove('platform-windows','platform-mac','platform-linux');`
-    win?.webContents.devToolsWebContents?.executeJavaScript(js)
+    const js = `${__JS__};run(\`${css}\`)`
+    await win?.webContents.devToolsWebContents?.executeJavaScript(js)
   })
 }
 /**

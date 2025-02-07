@@ -5,12 +5,16 @@ import { defineConfig, type Options } from 'tsup'
 function getConfig(): Options[] {
   rmSync('./dist', { recursive: true, force: true })
   const fontCSS = transformSync(
-    readFileSync('./src/utils/devtoolsCSS/font.css', 'utf-8'),
+    readFileSync('./src/utils/devtools/font.css', 'utf-8'),
     { minify: true, loader: 'css' },
   )
   const scrollbarCSS = transformSync(
-    readFileSync('./src/utils/devtoolsCSS/scrollbar.css', 'utf-8'),
+    readFileSync('./src/utils/devtools/scrollbar.css', 'utf-8'),
     { minify: true, loader: 'css' },
+  )
+  const JS = transformSync(
+    readFileSync('./src/utils/devtools/js.ts', 'utf-8'),
+    { minify: true, loader: 'ts' },
   )
   return [
     {
@@ -26,6 +30,7 @@ function getConfig(): Options[] {
       define: {
         __FONT_CSS__: JSON.stringify(fontCSS?.code.replace(/\n/g, '') || ''),
         __SCROLLBAR_CSS__: JSON.stringify(scrollbarCSS?.code.replace(/\n/g, '') || ''),
+        __JS__: JSON.stringify(JS?.code.replace(/\n/g, '') || ''),
       },
     },
     {
