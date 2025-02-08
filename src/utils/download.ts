@@ -20,17 +20,22 @@ export function getHeader(headers: Record<string, Arrayable<string>>, key: any):
 export async function downloadUtil<T>(
   url: string,
   headers: Record<string, any>,
-  signal: AbortSignal,
-  onResponse: (resp: IncomingMessage, resolve: (data: T) => void, reject: (e: any) => void) => void,
+  onResponse: (req: Electron.ClientRequest, resp: IncomingMessage, resolve: (data: T) => void, reject: (e: any) => void) => void,
 ): Promise<T> {
   await electron.app.whenReady()
   return new Promise((resolve, reject) => {
-    const request = electron.net.request({ url, method: 'GET', redirect: 'follow', headers, cache: 'no-cache' })
-    signal.addEventListener('abort', () => request.abort(), { once: true })
+    /// keep-sorted
+    const request = electron.net.request({
+      cache: 'no-cache',
+      headers,
+      method: 'GET',
+      redirect: 'follow',
+      url,
+    })
     request.on('response', (resp) => {
-      resp.on('aborted', () => reject(new Error('aborted')))
-      resp.on('error', () => reject(new Error('download error')))
-      onResponse(resp, resolve, reject)
+      resp.on('aborted', () => reject(new Error('Aborted')))
+      resp.on('error', reject)
+      onResponse(request, resp, resolve, reject)
     })
     request.on('error', reject)
     request.end()
@@ -70,11 +75,14 @@ export async function defaultDownloadJSON<T>(
   return await downloadUtil<T>(
     url,
     headers,
-    signal,
-    (resp, resolve, reject) => {
+    (request, resp, resolve, reject) => {
       let data = ''
       resp.on('data', chunk => (data += chunk))
       resp.on('end', () => resolveData(data, resolve, reject))
+      signal.addEventListener('abort', () => {
+        request.abort()
+        data = null!
+      }, { once: true })
     },
   )
 }
@@ -123,25 +131,30 @@ export async function defaultDownloadAsar(
   return await downloadUtil<Buffer>(
     url,
     headers,
-    signal,
-    (resp, resolve) => {
+    (request, resp, resolve) => {
       const total = +getHeader(resp.headers, 'content-length') || -1
-      const data: Buffer[] = []
+      let data: Buffer[] = []
       resp.on('data', (chunk) => {
         const delta = chunk.length
         transferred += delta
         const current = Date.now()
+        /// keep-sorted
         onDownloading?.({
+          bps: delta / (current - time),
+          delta,
           percent: total > 0 ? +(transferred / total).toFixed(2) * 100 : -1,
           total,
           transferred,
-          delta,
-          bps: delta / (current - time),
         })
         time = current
         data.push(chunk)
       })
       resp.on('end', () => resolve(Buffer.concat(data)))
+      signal.addEventListener('abort', () => {
+        request.abort()
+        data.length = 0
+        data = null!
+      }, { once: true })
     },
   )
 }

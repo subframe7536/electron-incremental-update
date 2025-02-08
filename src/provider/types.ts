@@ -46,7 +46,7 @@ export interface IProvider<T extends UpdateInfoWithURL = UpdateInfoWithURL> {
    */
   downloadJSON: (name: string, versionPath: string, signal: AbortSignal) => Promise<T>
   /**
-   * Download update asar
+   * Download update asar buffer
    * @param updateInfo existing update info
    * @param signal abort signal
    * @param onDownloading hook for on downloading
