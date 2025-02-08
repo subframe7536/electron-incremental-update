@@ -37,5 +37,5 @@ function run(css: string): void {
   }
 
   // Cleanup
-  document.onclose = () => observer.disconnect()
+  window.onbeforeunload = () => observer.disconnect()
 }
