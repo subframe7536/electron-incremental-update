@@ -60,9 +60,9 @@
     "esbuild": "*"
   },
   "dependencies": {
-    "@babel/core": "^7.26.7",
+    "@babel/core": "^7.26.9",
     "@babel/plugin-transform-arrow-functions": "^7.25.9",
-    "@babel/plugin-transform-template-literals": "^7.25.9",
+    "@babel/plugin-transform-template-literals": "^7.26.8",
     "@subframe7536/type-utils": "^0.1.6",
     "ci-info": "^4.1.0",
     "local-pkg": "^1.0.0",
@@ -73,19 +73,23 @@
   "devDependencies": {
     "@subframe7536/eslint-config": "^1.1.8",
     "@types/babel__core": "^7.20.5",
-    "@types/node": "^20.17.17",
-    "bumpp": "^10.0.1",
-    "electron": "34.0.2",
-    "eslint": "^9.19.0",
+    "@types/node": "^20.17.19",
+    "bumpp": "^10.0.3",
+    "electron": "34.2.0",
+    "eslint": "^9.20.1",
     "tsup": "^8.3.6",
     "typescript": "^5.7.3",
-    "vite": "^6.0.11",
+    "vite": "^6.1.0",
     "vite-plugin-electron": "^0.29.0",
     "vitest": "^3.0.5"
   },
   "pnpm": {
     "overrides": {
       "is-core-module": "npm:@nolyfill/is-core-module@^1"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
   }
 }
