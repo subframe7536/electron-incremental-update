@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { defaultIsLowerVersion } from '../src/utils/version'
 
 describe('compareVersionDefault', () => {

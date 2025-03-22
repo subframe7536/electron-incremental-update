@@ -1,8 +1,11 @@
-import type { Promisable } from '@subframe7536/type-utils'
 import type { Logger, UpdaterOption } from './types'
+import type { Promisable } from '@subframe7536/type-utils'
+
 import fs from 'node:fs'
 import path from 'node:path'
+
 import electron from 'electron'
+
 import { getPathFromAppNameAsar, isDev } from '../utils/electron'
 import { Updater } from './updater'
 

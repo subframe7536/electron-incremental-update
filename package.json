@@ -60,32 +60,37 @@
     "esbuild": "*"
   },
   "dependencies": {
-    "@babel/core": "^7.26.7",
+    "@babel/core": "^7.26.10",
     "@babel/plugin-transform-arrow-functions": "^7.25.9",
-    "@babel/plugin-transform-template-literals": "^7.25.9",
+    "@babel/plugin-transform-template-literals": "^7.26.8",
+    "@rgrove/parse-xml": "^4.2.0",
     "@subframe7536/type-utils": "^0.1.6",
-    "ci-info": "^4.1.0",
-    "local-pkg": "^1.0.0",
+    "ci-info": "^4.2.0",
+    "local-pkg": "^1.1.1",
     "magic-string": "^0.30.17",
     "selfsigned": "^2.4.1",
     "vite-plugin-electron": "^0.29.0"
   },
   "devDependencies": {
-    "@subframe7536/eslint-config": "^1.1.8",
+    "@subframe7536/eslint-config": "^1.2.3",
     "@types/babel__core": "^7.20.5",
-    "@types/node": "^20.17.17",
-    "bumpp": "^10.0.1",
-    "electron": "34.0.2",
-    "eslint": "^9.19.0",
-    "tsup": "^8.3.6",
-    "typescript": "^5.7.3",
-    "vite": "^6.0.11",
+    "@types/node": "^22.13.11",
+    "bumpp": "^10.1.0",
+    "electron": "34.2.0",
+    "eslint": "^9.23.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.2",
     "vite-plugin-electron": "^0.29.0",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.9"
   },
   "pnpm": {
     "overrides": {
-      "is-core-module": "npm:@nolyfill/is-core-module@^1"
-    }
+      "is-core-module": "npm:@nolyfill/is-core-module@^1.0.39"
+    },
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
   }
 }

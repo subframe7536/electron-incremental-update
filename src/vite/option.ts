@@ -1,9 +1,12 @@
+import type { UpdateJSON } from '../utils/version'
+import type { DistinguishedName } from './key'
 import type { Promisable } from '@subframe7536/type-utils'
 import type { InlineConfig } from 'vite'
+
 import { defaultSignature } from '../utils/crypto'
-import { defaultVersionJsonGenerator, type UpdateJSON } from '../utils/version'
+import { defaultVersionJsonGenerator } from '../utils/version'
 import { defaultZipFile } from '../utils/zip'
-import { type DistinguishedName, parseKeys } from './key'
+import { parseKeys } from './key'
 
 export interface PKG {
   name: string

@@ -1,15 +1,18 @@
-import type { BuildOptions, InlineConfig, Plugin, PluginOption } from 'vite'
-import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
 import type { BytecodeOptions } from './bytecode'
 import type { ElectronUpdaterOptions, PKG } from './option'
+import type { BuildOptions, InlineConfig, Plugin, PluginOption } from 'vite'
+import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
+
 import fs from 'node:fs'
 import path from 'node:path'
+
 import { isCI } from 'ci-info'
 import { getPackageInfoSync, loadPackageJSON } from 'local-pkg'
 import { mergeConfig, normalizePath } from 'vite'
 import { startup } from 'vite-plugin-electron'
 import { notBundle } from 'vite-plugin-electron/plugin'
 import ElectronSimple from 'vite-plugin-electron/simple'
+
 import { buildAsar, buildEntry, buildUpdateJson } from './build'
 import { id, log } from './constant'
 import { parseOptions } from './option'

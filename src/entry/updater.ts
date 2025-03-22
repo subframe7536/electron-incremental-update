@@ -1,4 +1,5 @@
 import type { DownloadingInfo, IProvider, UpdateInfoWithURL, UpdateJSONWithURL } from '../provider/types'
+import type { UpdateInfo, UpdateJSON } from '../utils/version'
 import type {
   Logger,
   UpdateInfoWithExtraVersion,
@@ -6,9 +7,12 @@ import type {
   UpdaterOption,
   UpdaterUnavailableCode,
 } from './types'
+
 import { EventEmitter } from 'node:events'
 import fs from 'node:fs'
+
 import electron from 'electron'
+
 import {
   getAppVersion,
   getEntryVersion,
@@ -16,7 +20,7 @@ import {
   isDev,
   restartApp,
 } from '../utils/electron'
-import { isUpdateJSON, type UpdateInfo, type UpdateJSON } from '../utils/version'
+import { isUpdateJSON } from '../utils/version'
 import { UpdaterError } from './types'
 
 /**

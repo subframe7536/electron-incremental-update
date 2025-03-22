@@ -1,4 +1,5 @@
 import MagicString from 'magic-string'
+
 import { shim } from './constant'
 
 // eslint-disable-next-line regexp/no-super-linear-backtracking

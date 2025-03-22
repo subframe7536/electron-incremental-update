@@ -1,4 +1,5 @@
 import type { Plugin } from 'vite'
+
 import { esmId } from '../constant'
 import { findStaticImports, insertCJSShim } from './utils'
 

@@ -1,11 +1,16 @@
+import type { UpdateJSON } from '../utils/version'
 import type { BytecodeOptions } from './bytecode'
 import type { BuildAsarOption, BuildEntryOption, BuildVersionOption } from './option'
+import type { InlineConfig } from 'vite'
+
 import fs from 'node:fs'
 import path from 'node:path'
+
 import Asar from '@electron/asar'
-import { type InlineConfig, mergeConfig } from 'vite'
+import { mergeConfig } from 'vite'
 import { build } from 'vite-plugin-electron'
-import { isUpdateJSON, type UpdateJSON } from '../utils/version'
+
+import { isUpdateJSON } from '../utils/version'
 import { log } from './constant'
 import { readableSize } from './utils'
 

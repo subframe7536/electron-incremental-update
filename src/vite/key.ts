@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
+
 import { generate } from 'selfsigned'
+
 import { log } from './constant'
 
 export interface DistinguishedName {

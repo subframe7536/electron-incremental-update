@@ -1,5 +1,6 @@
 const { writeFileSync, mkdirSync } = require('node:fs')
 const { relative, join } = require('node:path/posix')
+
 const { exports: exp } = require('./package.json')
 
 console.log('fix cjs')

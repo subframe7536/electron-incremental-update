@@ -1,9 +1,11 @@
 import cp from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+
 import * as babel from '@babel/core'
 import { getPackageInfoSync } from 'local-pkg'
 import MagicString from 'magic-string'
+
 import { parseVersion } from '../../utils/version'
 import { bytecodeLog } from '../constant'
 import { bytecodeGeneratorScript } from './code'

@@ -1,8 +1,12 @@
 import type { Promisable } from '@subframe7536/type-utils'
+import type { Plugin, ResolvedConfig } from 'vite'
+
 import fs from 'node:fs'
 import path from 'node:path'
+
 import MagicString from 'magic-string'
-import { createFilter, normalizePath, type Plugin, type ResolvedConfig } from 'vite'
+import { createFilter, normalizePath } from 'vite'
+
 import { bytecodeId, bytecodeLog } from '../constant'
 import { readableSize } from '../utils'
 import { bytecodeModuleLoaderCode } from './code'

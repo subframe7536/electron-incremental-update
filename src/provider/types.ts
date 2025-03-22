@@ -1,6 +1,6 @@
+import type { UpdateInfo } from '../utils/version'
 import type { Promisable } from '@subframe7536/type-utils'
 import type { URL } from 'node:url'
-import type { UpdateInfo } from '../utils/version'
 
 export type UpdateInfoWithURL = UpdateInfo & { url: string }
 

@@ -1,7 +1,11 @@
-import type { Arrayable } from '@subframe7536/type-utils'
 import type { DownloadingInfo } from '../provider/types'
-import electron, { type IncomingMessage } from 'electron'
-import { isUpdateJSON, type UpdateJSON } from './version'
+import type { UpdateJSON } from './version'
+import type { Arrayable } from '@subframe7536/type-utils'
+import type { IncomingMessage } from 'electron'
+
+import electron from 'electron'
+
+import { isUpdateJSON } from './version'
 
 /**
  * Safe get value from header
