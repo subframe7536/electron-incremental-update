@@ -190,7 +190,12 @@ export function bytecodePlugin(
                 }
 
                 const bytecodeLoaderBlock = getBytecodeLoaderBlock(chunk.fileName)
-                _code = hasBytecodeMoudle ? _code.replace(useStrict, `${useStrict}\n${bytecodeLoaderBlock}`) : _code
+                _code = hasBytecodeMoudle
+                  ? _code.replace(
+                      new RegExp(`(${useStrict})|("use strict";)`),
+                      `${useStrict}\n${bytecodeLoaderBlock}`,
+                    )
+                  : _code
               }
               fs.writeFileSync(chunkFilePath, _code)
             }
