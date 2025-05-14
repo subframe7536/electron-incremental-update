@@ -20,8 +20,10 @@ import { copyAndSkipIfExist } from './utils'
 
 export { convertLiteral } from './bytecode/utils'
 export { isCI } from 'ci-info'
+export { getPackageInfo, getPackageInfoSync, loadPackageJSON, resolveModule } from 'local-pkg'
+export default electronWithUpdater
 
-type MakeRequired<T, K extends keyof T> = Exclude<T, undefined> & { [P in K]-?: T[P] }
+type MakeRequired<T, K extends keyof T> = NonNullable<T> & { [P in K]-?: T[P] }
 type ReplaceKey<
   T,
   Key extends keyof T,
@@ -34,7 +36,7 @@ type MakeRequiredAndReplaceKey<
   NewKey extends string,
 > = MakeRequired<ReplaceKey<T, K, NewKey>, NewKey>
 
-type StartupFn = Exclude<Exclude<ElectronSimpleOptions['preload'], undefined>['onstart'], undefined>
+type StartupFn = NonNullable<NonNullable<ElectronSimpleOptions['preload']>['onstart']>
 
 /**
  * Startup function for debug (see {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template})
@@ -303,7 +305,7 @@ export async function electronWithUpdater(
     __EIU_VERSION_PATH__: JSON.stringify(parseVersionPath(normalizePath(buildVersionOption.versionPath))),
   }
 
-  const _buildEntry = async (): Promise<void> => {
+  async function _buildEntry(): Promise<void> {
     await buildEntry(
       buildEntryOption,
       isESM,
@@ -313,8 +315,8 @@ export async function electronWithUpdater(
     log.info(`Build entry to '${entryOutputDirPath}'`, { timestamp: true })
   }
 
-  const _postBuild = postBuild
-    ? async () => await postBuild({
+  async function _postBuild(): Promise<void | undefined> {
+    return await postBuild?.({
       getPathFromEntryOutputDir(...paths) {
         return path.join(entryOutputDirPath, ...paths)
       },
@@ -338,7 +340,7 @@ export async function electronWithUpdater(
         }
       },
     })
-    : async () => { }
+  }
 
   let isInit = false
 
@@ -347,7 +349,7 @@ export async function electronWithUpdater(
     treeshake: true,
   }
 
-  const esmShimPlugin = isESM ? (await import('./esm/index')).esm() : undefined
+  const esmShimPlugin = isESM ? import('./esm/index').then(m => m.esm()) : undefined
 
   const electronPluginOptions: ElectronSimpleOptions = {
     main: {
@@ -368,7 +370,7 @@ export async function electronWithUpdater(
         {
           plugins: [
             !isBuild && useNotBundle ? notBundle() : undefined,
-            bytecodeOptions && await import('./bytecode').then(m => m.bytecodePlugin('main', bytecodeOptions)),
+            bytecodeOptions && import('./bytecode').then(m => m.bytecodePlugin('main', bytecodeOptions)),
             esmShimPlugin,
           ],
           build: {
@@ -388,7 +390,7 @@ export async function electronWithUpdater(
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
           plugins: [
-            bytecodeOptions && ((await import('./bytecode/index')).bytecodePlugin)('preload', bytecodeOptions),
+            bytecodeOptions && import('./bytecode/index').then(m => m.bytecodePlugin('preload', bytecodeOptions)),
             esmShimPlugin,
             {
               name: `${id}-build`,
@@ -448,7 +450,7 @@ export async function electronWithUpdater(
       apply() {
         return !isBuild
       },
-      configureServer: (server) => {
+      configureServer(server) {
         server.watcher
           .add(files)
           .on(
@@ -466,7 +468,3 @@ export async function electronWithUpdater(
 
   return [ElectronSimple(electronPluginOptions), extraHmrPlugin]
 }
-
-export default electronWithUpdater
-
-export { getPackageInfo, getPackageInfoSync, loadPackageJSON, resolveModule } from 'local-pkg'

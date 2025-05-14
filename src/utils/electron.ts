@@ -6,19 +6,19 @@ import path from 'node:path'
 import electron from 'electron'
 
 /**
- * type only entry dir path, transformed by esbuild's define
+ * type only entry dir path, transformed by vite's define
  */
 declare const __EIU_ENTRY_DIST_PATH__: string
 /**
- * type only electron dist path, transformed by esbuild's define
+ * type only electron dist path, transformed by vite's define
  */
 declare const __EIU_ELECTRON_DIST_PATH__: string
 /**
- * type only is dev, transformed by esbuild's define
+ * type only is dev, transformed by vite's define
  */
 declare const __EIU_IS_DEV__: boolean
 /**
- * type only is esmodule, transformed by esbuild's define
+ * type only is esmodule, transformed by vite's define
  */
 declare const __EIU_IS_ESM__: boolean
 

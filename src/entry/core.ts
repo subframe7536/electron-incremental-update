@@ -10,19 +10,19 @@ import { getPathFromAppNameAsar, isDev } from '../utils/electron'
 import { Updater } from './updater'
 
 /**
- * type only electron main file path, transformed by esbuild's define
+ * type only electron main file path, transformed by vite's define
  */
 declare const __EIU_MAIN_FILE__: string
 /**
- * type only electron dist path, transformed by esbuild's define
+ * type only electron dist path, transformed by vite's define
  */
 declare const __EIU_ELECTRON_DIST_PATH__: string
 /**
- * type only asar base name, transformed by esbuild's define
+ * type only asar base name, transformed by vite's define
  */
 declare const __EIU_ASAR_BASE_NAME__: string
 /**
- * type only is esmodule, transformed by esbuild's define
+ * type only is esmodule, transformed by vite's define
  */
 declare const __EIU_IS_ESM__: string
 

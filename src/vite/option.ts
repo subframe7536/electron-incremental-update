@@ -21,7 +21,7 @@ export interface BuildAsarOption {
   gzipPath: string
   electronDistPath: string
   rendererDistPath: string
-  generateGzipFile: Exclude<GeneratorOverrideFunctions['generateGzipFile'], undefined>
+  generateGzipFile: NonNullable<GeneratorOverrideFunctions['generateGzipFile']>
 }
 
 export interface BuildVersionOption {
@@ -30,8 +30,8 @@ export interface BuildVersionOption {
   privateKey: string
   cert: string
   versionPath: string
-  generateSignature: Exclude<GeneratorOverrideFunctions['generateSignature'], undefined>
-  generateUpdateJson: Exclude<GeneratorOverrideFunctions['generateUpdateJson'], undefined>
+  generateSignature: NonNullable<GeneratorOverrideFunctions['generateSignature']>
+  generateUpdateJson: NonNullable<GeneratorOverrideFunctions['generateUpdateJson']>
 }
 
 export interface BuildEntryOption {

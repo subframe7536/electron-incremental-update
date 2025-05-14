@@ -97,8 +97,8 @@ export async function buildEntry(
     },
     vite: mergeConfig<InlineConfig, InlineConfig>({
       plugins: [
-        isESM && await import('./esm').then(m => m.esm()),
-        bytecodeOptions && await import('./bytecode').then(m => m.bytecodePlugin('main', bytecodeOptions)),
+        isESM && import('./esm').then(m => m.esm()),
+        bytecodeOptions && import('./bytecode').then(m => m.bytecodePlugin('main', bytecodeOptions)),
       ],
       build: {
         sourcemap,
