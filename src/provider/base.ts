@@ -1,10 +1,10 @@
-import type { DownloadingInfo, IProvider, UpdateInfoWithURL } from './types'
+import type { DownloadingInfo, IProvider, UpdateInfoWithURL, UpdateJSONWithURL } from './types'
 
 import { defaultVerifySignature } from '../utils/crypto'
 import { defaultIsLowerVersion } from '../utils/version'
 import { defaultUnzipFile } from '../utils/zip'
 
-export abstract class BaseProvider<T extends UpdateInfoWithURL = UpdateInfoWithURL> implements IProvider<T> {
+export abstract class BaseProvider implements IProvider {
   public name = 'BaseProvider'
   /**
    * @inheritdoc
@@ -22,7 +22,7 @@ export abstract class BaseProvider<T extends UpdateInfoWithURL = UpdateInfoWithU
   /**
    * @inheritdoc
    */
-  public abstract downloadJSON(name: string, versionPath: string, signal: AbortSignal): Promise<T>
+  public abstract downloadJSON(name: string, versionPath: string, signal: AbortSignal): Promise<UpdateJSONWithURL>
 
   /**
    * @inheritdoc

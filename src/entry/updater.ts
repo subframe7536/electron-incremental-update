@@ -182,7 +182,7 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
         'UNAVAILABLE_ERROR',
       )
     }
-    const { signature, version, minimumVersion, url = '', ...rest } = this.receiveBeta ? _data.beta : _data
+    const { signature, version, minimumVersion, url, ...rest } = this.receiveBeta ? _data.beta : _data
     const info = { signature, minimumVersion, version, url }
     const extraVersionInfo = {
       signature,

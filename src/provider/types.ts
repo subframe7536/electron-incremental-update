@@ -33,7 +33,7 @@ export interface DownloadingInfo {
 
 export type UpdateJSONWithURL = UpdateInfoWithURL & { beta: UpdateInfoWithURL }
 
-export interface IProvider<T extends UpdateInfoWithURL = UpdateInfoWithURL> {
+export interface IProvider {
   /**
    * Provider name
    */
@@ -44,7 +44,7 @@ export interface IProvider<T extends UpdateInfoWithURL = UpdateInfoWithURL> {
    * @param versionPath normalized version path in project
    * @param signal abort signal
    */
-  downloadJSON: (name: string, versionPath: string, signal: AbortSignal) => Promise<T>
+  downloadJSON: (name: string, versionPath: string, signal: AbortSignal) => Promise<UpdateJSONWithURL>
   /**
    * Download update asar buffer
    * @param updateInfo existing update info
