@@ -55,7 +55,7 @@ function trimData(data: string): string {
   return data.trim().slice(0, 5e3).replace(/\s+/g, ' ')
 }
 
-const defaultResolveDataFn: ResolveDataFn = (data, resolve, reject) => {
+export const resolveJson: ResolveDataFn = (data, resolve, reject) => {
   try {
     resolve(JSON.parse(data))
   } catch {
@@ -70,11 +70,11 @@ const defaultResolveDataFn: ResolveDataFn = (data, resolve, reject) => {
  * @param signal abort signal
  * @param resolveData on resolve
  */
-export async function defaultDownloadJSON<T>(
+export async function defaultDownloadText<T>(
   url: string,
   headers: Record<string, any>,
   signal: AbortSignal,
-  resolveData: ResolveDataFn = defaultResolveDataFn,
+  resolveData: ResolveDataFn,
 ): Promise<T> {
   return await downloadUtil<T>(
     url,
@@ -97,7 +97,7 @@ export async function defaultDownloadJSON<T>(
  * @param signal abort signal
  */
 export async function defaultDownloadUpdateJSON(url: string, headers: Record<string, any>, signal: AbortSignal): Promise<UpdateJSON> {
-  return await defaultDownloadJSON<UpdateJSON>(
+  return await defaultDownloadText<UpdateJSON>(
     url,
     headers,
     signal,
