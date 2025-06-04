@@ -36,7 +36,7 @@ type MakeRequiredAndReplaceKey<
   NewKey extends string,
 > = MakeRequired<ReplaceKey<T, K, NewKey>, NewKey>
 
-type StartupFn = NonNullable<NonNullable<ElectronSimpleOptions['preload']>['onstart']>
+type StartupFn = NonNullable<NonNullable<ElectronSimpleOptions['main']>['onstart']>
 
 /**
  * Startup function for debug (see {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template})
@@ -187,6 +187,9 @@ export interface ElectronWithUpdaterOptions {
    */
   updater?: ElectronUpdaterOptions
 }
+
+const ex = startup.exit
+startup.exit = () => ex().catch(() => {})
 
 /**
  * Base on `vite-plugin-electron/simple`
