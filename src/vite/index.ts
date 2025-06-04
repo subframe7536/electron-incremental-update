@@ -430,7 +430,10 @@ export async function electronWithUpdater(
           ...electronPluginOptions,
           updater: { buildAsarOption, buildEntryOption, buildVersionOption },
         },
-        (key, value) => (((['privateKey', 'cert', 'define'].includes(key)) && !(typeof logParsedOptions === 'object' && logParsedOptions.showKeys === true)) ? '***' : value),
+        (key, value) => (((['privateKey', 'cert', 'define'].includes(key))
+          && !(typeof logParsedOptions === 'object' && logParsedOptions.showKeys === true))
+          ? '***'
+          : value),
         2,
       ),
       { timestamp: true },

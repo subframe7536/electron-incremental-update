@@ -323,7 +323,7 @@ export function parseOptions(
     overrideViteOptions,
     ignoreDynamicRequires,
     external: (source, importer, isResolved) => {
-      if (source.endsWith('.node')) {
+      if (source.endsWith('.node') || source.startsWith('node:')) {
         return false
       }
       if (!external) {
