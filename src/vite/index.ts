@@ -319,10 +319,7 @@ export async function electronWithUpdater(
       bytecodeOptions,
     )
     log.info(`Build entry to '${entryOutputDirPath}'`, { timestamp: true })
-  }
-
-  async function _postBuild(): Promise<void | undefined> {
-    return await postBuild?.({
+    await postBuild?.({
       getPathFromEntryOutputDir(...paths) {
         return path.join(entryOutputDirPath, ...paths)
       },
@@ -364,7 +361,6 @@ export async function electronWithUpdater(
         if (!isInit) {
           isInit = true
           await _buildEntry()
-          await _postBuild()
         }
         if (_main.onstart) {
           _main.onstart(args)
@@ -406,7 +402,6 @@ export async function electronWithUpdater(
               },
               async closeBundle() {
                 await _buildEntry()
-                await _postBuild()
                 const buffer = await buildAsar(buildAsarOption)
                 if (!buildVersionJson && !isCI) {
                   log.warn('No `buildVersionJson` option setup, skip build version json. Only build in CI by default', { timestamp: true })
