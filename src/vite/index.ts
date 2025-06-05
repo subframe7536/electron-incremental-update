@@ -464,10 +464,28 @@ export async function electronWithUpdater(
           .add(files)
           .on(
             'change',
-            p => files.includes(p)
-              && _buildEntry()
-                .then(() => _postBuild())
-                .then(() => startup()),
+            async (p) => {
+              if (!files.includes(p)) {
+                return
+              }
+              await _buildEntry()
+              if (_main.onstart) {
+                await _main.onstart({
+                  startup,
+                  reload: () => {
+                    // @ts-expect-error fxxk
+                    if (process.electronApp) {
+                      (server.hot || server.ws).send({ type: 'full-reload' })
+                      startup.send('electron-vite&type=hot-reload')
+                    } else {
+                      startup()
+                    }
+                  },
+                })
+              } else {
+                await startup()
+              }
+            },
           )
       },
     }
