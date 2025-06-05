@@ -271,13 +271,19 @@ export async function electronWithUpdater(
     bytecodeOptions = undefined
   }
 
+  const defaultExternal = (src: string): boolean => {
+    return src.startsWith('node:')
+      || Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}).includes(src)
+      || src === 'original-fs'
+  }
+
   const {
     buildAsarOption,
     buildEntryOption,
     buildVersionOption,
     postBuild,
     cert,
-  } = parseOptions(pkg, sourcemap, minify, updater)
+  } = parseOptions(pkg, defaultExternal, sourcemap, minify, updater)
   const { entryOutputDirPath, nativeModuleEntryMap, appEntryPath } = buildEntryOption
 
   try {
@@ -345,7 +351,7 @@ export async function electronWithUpdater(
   let isInit = false
 
   const rollupOptions: BuildOptions['rollupOptions'] = {
-    external: src => src.startsWith('node:') || Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}).includes(src) || src === 'original-fs',
+    external: defaultExternal,
     treeshake: true,
   }
 

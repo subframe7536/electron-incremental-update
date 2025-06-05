@@ -264,6 +264,7 @@ type ParseOptionReturn = {
 
 export function parseOptions(
   pkg: PKG,
+  defaultExternal: (src: string) => boolean,
   sourcemap = false,
   minify = false,
   options: ElectronUpdaterOptions = {},
@@ -323,11 +324,8 @@ export function parseOptions(
     overrideViteOptions,
     ignoreDynamicRequires,
     external: (source, importer, isResolved) => {
-      if (source.endsWith('.node') || source.startsWith('node:')) {
-        return false
-      }
       if (!external) {
-        return undefined
+        return defaultExternal(source)
       }
       if (typeof external === 'string') {
         return source === external
