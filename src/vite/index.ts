@@ -188,9 +188,6 @@ export interface ElectronWithUpdaterOptions {
   updater?: ElectronUpdaterOptions
 }
 
-const ex = startup.exit
-startup.exit = () => ex().catch(() => {})
-
 /**
  * Base on `vite-plugin-electron/simple`
  * - integrate with updater
@@ -461,12 +458,10 @@ export async function electronWithUpdater(
           .add(files)
           .on(
             'change',
-            p => files.includes(p) && _buildEntry()
-              .then(async () => {
-                await startup.exit()
-                await _postBuild()
-                await startup()
-              }),
+            p => files.includes(p)
+              && _buildEntry()
+                .then(() => _postBuild())
+                .then(() => startup()),
           )
       },
     }
