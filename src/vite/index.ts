@@ -1,5 +1,7 @@
 import type { BytecodeOptions } from './bytecode'
 import type { ElectronUpdaterOptions, PKG } from './option'
+import type { AnyFunction } from '@subframe7536/type-utils'
+import type { ChildProcessWithoutNullStreams } from 'node:child_process'
 import type { BuildOptions, InlineConfig, Plugin, PluginOption } from 'vite'
 import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
 
@@ -39,7 +41,8 @@ type MakeRequiredAndReplaceKey<
 type StartupFn = NonNullable<NonNullable<ElectronSimpleOptions['main']>['onstart']>
 
 /**
- * Startup function for debug (see {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template})
+ * Startup function for debug
+ * @see {@link https://github.com/electron-vite/electron-vite-vue/blob/main/vite.config.ts electron-vite-vue template}
  * @example
  * import { debugStartup, buildElectronPluginOptions } from 'electron-incremental-update/vite'
  * const options = buildElectronPluginOptions({
@@ -50,13 +53,44 @@ type StartupFn = NonNullable<NonNullable<ElectronSimpleOptions['main']>['onstart
  *   },
  * })
  */
-export const debugStartup: StartupFn = (args) => {
+export const debugStartup: StartupFn = async (args) => {
   if (process.env.VSCODE_DEBUG) {
     // For `.vscode/.debug.script.mjs`
     console.log('[startup] Electron App')
   } else {
-    args.startup()
+    await args.startup()
   }
+}
+
+/**
+ * Startup function to filter unwanted error message
+ * @see {@link https://github.com/electron/electron/issues/46903#issuecomment-2848483520 reference}
+ * @example
+ * import { filterErrorMessageStartup, buildElectronPluginOptions } from 'electron-incremental-update/vite'
+ * const options = buildElectronPluginOptions({
+ *   // ...
+ *   main: {
+ *     // ...
+ *     startup: args => filterErrorMessageStartup(
+ *       args,
+ *       // ignore error message when function returns false
+ *       msg => !/"code":-32601/.test(message)
+ *     )
+ *   },
+ * })
+ */
+export async function filterErrorMessageStartup(
+  args: Parameters<StartupFn>[0],
+  filter: (msg: string) => boolean,
+): Promise<void> {
+  await args.startup(undefined, { stdio: ['inherit', 'inherit', 'pipe', 'ipc'] })
+  const elec = (process as unknown as { electronApp: ChildProcessWithoutNullStreams }).electronApp
+  elec.stderr.addListener('data', (data: Buffer) => {
+    const message = data.toString()
+    if (filter(message)) {
+      console.error(message)
+    }
+  })
 }
 
 /**
@@ -71,13 +105,13 @@ export const debugStartup: StartupFn = (args) => {
  *   },
  * })
  */
-export function fixWinCharEncoding(fn: StartupFn): StartupFn {
-  return async (...args) => {
+export function fixWinCharEncoding<T extends AnyFunction>(fn: T): T {
+  return (async (...args) => {
     if (process.platform === 'win32') {
       (await import('node:child_process')).spawnSync('chcp', ['65001'])
     }
     await fn(...args)
-  }
+  }) as T
 }
 
 function getMainFileBaseName(options: ElectronWithUpdaterOptions['main']['files']): string {
@@ -363,9 +397,9 @@ export async function electronWithUpdater(
           await _buildEntry()
         }
         if (_main.onstart) {
-          _main.onstart(args)
+          await _main.onstart(args)
         } else {
-          args.startup()
+          await args.startup()
         }
       },
       vite: mergeConfig<InlineConfig, InlineConfig>(
