@@ -920,9 +920,9 @@ export interface BuildEntryOption {
    */
   ignoreDynamicRequires?: boolean
   /**
-   * `external` option in `build.rollupOptions`, external `.node` by default
+   * `external` option in `build.rollupOptions`, default is node built-in modules or native modules
    */
-  external?: string | string[] | ((source: string, importer: string | undefined, isResolved: boolean) => boolean | null | undefined | void)
+  external?: NonNullable<NonNullable<InlineConfig['build']>['rollupOptions']>['external']
   /**
    * Custom options for `vite` build
    * ```ts

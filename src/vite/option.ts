@@ -3,6 +3,8 @@ import type { DistinguishedName } from './key'
 import type { Promisable } from '@subframe7536/type-utils'
 import type { InlineConfig } from 'vite'
 
+import { builtinModules } from 'node:module'
+
 import { defaultSignature } from '../utils/crypto'
 import { defaultVersionJsonGenerator } from '../utils/version'
 import { defaultZipFile } from '../utils/zip'
@@ -69,9 +71,9 @@ export interface BuildEntryOption {
    */
   ignoreDynamicRequires?: boolean
   /**
-   * `external` option in `build.rollupOptions`, external `.node` by default
+   * `external` option in `build.rollupOptions`, default is node built-in modules or native modules
    */
-  external?: string | string[] | ((source: string, importer: string | undefined, isResolved: boolean) => boolean | null | undefined | void)
+  external?: NonNullable<NonNullable<InlineConfig['build']>['rollupOptions']>['external']
   /**
    * Custom options for `vite` build
    * ```ts
@@ -264,7 +266,6 @@ type ParseOptionReturn = {
 
 export function parseOptions(
   pkg: PKG,
-  defaultExternal: (src: string) => boolean,
   sourcemap = false,
   minify = false,
   options: ElectronUpdaterOptions = {},
@@ -279,7 +280,12 @@ export function parseOptions(
       nativeModuleEntryMap = {},
       postBuild,
       ignoreDynamicRequires = false,
-      external,
+      external = [
+        /^node:.*/,
+        /.*\.(node|dll|dylib|so)$/,
+        'original-fs',
+        ...builtinModules,
+      ],
       overrideViteOptions = {},
     } = {},
     paths: {
@@ -323,18 +329,7 @@ export function parseOptions(
     nativeModuleEntryMap,
     overrideViteOptions,
     ignoreDynamicRequires,
-    external: (source, importer, isResolved) => {
-      if (!external) {
-        return defaultExternal(source)
-      }
-      if (typeof external === 'string') {
-        return source === external
-      }
-      if (Array.isArray(external)) {
-        return external.includes(source)
-      }
-      return external(source, importer, isResolved)
-    },
+    external,
   }
   // generate keys or get from file
   const { privateKey, cert } = parseKeys({
