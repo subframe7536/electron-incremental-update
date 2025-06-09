@@ -87,7 +87,7 @@ export async function filterErrorMessageStartup(
 ): Promise<void> {
   await args.startup(undefined, { stdio: ['inherit', 'pipe', 'pipe', 'ipc'] })
   const elec = (process as unknown as { electronApp: ChildProcessWithoutNullStreams }).electronApp
-  elec.stderr.addListener('data', (data: Buffer) => {
+  elec.stdout.addListener('data', (data: Buffer) => {
     console.log(data.toString().trimEnd())
   })
   elec.stderr.addListener('data', (data: Buffer) => {
