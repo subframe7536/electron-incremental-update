@@ -11,7 +11,9 @@ import { mergeConfig } from 'vite'
 import { build } from 'vite-plugin-electron'
 
 import { isUpdateJSON } from '../utils/version'
+import { bytecodePlugin } from './bytecode'
 import { log } from './constant'
+import { esm } from './esm'
 import { readableSize } from './utils'
 
 export async function buildAsar({
@@ -97,8 +99,8 @@ export async function buildEntry(
     },
     vite: mergeConfig<InlineConfig, InlineConfig>({
       plugins: [
-        isESM && import('./esm').then(m => m.esm()),
-        bytecodeOptions && import('./bytecode').then(m => m.bytecodePlugin('main', bytecodeOptions)),
+        isESM && esm(),
+        bytecodeOptions && bytecodePlugin('main', bytecodeOptions),
       ],
       build: {
         sourcemap,

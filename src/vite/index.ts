@@ -16,7 +16,9 @@ import { notBundle } from 'vite-plugin-electron/plugin'
 import ElectronSimple from 'vite-plugin-electron/simple'
 
 import { buildAsar, buildEntry, buildUpdateJson } from './build'
-import { id, log } from './constant'
+import { bytecodePlugin } from './bytecode'
+import { bytecodeLog, id, log } from './constant'
+import { esm } from './esm/index'
 import { parseOptions } from './option'
 import { copyAndSkipIfExist } from './utils'
 
@@ -298,7 +300,7 @@ export async function electronWithUpdater(
       : undefined
 
   if (isESM && bytecodeOptions?.enable) {
-    (await import('./constant')).bytecodeLog.warn(
+    bytecodeLog.warn(
       '`bytecodePlugin` does not support ES module, please remove "type": "module" in package.json',
       { timestamp: true },
     )
@@ -380,8 +382,6 @@ export async function electronWithUpdater(
     treeshake: true,
   }
 
-  const esmShimPlugin = isESM ? import('./esm/index').then(m => m.esm()) : undefined
-
   const electronPluginOptions: ElectronSimpleOptions = {
     main: {
       entry: _main.files,
@@ -399,9 +399,9 @@ export async function electronWithUpdater(
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
           plugins: [
-            !isBuild && useNotBundle ? notBundle() : undefined,
-            bytecodeOptions && import('./bytecode').then(m => m.bytecodePlugin('main', bytecodeOptions)),
-            esmShimPlugin,
+            !isBuild && useNotBundle && notBundle(),
+            bytecodeOptions && bytecodePlugin('main', bytecodeOptions),
+            isESM && esm(),
           ],
           build: {
             sourcemap,
@@ -420,8 +420,8 @@ export async function electronWithUpdater(
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
           plugins: [
-            bytecodeOptions && import('./bytecode/index').then(m => m.bytecodePlugin('preload', bytecodeOptions)),
-            esmShimPlugin,
+            bytecodeOptions && bytecodePlugin('preload', bytecodeOptions),
+            isESM && esm(),
             {
               name: `${id}-build`,
               enforce: 'post',
