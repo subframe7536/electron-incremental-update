@@ -48,6 +48,7 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
   private CERT: string
   private controller: AbortController
   private info?: UpdateInfoWithURL
+  private tmpFilePath?: string
   public provider?: IProvider
   /**
    * Updater logger
@@ -137,12 +138,25 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
     }
   }
 
+  private cleanup(): void {
+    if (this.tmpFilePath && fs.existsSync(this.tmpFilePath)) {
+      try {
+        fs.unlinkSync(this.tmpFilePath)
+        this.tmpFilePath = undefined
+        this.logger?.debug('Cleaned up temporary update file')
+      } catch (error) {
+        this.logger?.warn(`Failed to clean up temporary update file: ${error}`)
+      }
+    }
+  }
+
   /**
    * Handle error message and emit error event
    */
   private err(msg: string, code: UpdaterErrorCode, errorInfo: string): void {
     const err = new UpdaterError(code, errorInfo)
     this.logger?.error(`[${code}] ${msg}`, err)
+    this.cleanup()
     this.emit('error', err)
   }
 
@@ -291,16 +305,17 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
     this.logger?.debug('Validation end')
 
     try {
-      const tmpFilePath = `${getPathFromAppNameAsar()}.tmp`
+      this.tmpFilePath = `${getPathFromAppNameAsar()}.tmp`
       // write file to tmp path
-      this.logger?.debug(`Install to ${tmpFilePath}`)
-      fs.writeFileSync(tmpFilePath, await this.provider!.unzipFile(buffer))
+      this.logger?.debug(`Install to ${this.tmpFilePath}`)
+      fs.writeFileSync(this.tmpFilePath, await this.provider!.unzipFile(buffer))
 
       this.logger?.info(`Download success, version: ${_version}`)
       this.info = undefined
       this.emit('update-downloaded')
       return true
     } catch (error) {
+      this.cleanup()
       this.err(
         'Download failed',
         'ERR_DOWNLOAD',
@@ -323,6 +338,7 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
       return
     }
     this.controller.abort()
+    this.cleanup()
     this.logger?.info('Cancel update')
     this.emit('update-cancelled')
     this.controller = new AbortController()
