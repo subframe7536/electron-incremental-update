@@ -71,7 +71,9 @@ export interface BuildEntryOption {
    */
   ignoreDynamicRequires?: boolean
   /**
-   * `external` option in `build.rollupOptions`, default is node built-in modules or native modules
+   * `external` option in `build.rollupOptions`,
+   * default is node built-in modules or native modules.
+   * If is in dev, also external `dependencies` in package.json
    */
   external?: NonNullable<NonNullable<InlineConfig['build']>['rollupOptions']>['external']
   /**
