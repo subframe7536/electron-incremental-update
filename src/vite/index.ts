@@ -74,7 +74,7 @@ export const debugStartup: StartupFn = async (args) => {
  *     startup: args => filterErrorMessageStartup(
  *       args,
  *       // ignore error message when function returns false
- *       msg => !/"code":-32601/.test(message)
+ *       msg => !/"code":-32601/.test(msg)
  *     )
  *   },
  * })
@@ -453,16 +453,16 @@ export async function electronWithUpdater(
   }
 
   if (logParsedOptions) {
+    const shouldShowKey = typeof logParsedOptions === 'object' && logParsedOptions.showKeys === true
     log.info(
       JSON.stringify(
         {
           ...electronPluginOptions,
           updater: { buildAsarOption, buildEntryOption, buildVersionOption },
         },
-        (key, value) => (((['privateKey', 'cert', 'define'].includes(key))
-          && !(typeof logParsedOptions === 'object' && logParsedOptions.showKeys === true))
-          ? '***'
-          : value),
+        (key, value) => ((key === 'privateKey' || key === 'cert') && shouldShowKey)
+          ? value
+          : `<${key.toUpperCase()}>`,
         2,
       ),
       { timestamp: true },
