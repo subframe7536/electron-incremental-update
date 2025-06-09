@@ -265,6 +265,7 @@ type ParseOptionReturn = {
 }
 
 export function parseOptions(
+  isBuild: boolean,
   pkg: PKG,
   sourcemap = false,
   minify = false,
@@ -285,6 +286,7 @@ export function parseOptions(
         /.*\.(node|dll|dylib|so)$/,
         'original-fs',
         ...builtinModules,
+        ...isBuild ? [] : Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}),
       ],
       overrideViteOptions = {},
     } = {},

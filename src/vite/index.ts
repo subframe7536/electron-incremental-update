@@ -311,7 +311,7 @@ export async function electronWithUpdater(
     buildVersionOption,
     postBuild,
     cert,
-  } = parseOptions(pkg, sourcemap, minify, updater)
+  } = parseOptions(isBuild, pkg, sourcemap, minify, updater)
   const { entryOutputDirPath, nativeModuleEntryMap, appEntryPath, external } = buildEntryOption
 
   try {
@@ -469,7 +469,7 @@ export async function electronWithUpdater(
     )
   }
 
-  let extraHmrPlugin: Plugin | undefined
+  const result: PluginOption[] = [ElectronSimple(electronPluginOptions)]
 
   if (nativeModuleEntryMap) {
     const files = [
@@ -477,7 +477,7 @@ export async function electronWithUpdater(
       appEntryPath,
     ].map(file => path.resolve(normalizePath(file)))
 
-    extraHmrPlugin = {
+    result.push({
       name: `${id}-dev`,
       apply() {
         return !isBuild
@@ -511,8 +511,8 @@ export async function electronWithUpdater(
             },
           )
       },
-    }
+    })
   }
 
-  return [ElectronSimple(electronPluginOptions), extraHmrPlugin]
+  return result
 }
