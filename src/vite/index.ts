@@ -332,7 +332,6 @@ export async function electronWithUpdater(
     throw new Error(`Wrong "main" field in package.json: "${pkg.main}", it should be "${_appPath}"`)
   }
 
-  /// keep-sorted
   const define = {
     __EIU_ASAR_BASE_NAME__: JSON.stringify(path.basename(buildAsarOption.asarOutputPath)),
     __EIU_ELECTRON_DIST_PATH__: JSON.stringify(normalizePath(buildAsarOption.electronDistPath)),

@@ -28,7 +28,6 @@ export async function downloadUtil<T>(
 ): Promise<T> {
   await electron.app.whenReady()
   return new Promise((resolve, reject) => {
-    /// keep-sorted
     const request = electron.net.request({
       cache: 'no-cache',
       headers,
@@ -96,7 +95,11 @@ export async function defaultDownloadText<T>(
  * @param headers extra headers
  * @param signal abort signal
  */
-export async function defaultDownloadUpdateJSON(url: string, headers: Record<string, any>, signal: AbortSignal): Promise<UpdateJSON> {
+export async function defaultDownloadUpdateJSON(
+  url: string,
+  headers: Record<string, any>,
+  signal: AbortSignal,
+): Promise<UpdateJSON> {
   return await defaultDownloadText<UpdateJSON>(
     url,
     headers,
@@ -142,7 +145,6 @@ export async function defaultDownloadAsar(
         const delta = chunk.length
         transferred += delta
         const current = Date.now()
-        /// keep-sorted
         onDownloading?.({
           bps: delta / (current - time),
           delta,
