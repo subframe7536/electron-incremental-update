@@ -461,8 +461,8 @@ export async function electronWithUpdater(
           updater: { buildAsarOption, buildEntryOption, buildVersionOption },
         },
         (key, value) => ((key === 'privateKey' || key === 'cert') && shouldShowKey)
-          ? value
-          : `<${key.toUpperCase()}>`,
+          ? `<${key.toUpperCase()}>`
+          : value,
         2,
       ),
       { timestamp: true },
