@@ -433,12 +433,13 @@ function disableHWAccForWin7(): void
  */
 function singleInstance(window?: BrowserWindow): void
 /**
- * Set `AppData` dir to the dir of .exe file
+ * Set `userData` dir to the dir of .exe file
  *
  * Useful for portable Windows app
  * @param dirName dir name, default to `data`
+ * @param create whether to create dir, default to `true`
  */
-function setPortableAppDataPath(dirName?: string): void
+function setPortableDataPath(dirName?: string, create?: boolean): void
 /**
  * Load `process.env.VITE_DEV_SERVER_URL` when dev, else load html file
  * @param win window

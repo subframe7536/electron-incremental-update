@@ -132,20 +132,38 @@ export function singleInstance(window?: BrowserWindow): void {
 }
 
 /**
- * Set `AppData` dir to the dir of .exe file
+ * Set `userData` dir to the dir of .exe file
  *
  * Useful for portable Windows app
  * @param dirName dir name, default to `data`
+ * @param create whether to create dir, default to `true`
  */
-export function setPortableAppDataPath(dirName = 'data'): void {
-  const portablePath = path.join(path.dirname(electron.app.getPath('exe')), dirName)
-
-  if (!fs.existsSync(portablePath)) {
-    fs.mkdirSync(portablePath)
+export function setPortableDataPath(dirName: string = 'data', create: boolean = true): void {
+  if (electron.app.isReady()) {
+    throw new Error('Portable app data dir must be setup before app is ready')
   }
 
-  electron.app.setPath('appData', portablePath)
+  const portableDir = path.join(path.dirname(electron.app.getPath('exe')), dirName)
+
+  if (create) {
+    if (!fs.existsSync(portableDir)) {
+      fs.mkdirSync(portableDir)
+    } else if (!fs.statSync(portableDir).isDirectory()) {
+      fs.rmSync(portableDir)
+      fs.mkdirSync(portableDir)
+    }
+  } else if (!fs.existsSync(portableDir)) {
+    throw new Error('Portable app data dir does not exists')
+  }
+
+  electron.app.setPath('userData', portableDir)
 }
+
+/**
+ * @deprecated
+ * @alias {@link setPortableDataPath}
+ */
+export const setPortableAppDataPath = setPortableDataPath
 
 /**
  * Load `process.env.VITE_DEV_SERVER_URL` when dev, else load html file
