@@ -2,7 +2,7 @@ import type { BytecodeOptions } from './bytecode'
 import type { ElectronUpdaterOptions, PKG } from './option'
 import type { AnyFunction } from '@subframe7536/type-utils'
 import type { ChildProcessWithoutNullStreams } from 'node:child_process'
-import type { BuildOptions, InlineConfig, Plugin, PluginOption } from 'vite'
+import type { BuildOptions, InlineConfig, PluginOption } from 'vite'
 import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
 
 import fs from 'node:fs'
@@ -355,12 +355,12 @@ export async function electronWithUpdater(
       getPathFromEntryOutputDir(...paths) {
         return path.join(entryOutputDirPath, ...paths)
       },
-      copyToEntryOutputDir({ from, to, skipIfExist = true }) {
+      copyToEntryOutputDir({ from, to = path.basename(from), skipIfExist = true }) {
         if (!fs.existsSync(from)) {
           log.warn(`${from} not found`, { timestamp: true })
           return
         }
-        const target = path.join(entryOutputDirPath, to ?? path.basename(from))
+        const target = path.join(entryOutputDirPath, to)
         copyAndSkipIfExist(from, target, skipIfExist)
       },
       copyModules({ modules, skipIfExist = true }) {

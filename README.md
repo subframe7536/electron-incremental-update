@@ -278,7 +278,7 @@ const plugin = electronWithUpdater({
         db: './electron/native/db.ts',
         img: './electron/native/img.ts',
       },
-      postBuild: async ({ copyToEntryOutputDir, copyModules }) => {
+      postBuild: ({ copyToEntryOutputDir, copyModules }) => {
         // for better-sqlite3
         copyToEntryOutputDir({
           from: './node_modules/better-sqlite3/build/Release/better_sqlite3.node',
@@ -286,7 +286,7 @@ const plugin = electronWithUpdater({
         })
         // for @napi-rs/image
         const startStr = '@napi-rs+image-'
-        const fileName = (await readdir('./node_modules/.pnpm')).filter(p => p.startsWith(startStr))[0]
+        const fileName = readdirSync('./node_modules/.pnpm').find(p => p.startsWith(startStr))!
         const archName = fileName.substring(startStr.length).split('@')[0]
         copyToEntryOutputDir({
           from: `./node_modules/.pnpm/${fileName}/node_modules/@napi-rs/image-${archName}/image.${archName}.node`,
@@ -348,6 +348,74 @@ module.exports = {
     '!node_modules/**',
   ]
 }
+```
+
+#### Result in app.asar
+
+Before: Redundant 🤮
+
+```
+.
+├── dist-entry
+│   ├── chunk-IVHNGRZY-BPUeB0jT.js
+│   ├── db.js
+│   ├── entry.js
+│   └── image.js
+├── node_modules
+│   ├── @napi-rs
+│   ├── base64-js
+│   ├── better-sqlite3
+│   ├── bindings
+│   ├── bl
+│   ├── buffer
+│   ├── chownr
+│   ├── decompress-response
+│   ├── deep-extend
+│   ├── detect-libc
+│   ├── end-of-stream
+│   ├── expand-template
+│   ├── file-uri-to-path
+│   ├── fs-constants
+│   ├── github-from-package
+│   ├── ieee754
+│   ├── inherits
+│   ├── ini
+│   ├── mimic-response
+│   ├── minimist
+│   ├── mkdirp-classic
+│   ├── napi-build-utils
+│   ├── node-abi
+│   ├── once
+│   ├── prebuild-install
+│   ├── pump
+│   ├── rc
+│   ├── readable-stream
+│   ├── safe-buffer
+│   ├── semver
+│   ├── simple-concat
+│   ├── simple-get
+│   ├── string_decoder
+│   ├── strip-json-comments
+│   ├── tar-fs
+│   ├── tar-stream
+│   ├── tunnel-agent
+│   ├── util-deprecate
+│   └── wrappy
+└── package.json
+```
+
+After: Clean 😍
+
+```
+.
+├── dist-entry
+│   ├── better_sqlite3.node
+│   ├── chunk-IVHNGRZY-BPUeB0jT.js
+│   ├── db.js
+│   ├── entry.js
+│   ├── image.js
+│   └── image.win32-x64-msvc.node
+└── package.json
 ```
 
 ### Bytecode Protection
@@ -923,7 +991,9 @@ export interface BuildEntryOption {
   /**
    * `external` option in `build.rollupOptions`,
    * default is node built-in modules or native modules.
-   * If is in dev, also external `dependencies` in package.json
+   *
+   * If is in dev and {@link postBuild} is not setup, will also
+   * external `dependencies` in `package.json`
    */
   external?: NonNullable<NonNullable<InlineConfig['build']>['rollupOptions']>['external']
   /**
@@ -944,8 +1014,9 @@ export interface BuildEntryOption {
    */
   overrideViteOptions?: InlineConfig
   /**
-   * Resolve extra files on startup, such as `.node`
-   * @remark won't trigger will reload
+   * By default, all the unbundled modules will be packaged by packager like `electron-builder`.
+   * If setup, all the `dependencies` in `package.json` will be bundled by default, and you need
+   * to manually handle the native module files.
    */
   postBuild?: (args: {
     /**

@@ -73,7 +73,9 @@ export interface BuildEntryOption {
   /**
    * `external` option in `build.rollupOptions`,
    * default is node built-in modules or native modules.
-   * If is in dev, also external `dependencies` in package.json
+   *
+   * If is in dev and {@link postBuild} is not setup, will also
+   * external `dependencies` in `package.json`
    */
   external?: NonNullable<NonNullable<InlineConfig['build']>['rollupOptions']>['external']
   /**
@@ -94,8 +96,12 @@ export interface BuildEntryOption {
    */
   overrideViteOptions?: InlineConfig
   /**
-   * Resolve extra files on startup, such as `.node`
-   * @remark won't trigger will reload
+   * By default, all the unbundled modules will be packaged by packager like `electron-builder`.
+   * If setup, all the `dependencies` in `package.json` will be bundled by default, and you need
+   * to manually handle the native module files.
+   *
+   * If you are using `electron-buidler`, don't forget to append `'!node_modules/**'` in
+   * electron-build config's `files` array
    */
   postBuild?: (args: {
     /**
@@ -288,7 +294,9 @@ export function parseOptions(
         /.*\.(node|dll|dylib|so)$/,
         'original-fs',
         ...builtinModules,
-        ...isBuild ? [] : Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}),
+        ...(isBuild || postBuild)
+          ? []
+          : Object.keys('dependencies' in pkg ? pkg.dependencies as object : {}),
       ],
       overrideViteOptions = {},
     } = {},
