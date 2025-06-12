@@ -49,6 +49,7 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
   private controller: AbortController
   private info?: UpdateInfoWithURL
   private tmpFilePath?: string
+  private processing: boolean = false
   public provider?: IProvider
   /**
    * Updater logger
@@ -176,9 +177,18 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
       info?: T,
     ): false => {
       this.logger?.info(`[${code}] ${msg}`)
+      this.logger?.debug('Check update end')
+      this.processing = false
       this.emit('update-not-available', code, msg, info)
       return false
     }
+
+    if (this.processing) {
+      this.logger?.info('Updater is already processing, skip check update')
+      return false
+    }
+    this.processing = true
+    this.logger?.debug('Check update start')
 
     if (!data && !this.provider) {
       const msg = 'No update json or provider'
@@ -234,8 +244,10 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
         )
       }
       this.logger?.info(`Update available: ${version}`)
-      this.emit('update-available', extraVersionInfo)
       this.info = info
+      this.processing = false
+      this.logger?.debug('Check update end')
+      this.emit('update-available', extraVersionInfo)
       return true
     } catch {
       const msg = 'Fail to parse version string'
@@ -259,48 +271,53 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
    */
   public async downloadUpdate(data: Uint8Array, info: Omit<UpdateInfo, 'minimumVersion'>): Promise<boolean>
   public async downloadUpdate(data?: Uint8Array, info?: Omit<UpdateInfo, 'minimumVersion'>): Promise<boolean> {
+    const emitError = (code: UpdaterErrorCode, errorInfo: string): false => {
+      this.err(`Download update failed`, code, errorInfo)
+      this.logger?.debug('Download update end')
+      this.processing = false
+      return false
+    }
+    if (this.processing) {
+      this.logger?.info('Updater is already processing, skip download update')
+      return false
+    }
+    this.processing = true
+    this.logger?.debug('Download update start')
+
     const _sig = info?.signature ?? this.info?.signature
     const _version = info?.version ?? this.info?.version
 
     if (!_sig || !_version) {
-      this.err(
-        'Download failed',
+      return emitError(
         'ERR_PARAM',
         'No update signature, please call `checkUpdate` first or manually setup params',
       )
-      return false
     }
 
     if (!data && !this.provider) {
-      this.err(
-        'Download failed',
+      return emitError(
         'ERR_PARAM',
         'No update asar buffer and provider',
       )
-      return false
     }
 
     // if typeof data is Buffer, the version will not be used
     const buffer = await this.fetch('buffer', data ? Buffer.from(data) : undefined)
 
     if (!buffer) {
-      this.err(
-        'Download failed',
+      return emitError(
         'ERR_PARAM',
         'No update asar file buffer',
       )
-      return false
     }
 
     // verify update file
     this.logger?.debug('Validation start')
     if (!await this.provider!.verifySignaure(buffer, _version, _sig, this.CERT)) {
-      this.err(
-        'Download failed',
+      return emitError(
         'ERR_VALIDATE',
         'Invalid update asar file',
       )
-      return false
     }
     this.logger?.debug('Validation end')
 
@@ -313,15 +330,15 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
       this.logger?.info(`Download success, version: ${_version}`)
       this.info = undefined
       this.emit('update-downloaded')
+      this.processing = false
+      this.logger?.debug('Download update end')
       return true
     } catch (error) {
       this.cleanup()
-      this.err(
-        'Download failed',
+      return emitError(
         'ERR_DOWNLOAD',
-        `Fail to unwrap asar file, ${error}`,
+        `Failed to write update file: ${error instanceof Error ? error.message : error}`,
       )
-      return false
     }
   }
 
