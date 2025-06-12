@@ -120,15 +120,15 @@ export class Updater<T extends UpdateInfoWithExtraVersion = UpdateInfoWithExtraV
     try {
       const result = format === 'json'
         ? await this.provider!.downloadJSON(
-          electron.app.name,
-          __EIU_VERSION_PATH__,
-          this.controller.signal,
-        )
+            electron.app.name,
+            __EIU_VERSION_PATH__,
+            this.controller.signal,
+          )
         : await this.provider!.downloadAsar(
-          this.info!,
-          this.controller.signal,
-          info => this.emit('download-progress', info),
-        )
+            this.info!,
+            this.controller.signal,
+            info => this.emit('download-progress', info),
+          )
 
       this.logger?.debug(`Download ${format} success${format === 'buffer' ? `, file size: ${(result as Buffer).length}` : ''}`)
 

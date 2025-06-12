@@ -1,5 +1,4 @@
 import type { BaseGitHubProviderOptions } from './base'
-import type { GitHubProviderOptions } from './file'
 
 import { defaultDownloadText } from '../../utils/download'
 import { BaseGitHubProvider } from './base'

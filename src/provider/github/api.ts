@@ -1,4 +1,3 @@
-import type { UpdateInfoWithURL } from '../types'
 import type { BaseGitHubProviderOptions } from './base'
 
 import { defaultDownloadText, resolveJson } from '../../utils/download'
