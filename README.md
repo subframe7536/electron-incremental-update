@@ -103,7 +103,6 @@ export default defineConfig(async ({ command }) => {
     plugins: [
       electronWithUpdater({
         isBuild,
-        logParsedOptions: true,
         main: {
           files: ['./electron/main/index.ts', './electron/main/worker.ts'],
           // see https://github.com/electron-vite/electron-vite-vue/blob/85ed267c4851bf59f32888d766c0071661d4b94c/vite.config.ts#L22-L28
@@ -824,12 +823,6 @@ export interface ElectronWithUpdaterOptions {
    * @default isCI
    */
   buildVersionJson?: boolean
-  /**
-   * Whether to log parsed options
-   *
-   * To show certificate and private keys, set `logParsedOptions: { showKeys: true }`
-   */
-  logParsedOptions?: boolean | { showKeys: boolean }
   /**
    * Main process options
    *

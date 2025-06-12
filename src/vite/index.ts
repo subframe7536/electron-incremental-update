@@ -204,12 +204,6 @@ export interface ElectronWithUpdaterOptions {
    */
   buildVersionJson?: boolean
   /**
-   * Whether to log parsed options
-   *
-   * To show certificate and private keys, set `logParsedOptions: { showKeys: true }`
-   */
-  logParsedOptions?: boolean | { showKeys: boolean }
-  /**
    * Main process options
    *
    * To change output directories, use `options.updater.paths.electronDistPath` instead
@@ -249,7 +243,6 @@ export interface ElectronWithUpdaterOptions {
  *     plugins: [
  *       electronWithUpdater({
  *         isBuild,
- *         logParsedOptions: true,
  *         main: {
  *           files: ['./electron/main/index.ts', './electron/main/worker.ts'],
  *           // see https://github.com/electron-vite/electron-vite-vue/blob/85ed267c4851bf59f32888d766c0071661d4b94c/vite.config.ts#L22-L28
@@ -288,7 +281,6 @@ export async function electronWithUpdater(
     updater,
     bytecode,
     useNotBundle = true,
-    logParsedOptions,
   } = options
   if (!pkg || !pkg.version || !pkg.name || !pkg.main) {
     log.error('package.json not found or invalid', { timestamp: true })
@@ -452,23 +444,6 @@ export async function electronWithUpdater(
         _preload.vite ?? {},
       ),
     },
-  }
-
-  if (logParsedOptions) {
-    const shouldShowKey = typeof logParsedOptions === 'object' && logParsedOptions.showKeys === true
-    log.info(
-      JSON.stringify(
-        {
-          ...electronPluginOptions,
-          updater: { buildAsarOption, buildEntryOption, buildVersionOption },
-        },
-        (key, value) => (key === 'privateKey' || key === 'cert')
-          ? shouldShowKey ? value : `<${key.toUpperCase()}>`
-          : value,
-        2,
-      ),
-      { timestamp: true },
-    )
   }
 
   const result: PluginOption[] = [ElectronSimple(electronPluginOptions)]
