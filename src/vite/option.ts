@@ -1,7 +1,9 @@
 import type { UpdateJSON } from '../utils/version'
+import type { BytecodeOptions } from './bytecode'
 import type { DistinguishedName } from './key'
 import type { Promisable } from '@subframe7536/type-utils'
 import type { InlineConfig } from 'vite'
+import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple.js'
 
 import { builtinModules } from 'node:module'
 
@@ -15,6 +17,103 @@ export interface PKG {
   version: string
   main: string
   type: 'commonjs' | 'module'
+}
+type MakeRequired<T, K extends keyof T> = NonNullable<T> & { [P in K]-?: T[P] }
+type ReplaceKey<
+  T,
+  Key extends keyof T,
+  NewKey extends string,
+> = Omit<T, Key> & { [P in NewKey]: T[Key] }
+
+type MakeRequiredAndReplaceKey<
+  T,
+  K extends keyof T,
+  NewKey extends string,
+> = MakeRequired<ReplaceKey<T, K, NewKey>, NewKey>
+
+type ExcludeOutputDirOptions = {
+  vite?: {
+    build?: {
+      outDir: never
+      rollupOptions?: {
+        output?: {
+          dir: never
+        }
+      }
+    }
+  }
+}
+
+export interface ElectronWithUpdaterOptions {
+  /**
+   * Whether is in build mode
+   * ```ts
+   * export default defineConfig(({ command }) => {
+   *   const isBuild = command === 'build'
+   * })
+   * ```
+   */
+  isBuild: boolean
+  /**
+   * Manually setup package.json, read name, version and main,
+   * use `local-pkg` of `loadPackageJSON()` to load package.json by default
+   * ```ts
+   * import pkg from './package.json'
+   * ```
+   */
+  pkg?: PKG
+  /**
+   * Whether to generate sourcemap
+   * @default !isBuild
+   */
+  sourcemap?: boolean
+  /**
+   * Whether to minify the code
+   * @default isBuild
+   */
+  minify?: boolean
+  /**
+   * Whether to generate bytecode
+   *
+   * **Only support CommonJS**
+   *
+   * Only main process by default, if you want to use in preload script, please use `electronWithUpdater({ bytecode: { enablePreload: true } })` and set `sandbox: false` when creating window
+   */
+  bytecode?: boolean | BytecodeOptions
+  /**
+   * Use `NotBundle()` plugin in main
+   * @default true
+   */
+  useNotBundle?: boolean
+  /**
+   * Whether to generate version json
+   * @default isCI
+   */
+  buildVersionJson?: boolean
+  /**
+   * Main process options
+   *
+   * To change output directories, use `options.updater.paths.electronDistPath` instead
+   */
+  main: MakeRequiredAndReplaceKey<
+    ElectronSimpleOptions['main'],
+    'entry',
+    'files'
+  > & ExcludeOutputDirOptions
+  /**
+   * Preload process options
+   *
+   * To change output directories, use `options.updater.paths.electronDistPath` instead
+   */
+  preload: MakeRequiredAndReplaceKey<
+    Exclude<ElectronSimpleOptions['preload'], undefined>,
+    'input',
+    'files'
+  > & ExcludeOutputDirOptions
+  /**
+   * Updater options
+   */
+  updater?: UpdaterOptions
 }
 
 export interface BuildAsarOption {
@@ -176,7 +275,7 @@ export interface GeneratorOverrideFunctions {
   generateGzipFile?: (buffer: Buffer) => Promisable<Buffer>
 }
 
-export interface ElectronUpdaterOptions {
+interface UpdaterOptions {
   /**
    * Minimum version of entry
    * @default '0.0.0'
@@ -277,7 +376,7 @@ export function parseOptions(
   pkg: PKG,
   sourcemap = false,
   minify = false,
-  options: ElectronUpdaterOptions = {},
+  options: UpdaterOptions = {},
 ): ParseOptionReturn {
   const {
     minimumVersion = '0.0.0',

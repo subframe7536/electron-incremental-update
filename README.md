@@ -838,10 +838,10 @@ export interface ElectronWithUpdaterOptions {
   /**
    * Updater options
    */
-  updater?: ElectronUpdaterOptions
+  updater?: UpdaterOptions
 }
 
-export interface ElectronUpdaterOptions {
+export interface UpdaterOptions {
   /**
    * Minimum version of entry
    * @default '0.0.0'
