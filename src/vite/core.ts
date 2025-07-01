@@ -315,7 +315,6 @@ export async function electronWithUpdater(
     },
     preload: {
       input: _preload.files,
-      onstart: _preload.onstart,
       vite: mergeConfig<InlineConfig, InlineConfig>(
         {
           plugins: [
