@@ -857,13 +857,34 @@ export interface ElectronWithUpdaterOptions {
    *
    * To change output directories, use `options.updater.paths.electronDistPath` instead
    */
-  main: MakeRequiredAndReplaceKey<ElectronSimpleOptions['main'], 'entry', 'files'> & ExcludeOutputDirOptions
+  main: {
+    /**
+     * Shortcut of `build.rollupOptions.input`
+     */
+    files: NonNullable<ElectronOptions['entry']>
+    /**
+     * Electron App startup function.
+     *
+     * It will mount the Electron App child-process to `process.electronApp`.
+     * @param argv default value `['.', '--no-sandbox']`
+     * @param options options for `child_process.spawn`
+     * @param customElectronPkg custom electron package name (default: 'electron')
+     */
+    onstart?: ElectronOptions['onstart']
+  } & ViteOverride
   /**
    * Preload process options
    *
    * To change output directories, use `options.updater.paths.electronDistPath` instead
    */
-  preload: MakeRequiredAndReplaceKey<Exclude<ElectronSimpleOptions['preload'], undefined>, 'input', 'files'> & ExcludeOutputDirOptions
+  preload: {
+    /**
+     * Shortcut of `build.rollupOptions.input`.
+     *
+     * Preload scripts may contain Web assets, so use the `build.rollupOptions.input` instead `build.lib.entry`.
+     */
+    files: NonNullable<ElectronOptions['entry']>
+  } & ViteOverride
   /**
    * Updater options
    */
