@@ -5,7 +5,7 @@ import { electronWithUpdater } from './core'
 
 type MakeOptional<T, K extends keyof T> = Partial<Pick<T, K>> & Omit<T, K>
 
-interface ElectronViteHelperOptions extends MakeOptional<ElectronWithUpdaterOptions, 'isBuild'> {
+export interface ElectronViteHelperOptions extends MakeOptional<ElectronWithUpdaterOptions, 'isBuild'> {
   /**
    * Config for renderer process
    */
