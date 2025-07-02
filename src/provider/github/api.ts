@@ -16,17 +16,17 @@ export interface GitHubApiProviderOptions extends BaseGitHubProviderOptions {
   token?: string
 }
 
+/**
+ * Update Provider for Github API, you need to upload `version.json` to release as well
+ * - check update from `https://api.github.com/repos/{user}/{repo}/releases?per_page=1`
+ * - download update json and get version and download url
+ * - download update asar from update info
+ *
+ * you can setup `urlHandler` in options to modify url before request
+ * @param options provider options
+ */
 export class GitHubApiProvider extends BaseGitHubProvider<GitHubApiProviderOptions> {
   public name = 'GithubApiProvider'
-  /**
-   * Update Provider for Github API, you need to upload `version.json` to release as well
-   * - check update from `https://api.github.com/repos/{user}/{repo}/releases?per_page=1`
-   * - download update json and get version and download url
-   * - download update asar from update info
-   *
-   * you can setup `urlHandler` in options to modify url before request
-   * @param options provider options
-   */
   constructor(options: GitHubApiProviderOptions) {
     super(options)
   }

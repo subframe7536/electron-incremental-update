@@ -10,16 +10,16 @@ export interface GitHubProviderOptions extends BaseGitHubProviderOptions {
   branch?: string
 }
 
+/**
+ * Update Provider for Github repo
+ * - download update json from `https://github.com/{user}/{repo}/raw/HEAD/{versionPath}`
+ * - download update asar from `https://github.com/{user}/{repo}/releases/download/v{version}/{name}-{version}.asar.gz`
+ *
+ * you can setup `urlHandler` in options to modify url before request
+ * @param options provider options
+ */
 export class GitHubProvider extends BaseGitHubProvider<GitHubProviderOptions> {
   public name = 'GithubProvider'
-  /**
-   * Update Provider for Github repo
-   * - download update json from `https://github.com/{user}/{repo}/raw/HEAD/{versionPath}`
-   * - download update asar from `https://github.com/{user}/{repo}/releases/download/v{version}/{name}-{version}.asar.gz`
-   *
-   * you can setup `urlHandler` in options to modify url before request
-   * @param options provider options
-   */
   constructor(options: GitHubProviderOptions) {
     super(options)
     if (!options.branch) {
