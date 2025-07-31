@@ -1,7 +1,7 @@
 {
   "name": "electron-incremental-update",
   "type": "module",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "description": "Electron incremental update tools with Vite plugin, support bytecode protection",
   "author": "subframe7536",
   "license": "MIT",
