@@ -1018,7 +1018,7 @@ export interface BuildEntryOption {
    */
   appEntryPath?: string
   /**
-   * Esbuild path map of native modules in entry directory
+   * Vite input options of native modules in entry directory
    *
    * @default {}
    * @example
