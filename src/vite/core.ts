@@ -67,7 +67,12 @@ export async function filterErrorMessageStartup(
   args: Parameters<StartupFn>[0],
   filter: (msg: string) => boolean,
 ): Promise<void> {
-  await args.startup(undefined, { stdio: ['inherit', 'pipe', 'pipe', 'ipc'] })
+  // https://github.com/electron-vite/vite-plugin-electron/pull/283
+  // reserve file descriptor 3 for Chromium; put Node IPC on file descriptor 4
+  const stdio = process.platform === 'linux'
+    ? ['inherit', 'pipe', 'pipe', 'ignore', 'ipc']
+    : ['inherit', 'pipe', 'pipe', 'ipc']
+  await args.startup(undefined, { stdio })
   const elec = (process as unknown as { electronApp: ChildProcessWithoutNullStreams }).electronApp
   elec.stdout.addListener('data', (data: Buffer) => {
     console.log(data.toString().trimEnd())
