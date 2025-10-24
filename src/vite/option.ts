@@ -256,7 +256,7 @@ export interface GeneratorOverrideFunctions {
     buffer: Buffer,
     privateKey: string,
     cert: string,
-    version: string
+    version: string,
   ) => Promisable<string>
   /**
    * Custom generate update json function
@@ -270,7 +270,7 @@ export interface GeneratorOverrideFunctions {
     existingJson: UpdateJSON,
     signature: string,
     version: string,
-    minVersion: string
+    minVersion: string,
   ) => Promisable<UpdateJSON>
   /**
    * Custom generate zip file buffer

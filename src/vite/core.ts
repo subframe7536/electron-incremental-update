@@ -1,4 +1,3 @@
-import type { BytecodeOptions } from './bytecode'
 import type { ElectronWithUpdaterOptions, PKG } from './option'
 import type { AnyFunction } from '@subframe7536/type-utils'
 import type { ChildProcessWithoutNullStreams, StdioOptions } from 'node:child_process'

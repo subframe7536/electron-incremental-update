@@ -38,7 +38,7 @@ type OnInstallFunction = (
   install: VoidFunction,
   tempAsarPath: string,
   appNameAsarPath: string,
-  logger?: Logger
+  logger?: Logger,
 ) => Promisable<void>
 
 export interface AppOption {

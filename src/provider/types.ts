@@ -1,6 +1,5 @@
 import type { UpdateInfo } from '../utils/version'
 import type { Promisable } from '@subframe7536/type-utils'
-import type { URL } from 'node:url'
 
 export type UpdateInfoWithURL = UpdateInfo & { url: string }
 
@@ -54,7 +53,7 @@ export interface IProvider {
   downloadAsar: (
     updateInfo: UpdateInfoWithURL,
     signal: AbortSignal,
-    onDownloading?: (info: DownloadingInfo) => void
+    onDownloading?: (info: DownloadingInfo) => void,
   ) => Promise<Buffer>
   /**
    * Check the old version is less than new version
