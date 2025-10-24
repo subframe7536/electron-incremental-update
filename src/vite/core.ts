@@ -1,7 +1,7 @@
 import type { BytecodeOptions } from './bytecode'
 import type { ElectronWithUpdaterOptions, PKG } from './option'
 import type { AnyFunction } from '@subframe7536/type-utils'
-import type { ChildProcessWithoutNullStreams } from 'node:child_process'
+import type { ChildProcessWithoutNullStreams, StdioOptions } from 'node:child_process'
 import type { BuildOptions, InlineConfig, PluginOption } from 'vite'
 import type { ElectronSimpleOptions } from 'vite-plugin-electron/simple'
 
@@ -69,7 +69,7 @@ export async function filterErrorMessageStartup(
 ): Promise<void> {
   // https://github.com/electron-vite/vite-plugin-electron/pull/283
   // reserve file descriptor 3 for Chromium; put Node IPC on file descriptor 4
-  const stdio = process.platform === 'linux'
+  const stdio: StdioOptions = process.platform === 'linux'
     ? ['inherit', 'pipe', 'pipe', 'ignore', 'ipc']
     : ['inherit', 'pipe', 'pipe', 'ipc']
   await args.startup(undefined, { stdio })
